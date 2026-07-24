@@ -181,5 +181,7 @@ GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')
 GITHUB_TOKENS = [t.strip() for t in os.getenv('GITHUB_TOKENS', GITHUB_TOKEN).split(',') if t.strip()]
 
 # YouTube Integration (optional — falls back to static courses if empty)
-YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', '')
+# Google OAuth
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '262401890252-9rvc6los0skfju4i5om4jqvqnnlj606p.apps.googleusercontent.com')
+GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET', '')
 
