@@ -21,3 +21,5 @@ ENV/
 .vscode/
 .idea/
 *.swp
+# Generated artifacts
+artifacts/
