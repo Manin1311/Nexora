@@ -159,7 +159,8 @@ SIMPLE_JWT = {
 }
 
 # CORS & Security Headers
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
+_default_cors = 'http://localhost:5173,http://127.0.0.1:5173,https://nexora-final-6x57.onrender.com'
+CORS_ALLOWED_ORIGINS = [o.strip() for o in os.getenv('CORS_ALLOWED_ORIGINS', _default_cors).split(',') if o.strip()]
 CORS_ALLOW_CREDENTIALS = True
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
