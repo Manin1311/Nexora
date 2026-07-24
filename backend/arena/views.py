@@ -1,0 +1,127 @@
+"""
+REST API views for the Code Arena.
+
+POST /api/arena/rooms/           — Create a new battle room
+GET  /api/arena/rooms/<code>/    — Get room info (validates joinability)
+"""
+
+import random
+import time
+
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework import status
+
+from .challenges import ARENA_CHALLENGES
+from .aptitude_challenges import APTITUDE_CHALLENGES
+from .room_manager import ROOMS, create_unique_room_code, purge_stale_rooms
+
+
+class CreateRoomView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        purge_stale_rooms()
+
+        language = request.data.get("language", "javascript")
+        if language not in ("javascript", "python"):
+            language = "javascript"
+
+        mode = request.data.get("mode", "coding")
+        if mode not in ("coding", "aptitude"):
+            mode = "coding"
+
+        room_code = create_unique_room_code()
+        
+        if mode == "aptitude":
+            challenge = None
+            questions = random.sample(APTITUDE_CHALLENGES, min(len(APTITUDE_CHALLENGES), 5))
+        else:
+            challenge = random.choice(ARENA_CHALLENGES)
+            questions = []
+
+        user_id = str(request.user.id)
+
+        ROOMS[room_code] = {
+            "code": room_code,
+            "host_id": user_id,
+            "challenge": challenge,
+            "questions": questions,
+            "mode": mode,
+            "language": language,
+            "status": "waiting",
+            "players": {},
+            "winner": None,
+            "created_at": time.time(),
+        }
+
+        response_data = {
+            "room_code": room_code,
+            "challenge": challenge,
+            "language": language,
+            "mode": mode,
+        }
+        if mode == "aptitude":
+            response_data["questions"] = [{k: v for k, v in q.items() if k != "correct_option"} for q in questions]
+
+        return Response(
+            response_data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class GetRoomView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, room_code):
+        code_upper = room_code.upper()
+        room = ROOMS.get(code_upper)
+        if not room:
+            if code_upper.startswith("NEXO-"):
+                challenge = random.choice(ARENA_CHALLENGES)
+                room = {
+                    "code": code_upper,
+                    "host_id": str(request.user.id),
+                    "challenge": challenge,
+                    "questions": [],
+                    "mode": "coding",
+                    "language": "javascript",
+                    "status": "waiting",
+                    "players": {},
+                    "winner": None,
+                    "created_at": time.time(),
+                }
+                ROOMS[code_upper] = room
+            else:
+                return Response({"error": "Room not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if room["status"] == "finished":
+            return Response({"error": "This battle has already ended."}, status=status.HTTP_410_GONE)
+
+        user_id = str(request.user.id)
+        host_id = room.get("host_id")
+
+        # Prevent creator/host from self-joining their own room in another window
+        if host_id and user_id == host_id and user_id in room["players"]:
+            return Response(
+                {"error": "You cannot join your own battle room. Share the room code with another developer!"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        existing_user_ids = [p.get("user_id", k) for k, p in room["players"].items()]
+        if len(room["players"]) >= 2 and user_id not in room["players"] and user_id not in existing_user_ids:
+            return Response({"error": "Room is full."}, status=status.HTTP_409_CONFLICT)
+
+        response_data = {
+            "room_code": room_code,
+            "challenge": room["challenge"],
+            "language": room["language"],
+            "player_count": len(room["players"]),
+            "status": room["status"],
+            "mode": room.get("mode", "coding"),
+        }
+        if room.get("mode") == "aptitude":
+            response_data["questions"] = [{k: v for k, v in q.items() if k != "correct_option"} for q in room.get("questions", [])]
+
+        return Response(response_data)

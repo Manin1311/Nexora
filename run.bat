@@ -1,0 +1,28 @@
+@echo off
+title Nexora Development Suite
+echo.
+echo ====================================================
+echo               STARTING NEXORA SUITE
+echo ====================================================
+echo.
+
+echo [1/3] Starting Django Backend (with auto-restart)...
+start "Nexora Backend (Django)" cmd /k ""%~dp0backend_watch.bat""
+
+echo [2/3] Starting React Frontend...
+start "Nexora Frontend (Vite)" cmd /k "cd /d "%~dp0frontend" && npm run dev"
+
+echo [3/3] Launching web browser...
+timeout /t 5 >nul
+start http://localhost:5173
+
+echo.
+echo ====================================================
+echo  Nexora is up and running!
+echo  - Backend window: AUTO-RESTARTS on crash
+echo  - Frontend window: Vite dev server
+echo  Keep both windows open.
+echo  You can close this window now.
+echo ====================================================
+timeout /t 5
+exit

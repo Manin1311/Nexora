@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nexora — AI Engineering Platform | Project Documentation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@700;800&display=swap');
+
+  :root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --secondary: #8b5cf6;
+    --accent: #ec4899;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --info: #06b6d4;
+    --bg: #0f0f1a;
+    --card: #1a1a2e;
+    --card2: #16213e;
+    --border: rgba(99,102,241,0.2);
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --heading: #f8fafc;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 14px;
+  }
+
+  @media print {
+    body { background: #fff !important; color: #1a1a2e !important; font-size: 12px; }
+    .cover { background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .page-section { page-break-before: always; }
+    .no-break { page-break-inside: avoid; }
+    .tag { background: #ede9fe !important; color: #4f46e5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .feature-card { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .code-block { background: #1e1e2e !important; color: #cdd6f4 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .tech-badge { background: #ede9fe !important; color: #4f46e5 !important; border: 1px solid #a78bfa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    h1, h2, h3, h4 { color: #1a1a2e !important; }
+    p, li { color: #374151 !important; }
+    .section-label { color: #6366f1 !important; }
+    .muted { color: #6b7280 !important; }
+    .highlight-box { background: #eff6ff !important; border-left-color: #3b82f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .present-box { background: #f0fdf4 !important; border-color: #10b981 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .present-box h4 { color: #065f46 !important; }
+    .present-box li { color: #064e3b !important; }
+  }
+
+  .cover {
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 30%, #16213e 60%, #0f3460 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 80px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+    top: -200px; right: -200px;
+    border-radius: 50%;
+  }
+
+  .cover::after {
+    content: '';
+    position: absolute;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%);
+    bottom: -150px; left: -150px;
+    border-radius: 50%;
+  }
+
+  .cover-logo {
+    width: 90px; height: 90px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px; margin: 0 auto 28px;
+    box-shadow: 0 20px 60px rgba(99,102,241,0.4);
+  }
+
+  .cover h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 72px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, #a5b4fc 50%, #c4b5fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -2px;
+    margin-bottom: 16px;
+  }
+
+  .cover-tagline {
+    font-size: 22px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 40px;
+    max-width: 600px;
+  }
+
+  .cover-meta {
+    display: flex; gap: 32px; flex-wrap: wrap;
+    justify-content: center; margin-bottom: 60px;
+  }
+
+  .cover-meta-item {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 16px 24px;
+    text-align: center;
+  }
+
+  .cover-meta-item .label {
+    font-size: 11px; text-transform: uppercase;
+    letter-spacing: 2px; color: rgba(255,255,255,0.4);
+    margin-bottom: 4px;
+  }
+
+  .cover-meta-item .value {
+    font-size: 16px; font-weight: 700;
+    color: #a5b4fc;
+  }
+
+  .cover-badges {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  }
+
+  .cover-badge {
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-size: 12px; font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,0.05);
+  }
+
+  .wrapper { max-width: 960px; margin: 0 auto; padding: 60px 40px; }
+
+  .toc-section {
+    background: linear-gradient(135deg, var(--card) 0%, var(--card2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 48px;
+    margin-bottom: 60px;
+  }
+
+  .toc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 24px; }
+
+  .toc-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 10px;
+    border: 1px solid rgba(99,102,241,0.1);
+    background: rgba(99,102,241,0.04);
+    font-size: 13px; color: var(--text);
+  }
+
+  .toc-item .num {
+    width: 24px; height: 24px; border-radius: 6px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; flex-shrink: 0;
+  }
+
+  .section-label {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 3px;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 40px; font-weight: 800;
+    color: var(--heading); margin-bottom: 16px;
+    line-height: 1.2;
+  }
+
+  .section-desc { font-size: 15px; color: var(--muted); max-width: 700px; line-height: 1.8; }
+
+  .page-card {
+    background: linear-gradient(135deg, var(--card) 0%, var(--card2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 20px; padding: 40px;
+    margin-bottom: 48px;
+    position: relative; overflow: hidden;
+  }
+
+  .page-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent-gradient, linear-gradient(90deg, #6366f1, #8b5cf6));
+  }
+
+  .page-header {
+    display: flex; align-items: flex-start;
+    gap: 20px; margin-bottom: 28px;
+  }
+
+  .page-icon {
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; flex-shrink: 0;
+    background: rgba(99,102,241,0.12);
+    border: 1px solid rgba(99,102,241,0.2);
+  }
+
+  .page-num {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 2px;
+    color: var(--primary); margin-bottom: 4px;
+  }
+
+  .page-name {
+    font-size: 24px; font-weight: 800;
+    color: var(--heading); margin-bottom: 6px;
+    font-family: 'Playfair Display', serif;
+  }
+
+  .page-url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--muted);
+    background: rgba(99,102,241,0.08);
+    padding: 3px 10px; border-radius: 6px;
+    display: inline-block;
+  }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+  .tag {
+    padding: 4px 12px; border-radius: 100px;
+    font-size: 11px; font-weight: 600;
+    background: rgba(99,102,241,0.12);
+    color: #a5b4fc;
+    border: 1px solid rgba(99,102,241,0.2);
+  }
+
+  .tag.green { background: rgba(16,185,129,0.12); color: #6ee7b7; border-color: rgba(16,185,129,0.2); }
+  .tag.pink { background: rgba(236,72,153,0.12); color: #f9a8d4; border-color: rgba(236,72,153,0.2); }
+  .tag.amber { background: rgba(245,158,11,0.12); color: #fcd34d; border-color: rgba(245,158,11,0.2); }
+  .tag.cyan { background: rgba(6,182,212,0.12); color: #67e8f9; border-color: rgba(6,182,212,0.2); }
+
+  .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+
+  .feature-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px; padding: 14px 16px;
+  }
+
+  .feature-card .f-title {
+    font-size: 13px; font-weight: 700;
+    color: var(--heading); margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .feature-card .f-desc {
+    font-size: 12px; color: var(--muted); line-height: 1.6;
+  }
+
+  .code-block {
+    background: #1e1e2e;
+    border: 1px solid rgba(99,102,241,0.15);
+    border-radius: 12px; padding: 20px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; line-height: 1.8;
+    overflow-x: auto; margin: 16px 0;
+    position: relative;
+  }
+
+  .code-block .cb-label {
+    position: absolute; top: 10px; right: 14px;
+    font-size: 10px; text-transform: uppercase;
+    letter-spacing: 2px; color: rgba(255,255,255,0.3);
+  }
+
+  .c-keyword { color: #cba6f7; }
+  .c-string { color: #a6e3a1; }
+  .c-comment { color: #6c7086; font-style: italic; }
+  .c-fn { color: #89dceb; }
+  .c-var { color: #cdd6f4; }
+  .c-num { color: #fab387; }
+  .c-op { color: #94e2d5; }
+  .c-class { color: #f9e2af; }
+
+  .highlight-box {
+    background: rgba(99,102,241,0.08);
+    border-left: 3px solid var(--primary);
+    border-radius: 0 12px 12px 0;
+    padding: 16px 20px; margin: 16px 0;
+    font-size: 14px; line-height: 1.7;
+  }
+
+  .present-box {
+    background: rgba(16,185,129,0.06);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 14px; padding: 20px 24px;
+    margin: 20px 0;
+  }
+
+  .present-box h4 {
+    font-size: 14px; font-weight: 700;
+    color: #6ee7b7; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .present-box ul { padding-left: 20px; }
+  .present-box li { font-size: 13px; color: var(--text); margin-bottom: 6px; line-height: 1.6; }
+
+  .divider { height: 1px; background: var(--border); margin: 48px 0; }
+
+  h3.sub {
+    font-size: 16px; font-weight: 700;
+    color: var(--heading); margin: 24px 0 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  h3.sub::before {
+    content: '';
+    width: 4px; height: 18px;
+    background: linear-gradient(180deg, #6366f1, #8b5cf6);
+    border-radius: 2px; display: inline-block;
+  }
+
+  .tech-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
+
+  .tech-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+    text-align: center;
+  }
+
+  .tech-card .t-icon { font-size: 32px; margin-bottom: 10px; }
+  .tech-card .t-name { font-size: 14px; font-weight: 700; color: var(--heading); margin-bottom: 6px; }
+  .tech-card .t-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  .tech-badge {
+    display: inline-block;
+    padding: 4px 10px; border-radius: 6px;
+    font-size: 11px; font-weight: 600;
+    background: rgba(99,102,241,0.12);
+    color: #a5b4fc;
+    border: 1px solid rgba(99,102,241,0.2);
+    margin: 3px;
+  }
+
+  .arch-flow {
+    display: flex; align-items: center;
+    gap: 0; flex-wrap: wrap;
+    margin: 20px 0;
+  }
+
+  .arch-step {
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 10px; padding: 10px 16px;
+    font-size: 13px; font-weight: 600;
+    color: #a5b4fc; text-align: center;
+    min-width: 100px;
+  }
+
+  .arch-arrow {
+    color: var(--muted); font-size: 18px; padding: 0 8px;
+  }
+
+  .stats-strip {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 16px; margin: 32px 0;
+  }
+
+  .stat-box {
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.15);
+    border-radius: 12px; padding: 20px;
+    text-align: center;
+  }
+
+  .stat-box .s-num {
+    font-size: 32px; font-weight: 900;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-box .s-label {
+    font-size: 12px; color: var(--muted); font-weight: 500;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; padding: 2px 7px;
+    background: rgba(99,102,241,0.12);
+    border-radius: 5px; color: #a5b4fc;
+  }
+
+  p { margin-bottom: 12px; }
+  ul { padding-left: 22px; }
+  li { margin-bottom: 6px; line-height: 1.7; }
+
+  .muted { color: var(--muted); }
+  .page-section { margin-bottom: 80px; }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <div class="cover-logo">⚡</div>
+  <h1>Nexora</h1>
+  <div class="cover-tagline">
+    AI-Powered Full-Stack Engineering Platform — Challenges, Interviews, Arena, Roadmaps & Career Tools
+  </div>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><div class="label">Project Type</div><div class="value">Full-Stack SaaS</div></div>
+    <div class="cover-meta-item"><div class="label">Pages / Modules</div><div class="value">20+ Pages</div></div>
+    <div class="cover-meta-item"><div class="label">Backend</div><div class="value">Django + Daphne</div></div>
+    <div class="cover-meta-item"><div class="label">Frontend</div><div class="value">React + Vite</div></div>
+    <div class="cover-meta-item"><div class="label">AI Models</div><div class="value">Groq + Gemini</div></div>
+    <div class="cover-meta-item"><div class="label">Database</div><div class="value">PostgreSQL (Neon)</div></div>
+  </div>
+  <div class="cover-badges">
+    <span class="cover-badge">🐍 Python 3.14</span>
+    <span class="cover-badge">⚛️ React 19</span>
+    <span class="cover-badge">🤖 LLaMA 3.3 70B</span>
+    <span class="cover-badge">💎 Gemini 2.5 Flash</span>
+    <span class="cover-badge">🌐 Render Hosted</span>
+    <span class="cover-badge">🔒 JWT Auth</span>
+    <span class="cover-badge">🔗 WebSockets</span>
+    <span class="cover-badge">🏆 Rank System</span>
+  </div>
+</div>
+
+<!-- PROJECT OVERVIEW -->
+<div class="wrapper page-section">
+  <div style="text-align:center; margin-bottom:48px;">
+    <div class="section-label">Project Introduction</div>
+    <h2 class="section-title">What is Nexora?</h2>
+    <p class="section-desc" style="margin:0 auto;">
+      Nexora is a next-generation, AI-powered engineering skills platform designed to take developers from beginner to
+      industry-ready through structured learning, real-time challenges, mock interviews, and live multiplayer coding battles.
+    </p>
+  </div>
+
+  <div class="highlight-box">
+    <strong>🎯 Problem Statement:</strong> Aspiring software developers face a fragmented ecosystem — they need LeetCode for challenges, HackerRank for assessments, LinkedIn for portfolios, YouTube for learning, and separate tools for interview preparation. <strong>Nexora unifies the entire developer journey into one cohesive, AI-driven platform.</strong>
+  </div>
+
+  <div class="stats-strip">
+    <div class="stat-box"><div class="s-num">20+</div><div class="s-label">Unique Pages</div></div>
+    <div class="stat-box"><div class="s-num">10</div><div class="s-label">Backend Apps</div></div>
+    <div class="stat-box"><div class="s-num">∞</div><div class="s-label">AI Challenges</div></div>
+    <div class="stat-box"><div class="s-num">1v1</div><div class="s-label">Live Multiplayer</div></div>
+  </div>
+
+  <p style="font-size:15px; color:var(--muted); line-height:1.9;">
+    Nexora provides a complete career development ecosystem: it dynamically generates coding challenges using large language models (Groq's LLaMA 3.3 70B & Google's Gemini 2.5 Flash), conducts mock job interviews with real-time AI feedback, offers a live multiplayer code battle arena over WebSockets, provides AI-generated personalized weekly learning roadmaps, analyzes GitHub profiles for code quality, generates ATS-optimized resumes, and maintains detailed progress analytics.
+  </p>
+
+  <!-- TABLE OF CONTENTS -->
+  <div class="toc-section" style="margin-top:48px;">
+    <div class="section-label">Navigation</div>
+    <h3 style="font-size:22px; font-weight:800; color:var(--heading); margin-bottom:4px;">Table of Contents</h3>
+    <p class="muted" style="font-size:13px;">All pages and sections documented in this report</p>
+    <div class="toc-grid">
+      <div class="toc-item"><span class="num">01</span> Landing Page (Marketing)</div>
+      <div class="toc-item"><span class="num">02</span> Authentication — Login & Register</div>
+      <div class="toc-item"><span class="num">03</span> Challenges Hub</div>
+      <div class="toc-item"><span class="num">04</span> Challenge Detail (AI Code Editor)</div>
+      <div class="toc-item"><span class="num">05</span> Code Arena (1v1 Multiplayer)</div>
+      <div class="toc-item"><span class="num">06</span> CS Fundamentals (Company Mock OA)</div>
+      <div class="toc-item"><span class="num">07</span> Interview Lab + AI Session</div>
+      <div class="toc-item"><span class="num">08</span> My Roadmap (AI Learning Planner)</div>
+      <div class="toc-item"><span class="num">09</span> Code Review (GitHub AI Audit)</div>
+      <div class="toc-item"><span class="num">10</span> Resume Hub (AI Resume Builder)</div>
+      <div class="toc-item"><span class="num">11</span> Revision Hub (Flash Cards)</div>
+      <div class="toc-item"><span class="num">12</span> Showcase (Developer Portfolio)</div>
+      <div class="toc-item"><span class="num">13</span> Progress Dashboard</div>
+      <div class="toc-item"><span class="num">14</span> Dev Mentor (AI Tutor Chat)</div>
+      <div class="toc-item"><span class="num">15</span> Profile Page</div>
+      <div class="toc-item"><span class="num">16</span> Technology Stack</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 01 — LANDING PAGE -->
+<div class="wrapper page-section">
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #6366f1, #ec4899);">
+    <div class="page-header">
+      <div class="page-icon">🏠</div>
+      <div>
+        <div class="page-num">Page 01</div>
+        <div class="page-name">Landing Page</div>
+        <code class="page-url">/ (Public Route)</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag">Marketing</span>
+      <span class="tag green">Public</span>
+      <span class="tag pink">Animated</span>
+      <span class="tag amber">SEO Ready</span>
+    </div>
+
+    <p>The <strong>Landing Page</strong> is the public-facing marketing homepage of Nexora. It is a premium, fully animated single-page experience that communicates the platform's value proposition, showcases core features, displays AI-generated testimonials, and converts visitors into registered users.</p>
+
+    <h3 class="sub">What It Does</h3>
+    <p>Creates the first impression using glassmorphism cards, parallax gradient backgrounds, an animated particle system, and smooth scroll-triggered Framer Motion stagger animations for feature reveal.</p>
+
+    <h3 class="sub">Key Features</h3>
+    <div class="feature-grid">
+      <div class="feature-card"><div class="f-title">⚡ Hero Section</div><div class="f-desc">Full-viewport hero with gradient text, floating badge system, and CSS keyframe particle background.</div></div>
+      <div class="feature-card"><div class="f-title">🎯 Feature Showcase</div><div class="f-desc">Glassmorphic feature cards for all 9 core platform modules with scroll reveal animations.</div></div>
+      <div class="feature-card"><div class="f-title">🤖 AI Demo Section</div><div class="f-desc">Live character-by-character typing animation showing AI challenge generation directly on the page.</div></div>
+      <div class="feature-card"><div class="f-title">📊 Stats Counter</div><div class="f-desc">Animated number counters (0 to target) triggered on scroll entry using Intersection Observer API.</div></div>
+      <div class="feature-card"><div class="f-title">🌙 Dark/Light Mode</div><div class="f-desc">Full theme system via CSS custom properties. Toggle state persisted in localStorage.</div></div>
+      <div class="feature-card"><div class="f-title">📱 Fully Responsive</div><div class="f-desc">Mobile-first responsive design with collapsible navbar and fluid grid layouts.</div></div>
+    </div>
+
+    <h3 class="sub">Code Logic — Animated Counter</h3>
+    <div class="code-block">
+      <span class="cb-label">JSX / React</span>
+<span class="c-comment">// Animated Counter: counts from 0 to target on scroll entry</span>
+<span class="c-keyword">const</span> <span class="c-fn">useCounter</span> = (target, duration = <span class="c-num">2000</span>) =&gt; {
+  <span class="c-keyword">const</span> [count, setCount] = <span class="c-fn">useState</span>(<span class="c-num">0</span>)
+  <span class="c-keyword">const</span> ref = <span class="c-fn">useRef</span>()
+  <span class="c-fn">useEffect</span>(() =&gt; {
+    <span class="c-keyword">const</span> observer = <span class="c-keyword">new</span> <span class="c-class">IntersectionObserver</span>(([entry]) =&gt; {
+      <span class="c-keyword">if</span> (entry.isIntersecting) {
+        <span class="c-keyword">let</span> start = <span class="c-num">0</span>
+        <span class="c-keyword">const</span> step = (target / duration) * <span class="c-num">16</span>
+        <span class="c-keyword">const</span> timer = <span class="c-fn">setInterval</span>(() =&gt; {
+          start = <span class="c-fn">Math.min</span>(start + step, target)
+          <span class="c-fn">setCount</span>(<span class="c-fn">Math.round</span>(start))
+          <span class="c-keyword">if</span> (start &gt;= target) <span class="c-fn">clearInterval</span>(timer)
+        }, <span class="c-num">16</span>)
+      }
+    })
+    <span class="c-keyword">if</span> (ref.current) observer.<span class="c-fn">observe</span>(ref.current)
+    <span class="c-keyword">return</span> () =&gt; observer.<span class="c-fn">disconnect</span>()
+  }, [])
+  <span class="c-keyword">return</span> { count, ref }
+}
+    </div>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li><strong>Open the live site URL</strong> — Show the animated hero loading with gradient text and floating particles.</li>
+        <li><strong>Scroll slowly</strong> — Let faculty see feature cards appear with Framer Motion stagger animations.</li>
+        <li>Point out the <strong>dark/light mode toggle</strong> in the navbar — show the smooth theme transition.</li>
+        <li>Highlight the <strong>AI Typing Demo</strong> section showing AI generating a challenge description in real-time.</li>
+        <li>Say: <em>"This landing page communicates our platform's entire value in under 10 seconds with high visual polish."</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 02 — AUTH -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #8b5cf6, #6366f1);">
+    <div class="page-header">
+      <div class="page-icon">🔐</div>
+      <div>
+        <div class="page-num">Page 02</div>
+        <div class="page-name">Authentication — Login & Register</div>
+        <code class="page-url">/login &nbsp;|&nbsp; /register</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag">JWT Auth</span>
+      <span class="tag pink">Google OAuth</span>
+      <span class="tag green">Secure</span>
+      <span class="tag amber">Token Rotation</span>
+    </div>
+
+    <p>Nexora uses a <strong>dual-token JWT system</strong> with Google One-Tap OAuth as an alternative. Access tokens expire in 60 minutes and are silently refreshed using refresh tokens (7-day lifetime). Registration includes a mandatory terms agreement checkbox and a live password strength meter.</p>
+
+    <h3 class="sub">Key Features</h3>
+    <div class="feature-grid">
+      <div class="feature-card"><div class="f-title">🔑 JWT Dual-Token</div><div class="f-desc">Access (60 min) + Refresh (7 days). Axios interceptor auto-refreshes silently. Tokens blacklisted on logout.</div></div>
+      <div class="feature-card"><div class="f-title">🌐 Google One-Tap</div><div class="f-desc">GSI library renders native Google button. Backend verifies ID token and issues JWT pair.</div></div>
+      <div class="feature-card"><div class="f-title">✅ Terms Checkbox</div><div class="f-desc">Mandatory checkbox linking to full Terms and Privacy Policy pages. Submit disabled until checked.</div></div>
+      <div class="feature-card"><div class="f-title">🛡️ Password Strength</div><div class="f-desc">Real-time color-coded meter (Weak → Very Strong) using regex validation scoring.</div></div>
+    </div>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Click <strong>Sign In with Google</strong> — show the native Google One-Tap popup appearing.</li>
+        <li>Show the <strong>Register form</strong> with the live password strength meter changing colors as you type.</li>
+        <li>Demonstrate the <strong>Terms & Privacy links</strong> opening dedicated policy pages.</li>
+        <li>Say: <em>"Authentication uses industry-standard JWT with silent auto-refresh — users are never logged out unexpectedly."</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 03 — CHALLENGES HUB -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #ec4899, #f59e0b);">
+    <div class="page-header">
+      <div class="page-icon">🧩</div>
+      <div>
+        <div class="page-num">Page 03</div>
+        <div class="page-name">Challenges Hub</div>
+        <code class="page-url">/challenges</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag">AI Generated</span>
+      <span class="tag pink">Daily Challenge</span>
+      <span class="tag amber">Topic Filters</span>
+      <span class="tag green">XP System</span>
+    </div>
+
+    <p>The <strong>Challenges Hub</strong> is the core learning engine. It displays all AI-generated coding challenges organized by difficulty and topic, with a Live Daily Challenge generated fresh every day by Groq LLaMA 3.3 70B.</p>
+
+    <h3 class="sub">Key Features</h3>
+    <div class="feature-grid">
+      <div class="feature-card"><div class="f-title">📅 Daily Challenge</div><div class="f-desc">Auto-generated at midnight by Groq LLaMA. Auto-creates on-demand if no challenge exists for today.</div></div>
+      <div class="feature-card"><div class="f-title">🔍 Smart Filters</div><div class="f-desc">Filter by Difficulty (Easy/Medium/Hard), Topic (DSA, Python, System Design), and full-text search.</div></div>
+      <div class="feature-card"><div class="f-title">⚡ On-Demand Generation</div><div class="f-desc">One-click per topic card generates a fresh AI challenge. Unlimited generation capability.</div></div>
+      <div class="feature-card"><div class="f-title">🏆 XP Rewards</div><div class="f-desc">Easy = 50 XP, Medium = 150 XP, Hard = 300 XP. Score multiplier applied upon evaluation.</div></div>
+    </div>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Show the <strong>Daily Challenge card</strong> — explain it refreshes automatically every 24 hours via AI.</li>
+        <li>Use the <strong>Difficulty + Topic filter</strong> — show challenges updating in real-time without page reload.</li>
+        <li>Click <strong>"Generate with AI"</strong> on a topic card — show a brand-new challenge appearing within seconds.</li>
+        <li>Say: <em>"Unlike static platforms, every challenge here is AI-generated on demand."</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 04 — CHALLENGE DETAIL -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #10b981, #06b6d4);">
+    <div class="page-header">
+      <div class="page-icon">💻</div>
+      <div>
+        <div class="page-num">Page 04</div>
+        <div class="page-name">Challenge Detail — AI Code Editor</div>
+        <code class="page-url">/challenges/:id</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag cyan">Monaco Editor</span>
+      <span class="tag green">AI Grading</span>
+      <span class="tag">Big-O Analysis</span>
+      <span class="tag amber">Certificates</span>
+    </div>
+
+    <p>The <strong>Challenge Detail Page</strong> is a full cloud IDE experience — Monaco (VS Code's engine) paired with a Python sandbox executor and AI evaluation engine that grades submissions and awards verifiable certificates.</p>
+
+    <h3 class="sub">Key Features</h3>
+    <div class="feature-grid">
+      <div class="feature-card"><div class="f-title">🖥️ Monaco Editor</div><div class="f-desc">VS Code-quality code editor with syntax highlighting, IntelliSense, and bracket matching.</div></div>
+      <div class="feature-card"><div class="f-title">🤖 AI Evaluation</div><div class="f-desc">Groq/Gemini evaluates correctness, efficiency, code quality, and provides actionable feedback.</div></div>
+      <div class="feature-card"><div class="f-title">📊 Big-O Analysis</div><div class="f-desc">AI extracts theoretical time+space complexity. Empirical execution time rendered as bar charts.</div></div>
+      <div class="feature-card"><div class="f-title">🏅 Certificates</div><div class="f-desc">Medium/Hard challenges with score ≥70% auto-generate a verifiable platform certificate.</div></div>
+    </div>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Open a <strong>Hard challenge</strong> — show the Monaco editor loading with VS Code-like syntax highlighting.</li>
+        <li>Write a solution and hit <strong>Submit</strong> — show the AI evaluation scorecard appearing with strengths/improvements.</li>
+        <li>Point to the <strong>Big-O chart</strong> — explain empirical timing vs theoretical complexity.</li>
+        <li>Say: <em>"It's an intelligent tutor evaluating code the way a senior engineer would in a code review."</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 05 — CODE ARENA -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #f59e0b, #ec4899);">
+    <div class="page-header">
+      <div class="page-icon">⚔️</div>
+      <div>
+        <div class="page-num">Page 05</div>
+        <div class="page-name">Code Arena — Live 1v1 Multiplayer Battle</div>
+        <code class="page-url">/arena</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag pink">WebSockets</span>
+      <span class="tag amber">Real-Time</span>
+      <span class="tag">1v1 Battle</span>
+      <span class="tag green">Anti-Cheat</span>
+    </div>
+
+    <p>The <strong>Code Arena</strong> is a real-time multiplayer competitive coding platform where two developers battle head-to-head simultaneously. Built on Django Channels + ASGI WebSockets with socket-level JWT auth.</p>
+
+    <h3 class="sub">Key Features</h3>
+    <div class="feature-grid">
+      <div class="feature-card"><div class="f-title">💻 Coding Battle</div><div class="f-desc">LeetCode-style unit test challenges. First to pass all test cases wins.</div></div>
+      <div class="feature-card"><div class="f-title">🧮 Aptitude Battle</div><div class="f-desc">Speed MCQ rounds, 30 seconds per question. Points awarded for speed + accuracy.</div></div>
+      <div class="feature-card"><div class="f-title">🎓 CS Fundamentals</div><div class="f-desc">OS, Networking, DBMS, Algorithms MCQ battle testing theoretical CS knowledge.</div></div>
+      <div class="feature-card"><div class="f-title">🛡️ Anti-Cheat Engine</div><div class="f-desc">Tab-blur detection. 3 violations = automatic disqualification and session flagging.</div></div>
+    </div>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Open Arena on <strong>two separate browser windows</strong> — Create room on one, join on the other.</li>
+        <li>Start a <strong>Coding Battle</strong> — show both editors side-by-side syncing test results in real-time.</li>
+        <li>Switch tabs in one browser — show the <strong>anti-cheat warning toast</strong> appearing instantly.</li>
+        <li>Say: <em>"This brings real-time WebSockets competitive multiplayer into developer learning."</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 06 — CS FUNDAMENTALS / MOCK OA -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #6366f1, #10b981);">
+    <div class="page-header">
+      <div class="page-icon">🏛️</div>
+      <div>
+        <div class="page-num">Page 06</div>
+        <div class="page-name">CS Fundamentals — Company Mock OA</div>
+        <code class="page-url">/fundamentals</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag">Proctored</span>
+      <span class="tag pink">Amazon Prep</span>
+      <span class="tag amber">Google Prep</span>
+      <span class="tag cyan">TCS Prep</span>
+    </div>
+
+    <p>Simulates actual corporate Online Assessment environments for Amazon, Google, and TCS with proctoring: fullscreen enforcement, tab-blur tracking, countdown timers, and AI evaluation reports.</p>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Click <strong>Amazon Mock OA</strong> — show the fullscreen enforcement prompt.</li>
+        <li>Switch tabs — show the <strong>proctoring warning modal</strong> with violation count incrementing.</li>
+        <li>Submit and show the <strong>AI-generated recruiter evaluation report</strong>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 07/08 — INTERVIEW LAB -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #06b6d4, #6366f1);">
+    <div class="page-header">
+      <div class="page-icon">🎙️</div>
+      <div>
+        <div class="page-num">Page 07 & 08</div>
+        <div class="page-name">Interview Lab + AI Interview Session</div>
+        <code class="page-url">/interviews &nbsp;|&nbsp; /interviews/:sessionId</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag cyan">AI Interviewer</span>
+      <span class="tag">Voice / Text</span>
+      <span class="tag green">STAR Analysis</span>
+    </div>
+
+    <p>Mock interview simulator where Nexora's AI acts as a hiring manager — conducting role-specific Q&A, asking contextual follow-ups, and providing post-interview competency radar charts.</p>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Select <strong>Technical Interview for SDE-1</strong> — show the AI opening question.</li>
+        <li>Answer and submit — show the <strong>AI follow-up question</strong> demonstrating contextual awareness.</li>
+        <li>End interview — show the <strong>5-dimension radar chart report</strong>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 09 — ROADMAP -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #8b5cf6, #ec4899);">
+    <div class="page-header">
+      <div class="page-icon">🗺️</div>
+      <div>
+        <div class="page-num">Page 09</div>
+        <div class="page-name">My Roadmap — AI Learning Planner</div>
+        <code class="page-url">/roadmap</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag">Personalized</span>
+      <span class="tag green">12-Week Plan</span>
+      <span class="tag amber">GitHub Analyzed</span>
+    </div>
+
+    <p>Generates a personalized 12-week learning curriculum by analyzing the user's GitHub profile, declared skills, and career goal with integrated YouTube tutorials.</p>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Enter a <strong>GitHub username</strong> and select a career goal — show profile analysis.</li>
+        <li>Show the <strong>12-week roadmap</strong> appearing with YouTube video embeds and task checklists.</li>
+        <li>Mark a task complete — show <strong>XP incrementing</strong> on the progress bar.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 10 — CODE REVIEW -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #10b981, #6366f1);">
+    <div class="page-header">
+      <div class="page-icon">🔍</div>
+      <div>
+        <div class="page-num">Page 10</div>
+        <div class="page-name">Code Review — GitHub AI Audit</div>
+        <code class="page-url">/codereview</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag green">GitHub Integration</span>
+      <span class="tag">AI Audit</span>
+      <span class="tag amber">Code Health Score</span>
+    </div>
+
+    <p>Performs a deep AI audit of any public GitHub repository — scanning code architecture, security vulnerabilities, documentation quality, and generating a 0-100 Code Health Score.</p>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Enter a <strong>GitHub repo URL</strong> — show scanning animation.</li>
+        <li>Show the <strong>Code Health Score gauge</strong> and Security Analysis flags.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 11 — RESUME HUB -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #f59e0b, #10b981);">
+    <div class="page-header">
+      <div class="page-icon">📄</div>
+      <div>
+        <div class="page-num">Page 11</div>
+        <div class="page-name">Resume Hub — AI Resume Builder</div>
+        <code class="page-url">/resume</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag amber">ATS Optimized</span>
+      <span class="tag green">PDF Export</span>
+      <span class="tag">AI Tailoring</span>
+    </div>
+
+    <p>Upload existing resume (PDF/DOCX), score against ATS algorithms across 10 criteria, and tailor to any job description in a single click.</p>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Upload a sample resume PDF — show <strong>ATS Score breakdown</strong>.</li>
+        <li>Paste a job description and click <strong>Tailor Resume</strong> — show AI bullet point optimization.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 12 — REVISION HUB -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #ec4899, #8b5cf6);">
+    <div class="page-header">
+      <div class="page-icon">📚</div>
+      <div>
+        <div class="page-num">Page 12</div>
+        <div class="page-name">Revision Hub — AI Flash Card System</div>
+        <code class="page-url">/revision</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag pink">Flash Cards</span>
+      <span class="tag amber">AI Generated</span>
+      <span class="tag green">Bookmarks</span>
+    </div>
+
+    <p>AI-powered 3D flip flash card system for rapid CS concept revision with code examples, analogies, and persistent bookmarks.</p>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Select a topic (e.g., Binary Trees) — show 3D flip card animation.</li>
+        <li>Bookmark a card — show bookmark persisting from PostgreSQL.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 13 — SHOWCASE -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #06b6d4, #8b5cf6);">
+    <div class="page-header">
+      <div class="page-icon">🌟</div>
+      <div>
+        <div class="page-num">Page 13</div>
+        <div class="page-name">Showcase — Developer Portfolio Hub</div>
+        <code class="page-url">/showcase</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag cyan">Portfolio</span>
+      <span class="tag green">GitHub Import</span>
+      <span class="tag pink">Community</span>
+    </div>
+
+    <p>Community project portfolio wall with one-click GitHub import, tag filtering, and a user-specific like system.</p>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Show project grid — paste GitHub URL to show auto-fill.</li>
+        <li>Click ❤️ button — show like counter incrementing instantly.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 14 — PROGRESS -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #10b981, #f59e0b);">
+    <div class="page-header">
+      <div class="page-icon">📊</div>
+      <div>
+        <div class="page-num">Page 14</div>
+        <div class="page-name">Progress Dashboard</div>
+        <code class="page-url">/progress</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag green">XP Tracker</span>
+      <span class="tag amber">Activity Heatmap</span>
+      <span class="tag">Rank System</span>
+    </div>
+
+    <p>Gamified developer dashboard featuring 12 rank tiers, 52-week activity contribution heatmap, certificates gallery, and XP activity log.</p>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Show <strong>XP progress bar</strong> and rank badge ladder.</li>
+        <li>Point out the <strong>52-week Activity Heatmap</strong> calendar.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 15 — DEV MENTOR -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #8b5cf6, #06b6d4);">
+    <div class="page-header">
+      <div class="page-icon">🤖</div>
+      <div>
+        <div class="page-num">Page 15</div>
+        <div class="page-name">Dev Mentor — AI Tutor Chat</div>
+        <code class="page-url">/devmentor</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag">AI Chat</span>
+      <span class="tag pink">Specialized Mentors</span>
+      <span class="tag green">Persistent History</span>
+    </div>
+
+    <p>Role-based AI tutor chat with 5 specialized personas (DSA Expert, System Design Architect, Frontend Dev, Python Guru, Career Coach) and persistent conversation history.</p>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Select <strong>DSA Expert</strong> — ask a algorithms question and show code output.</li>
+        <li>Switch to <strong>Career Coach</strong> — show persona-specific response style.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PAGE 16 — PROFILE -->
+  <div class="page-card no-break" style="--accent-gradient: linear-gradient(90deg, #f59e0b, #6366f1);">
+    <div class="page-header">
+      <div class="page-icon">👤</div>
+      <div>
+        <div class="page-num">Page 16</div>
+        <div class="page-name">Profile Page</div>
+        <code class="page-url">/profile</code>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag amber">GitHub Stats</span>
+      <span class="tag green">Rank Badge</span>
+      <span class="tag pink">Inline Edit</span>
+    </div>
+
+    <p>Developer identity card featuring GitHub stats, rank badge, avatar upload, and inline field editing with auto-save.</p>
+
+    <div class="present-box">
+      <h4>🎤 How to Present This Page to Faculty</h4>
+      <ul>
+        <li>Show profile card with rank badge and GitHub stats.</li>
+        <li>Click bio to show inline editing without reload.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- TECHNOLOGY STACK OVERVIEW -->
+<div class="wrapper page-section">
+  <div class="divider"></div>
+  <div style="text-align:center; margin-bottom:48px;">
+    <div class="section-label">Technology Stack</div>
+    <h2 class="section-title">How Nexora Is Built</h2>
+    <p class="section-desc" style="margin:0 auto;">Full production-grade technology stack powering every layer of the platform — deployed live on Render.com.</p>
+  </div>
+
+  <div class="tech-grid">
+    <div class="tech-card"><div class="t-icon">⚛️</div><div class="t-name">React 19 + Vite 8</div><div class="t-desc">Component-based UI with Framer Motion and Monaco Editor.</div></div>
+    <div class="tech-card"><div class="t-icon">🐍</div><div class="t-name">Django 6</div><div class="t-desc">REST API backend with SimpleJWT auth and 10 modular apps.</div></div>
+    <div class="tech-card"><div class="t-icon">🔗</div><div class="t-name">Django Channels</div><div class="t-desc">ASGI WebSocket server served by Daphne for real-time 1v1 battle.</div></div>
+    <div class="tech-card"><div class="t-icon">🤖</div><div class="t-name">Groq LLaMA 3.3 70B</div><div class="t-desc">Sub-1s LLM inference for challenge gen, interviews, and tutor chat.</div></div>
+    <div class="tech-card"><div class="t-icon">💎</div><div class="t-name">Google Gemini 2.5</div><div class="t-desc">AI fallback model for code evaluation and multi-model redundancy.</div></div>
+    <div class="tech-card"><div class="t-icon">🐘</div><div class="t-name">PostgreSQL (Neon)</div><div class="t-desc">Serverless PostgreSQL with SSL hosted on Neon.tech.</div></div>
+    <div class="tech-card"><div class="t-icon">🔒</div><div class="t-name">JWT + Google OAuth</div><div class="t-desc">Stateless dual-token authentication with Google One-Tap.</div></div>
+    <div class="tech-card"><div class="t-icon">🖥️</div><div class="t-name">Monaco Editor</div><div class="t-desc">VS Code's editor engine embedded for in-browser coding.</div></div>
+    <div class="tech-card"><div class="t-icon">🌐</div><div class="t-name">Render Cloud</div><div class="t-desc">Live Web Service + Static Site deployment on Render.com.</div></div>
+  </div>
+
+  <h3 class="sub" style="margin-top:40px;">10 Django Backend Apps</h3>
+  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-top:16px;">
+    <div class="feature-card"><div class="f-title">👤 users</div><div class="f-desc">User model, profiles, Google OAuth, JWT, resume.</div></div>
+    <div class="feature-card"><div class="f-title">🧩 challenges</div><div class="f-desc">Challenge CRUD, AI generation, submission grading.</div></div>
+    <div class="feature-card"><div class="f-title">⚔️ arena</div><div class="f-desc">WebSocket consumers, room state, anti-cheat engine.</div></div>
+    <div class="feature-card"><div class="f-title">🎙️ interviews</div><div class="f-desc">Sessions, AI questions, answer evaluation.</div></div>
+    <div class="feature-card"><div class="f-title">🗺️ roadmap</div><div class="f-desc">GitHub analysis, AI curriculum, YouTube API.</div></div>
+    <div class="feature-card"><div class="f-title">🤖 mentor</div><div class="f-desc">Personas, persistent chat, flash cards.</div></div>
+    <div class="feature-card"><div class="f-title">📊 progress</div><div class="f-desc">XP ladder, certificates, activity heatmap.</div></div>
+    <div class="feature-card"><div class="f-title">🌟 showcase</div><div class="f-desc">Portfolio wall, GitHub import, like system.</div></div>
+    <div class="feature-card"><div class="f-title">🔍 codereview</div><div class="f-desc">GitHub scanner, health score, security audit.</div></div>
+    <div class="feature-card"><div class="f-title">⚙️ core</div><div class="f-desc">Multi-key rotation client for Groq and Gemini AI.</div></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div style="background: linear-gradient(135deg, #0f0f1a, #1a1a2e); padding: 48px; text-align:center; border-top: 1px solid rgba(99,102,241,0.15); margin-top: 60px;">
+  <div style="font-size:32px; margin-bottom:12px;">⚡</div>
+  <div style="font-family:'Playfair Display',serif; font-size:28px; font-weight:800; color:#f8fafc; margin-bottom:8px;">Nexora</div>
+  <div style="color:#94a3b8; font-size:13px; margin-bottom:16px;">AI-Powered Engineering Skills Platform</div>
+  <div style="color:#6b7280; font-size:12px;">
+    Built with ❤️ using Django · React · Groq LLaMA · Gemini AI · PostgreSQL · WebSockets
+  </div>
+</div>
+
+</body>
+</html>
