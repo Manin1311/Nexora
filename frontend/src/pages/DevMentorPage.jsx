@@ -144,35 +144,35 @@ function OpportunityMatcherDashboard({ mentorService }) {
       .then(r => setData(r.data))
       .catch(() => {
         setData({
-          overall_readiness_score: 72,
-          career_gap_summary: "You have a solid developer foundation. To unlock senior roles, strengthen System Design and Cloud architecture depth.",
+          overall_readiness_score: 0,
+          career_gap_summary: "Welcome to Nexora! You currently have a fresh account with no completed challenges, mock interviews, showcase projects, or roadmap milestones. Complete activities across the platform to evaluate your skills and generate personalized career matches.",
           roles: [
             {
               role_title: "Full Stack Engineer",
               company_type: "High-Growth AI Startup",
-              match_score: 87,
-              readiness_level: "Immediate Fit (Ready to Apply)",
-              why_recommended: "Strong project portfolio and challenge completion rate align well with product engineering roles.",
-              missing_skills: ["Redis Caching", "Docker Compose", "CI/CD Pipelines"],
-              suggested_next_steps: ["Build a Redis-powered caching layer in your API", "Containerize your showcase app using Docker Compose", "Set up a basic GitHub Actions CI pipeline"]
+              match_score: 0,
+              readiness_level: "No Data Yet",
+              why_recommended: "Complete coding challenges, showcase projects, and mock interviews to evaluate your match score for this role.",
+              missing_skills: ["Coding Challenges", "Showcase Projects", "Mock Interviews"],
+              suggested_next_steps: ["Solve your first challenge in Code Arena", "Add a project to Showcase Hub", "Create your learning Roadmap"]
             },
             {
               role_title: "Frontend Architect",
               company_type: "Fintech / SaaS Product",
-              match_score: 81,
-              readiness_level: "2-3 Weeks Prep",
-              why_recommended: "High component architecture skills and strong UI project count. Solid interview scores support your readiness.",
-              missing_skills: ["Web Vitals Optimization", "Micro-Frontend Architecture"],
-              suggested_next_steps: ["Audit and optimize Core Web Vitals on your projects", "Study Webpack Module Federation for micro-frontends"]
+              match_score: 0,
+              readiness_level: "No Data Yet",
+              why_recommended: "Complete frontend challenges and build showcase apps to calculate your readiness score.",
+              missing_skills: ["Frontend Fundamentals", "UI Projects", "Mock Interview Practice"],
+              suggested_next_steps: ["Explore React & UI challenges in Code Arena", "Start a guided Interview Lab session"]
             },
             {
               role_title: "Backend Systems Developer",
               company_type: "Enterprise / Cloud",
-              match_score: 74,
-              readiness_level: "3-4 Weeks Roadmap Target",
-              why_recommended: "Demonstrated Django REST API foundation. Needs distributed systems depth for senior backend roles.",
-              missing_skills: ["Kafka Event Streaming", "PostgreSQL Query Optimization", "Microservices Design"],
-              suggested_next_steps: ["Complete System Design scenarios in Dev Mentor", "Solve 5 database query optimization challenges in Code Arena"]
+              match_score: 0,
+              readiness_level: "No Data Yet",
+              why_recommended: "Complete backend REST API and database challenges to unlock system design readiness.",
+              missing_skills: ["Database Challenges", "API Design", "System Design"],
+              suggested_next_steps: ["Practice API design in Dev Mentor", "Complete backend roadmap tasks"]
             }
           ]
         })
@@ -199,12 +199,14 @@ function OpportunityMatcherDashboard({ mentorService }) {
   const getScoreColor = (score) => {
     if (score >= 85) return '#10b981'
     if (score >= 70) return '#fbbf24'
-    return '#8b5cf6'
+    if (score > 0) return '#8b5cf6'
+    return '#94a3b8'
   }
 
   const getReadinessColor = (level) => {
     if (level?.toLowerCase().includes('immediate')) return '#10b981'
     if (level?.toLowerCase().includes('2-3') || level?.toLowerCase().includes('1-2')) return '#fbbf24'
+    if (level?.toLowerCase().includes('no data')) return '#94a3b8'
     return '#8b5cf6'
   }
 
@@ -218,7 +220,7 @@ function OpportunityMatcherDashboard({ mentorService }) {
     </div>
   )
 
-  const score = data?.overall_readiness_score || 72
+  const score = data?.overall_readiness_score ?? 0
   const scoreColor = getScoreColor(score)
 
   return (
@@ -271,7 +273,7 @@ function OpportunityMatcherDashboard({ mentorService }) {
             </span>
           </div>
           <h3 style={{ fontSize: 17, fontWeight: 900, color: 'var(--text-heading)', margin: '0 0 8px' }}>
-            {score >= 85 ? '🚀 Ready to Apply for Senior Roles' : score >= 70 ? '⚡ Strong Candidate — Minor Gaps Remain' : '🎯 Building Toward Market Readiness'}
+            {score >= 85 ? '🚀 Ready to Apply for Senior Roles' : score >= 70 ? '⚡ Strong Candidate — Minor Gaps Remain' : score > 0 ? '🎯 Building Toward Market Readiness' : '🌱 Fresh Account — Complete Activities to Unlock Score'}
           </h3>
           <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0, lineHeight: 1.65 }}>
             {data?.career_gap_summary}

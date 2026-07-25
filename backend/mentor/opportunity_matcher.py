@@ -42,7 +42,7 @@ def build_user_full_skill_profile(user) -> dict:
         interview_count = interviews.count()
         if interview_count > 0:
             scores = [i.overall_score for i in interviews if i.overall_score]
-            avg_interview_score = round(sum(scores) / len(scores), 1) if scores else 78.0
+            avg_interview_score = round(sum(scores) / len(scores), 1) if scores else 0
     except Exception:
         pass
 
@@ -70,6 +70,14 @@ def build_user_full_skill_profile(user) -> dict:
     except Exception:
         pass
 
+    has_activity = bool(
+        completed_challenges_count > 0 or
+        interview_count > 0 or
+        project_count > 0 or
+        roadmap_completed_count > 0 or
+        xp > 0
+    )
+
     # Build structured summary dict
     return {
         'name': user.get_full_name() or user.username,
@@ -78,15 +86,16 @@ def build_user_full_skill_profile(user) -> dict:
         'streak_days': streak,
         'completed_challenges_count': completed_challenges_count,
         'interview_count': interview_count,
-        'avg_interview_score': avg_interview_score or 78,
+        'avg_interview_score': avg_interview_score if interview_count > 0 else 0,
         'project_count': project_count,
         'project_tech_stack': list(set(project_tech_stack)),
         'roadmap_completed_count': roadmap_completed_count,
         'skills_mastery': memory.skills_mastery or {},
-        'strengths': memory.strengths or ["Clean Code", "React Architecture"],
-        'weaknesses': memory.weaknesses or ["System Design", "Database Query Tuning"],
+        'strengths': memory.strengths if has_activity else [],
+        'weaknesses': memory.weaknesses if has_activity else [],
         'recurring_mistakes': memory.recurring_mistakes or [],
-        'career_goals': memory.career_goals or "Senior Full Stack Engineer at Top Tech Firm",
+        'career_goals': memory.career_goals or "Software Engineer",
+        'has_activity': has_activity,
     }
 
 def get_opportunity_recommendations(user) -> dict:
@@ -96,6 +105,52 @@ def get_opportunity_recommendations(user) -> dict:
     """
     profile = build_user_full_skill_profile(user)
 
+    # For fresh accounts with no activity data across platform
+    if not profile['has_activity']:
+        return {
+            "overall_readiness_score": 0,
+            "career_gap_summary": "Welcome to Nexora! You currently have a fresh account with no completed challenges, mock interviews, showcase projects, or roadmap milestones. Complete activities across the platform to evaluate your skills and generate personalized career matches.",
+            "roles": [
+                {
+                    "role_title": "Full Stack Engineer",
+                    "company_type": "High-Growth AI Startup",
+                    "match_score": 0,
+                    "readiness_level": "No Data Yet",
+                    "why_recommended": "Complete coding challenges, showcase projects, and mock interviews to evaluate your match score for this role.",
+                    "missing_skills": ["Coding Challenges", "Showcase Projects", "Mock Interviews"],
+                    "suggested_next_steps": [
+                        "Solve your first challenge in Code Arena",
+                        "Add a project to Showcase Hub",
+                        "Create your learning Roadmap"
+                    ]
+                },
+                {
+                    "role_title": "Frontend Architect",
+                    "company_type": "Fintech / SaaS Product",
+                    "match_score": 0,
+                    "readiness_level": "No Data Yet",
+                    "why_recommended": "Complete frontend challenges and build showcase apps to calculate your readiness score.",
+                    "missing_skills": ["Frontend Fundamentals", "UI Projects", "Mock Interview Practice"],
+                    "suggested_next_steps": [
+                        "Explore React & UI challenges in Code Arena",
+                        "Start a guided Interview Lab session"
+                    ]
+                },
+                {
+                    "role_title": "Backend Systems Developer",
+                    "company_type": "Enterprise / Cloud",
+                    "match_score": 0,
+                    "readiness_level": "No Data Yet",
+                    "why_recommended": "Complete backend REST API and database challenges to unlock system design readiness.",
+                    "missing_skills": ["Database Challenges", "API Design", "System Design"],
+                    "suggested_next_steps": [
+                        "Practice API design in Dev Mentor",
+                        "Complete backend roadmap tasks"
+                    ]
+                }
+            ]
+        }
+
     prompt = f"""You are an elite Tech Career Strategist and AI Opportunity Matcher for Nexora platform.
 Analyze this developer's complete 8-module profile:
 
@@ -103,28 +158,28 @@ Developer Profile Data:
 - Name: {profile['name']}
 - Dev Rank: {profile['rank'].capitalize()} | Total XP: {profile['xp']}
 - Challenges Solved: {profile['completed_challenges_count']}
-- Mock Interviews Completed: {profile['interview_count']} (Average Score: {profile['avg_interview_score']}/100)
-- Showcase Projects: {profile['project_count']} (Tech Stack: {', '.join(profile['project_tech_stack']) or 'React, Python, Node.js'})
+- Mock Interviews Completed: {profile['interview_count']} (Average Score: {profile['avg_interview_score'] if profile['interview_count'] > 0 else 'N/A'}/100)
+- Showcase Projects: {profile['project_count']} (Tech Stack: {', '.join(profile['project_tech_stack']) or 'General Software Development'})
 - Completed Roadmap Milestones: {profile['roadmap_completed_count']}
 - Skill Competencies: {json.dumps(profile['skills_mastery'])}
-- Strengths: {', '.join(profile['strengths'])}
-- Target Focus / Weaknesses: {', '.join(profile['weaknesses'])}
+- Strengths: {', '.join(profile['strengths']) or 'Building platform foundation'}
+- Target Focus / Weaknesses: {', '.join(profile['weaknesses']) or 'System Design, Caching'}
 
 Return a strict JSON object (and ONLY JSON, no extra text or markdown formatting outside JSON) with this exact schema:
 {{
   "overall_readiness_score": 84,
-  "career_gap_summary": "Strong core full-stack competency with solid React and Python foundation. To unlock Tier-1 Tech Lead roles, focus on system design scalability and distributed caching.",
+  "career_gap_summary": "Strong core full-stack competency with solid React and Python foundation. Focus on system design scalability and distributed caching.",
   "roles": [
     {{
       "role_title": "Full Stack Engineer",
       "company_type": "High-Growth AI Startup / Mid-Market",
       "match_score": 88,
       "readiness_level": "Immediate Fit (Ready to Apply)",
-      "why_recommended": "Your proven experience with React component architecture, project portfolio ({profile['project_count']} projects), and strong challenge completion rate ({profile['completed_challenges_count']} solved) make you an optimal match.",
+      "why_recommended": "Your proven experience with React component architecture, project portfolio ({profile['project_count']} projects), and challenge completion rate ({profile['completed_challenges_count']} solved) make you an optimal match.",
       "missing_skills": ["GraphQL", "Redis Caching", "Docker Containerization"],
       "suggested_next_steps": [
         "Build a GraphQL API gateway integration project",
-        "Practice 3 high-frequency Redis caching system design scenarios",
+        "Practice Redis caching system design scenarios",
         "Complete Docker containerization challenge in Code Arena"
       ]
     }},
@@ -133,7 +188,7 @@ Return a strict JSON object (and ONLY JSON, no extra text or markdown formatting
       "company_type": "Fintech / Product Enterprise",
       "match_score": 82,
       "readiness_level": "2-3 Weeks Targeted Prep",
-      "why_recommended": "High mastery in modern UI design systems and state management. Strong interview performance score ({profile['avg_interview_score']}/100).",
+      "why_recommended": "High mastery in modern UI design systems and state management. Interview performance score ({profile['avg_interview_score'] if profile['interview_count'] > 0 else 'N/A'}/100).",
       "missing_skills": ["Web Performance Optimization", "Micro-frontends", "E2E Cypress Testing"],
       "suggested_next_steps": [
         "Implement code-splitting and bundle size auditing on Showcase projects",
@@ -145,7 +200,7 @@ Return a strict JSON object (and ONLY JSON, no extra text or markdown formatting
       "company_type": "Big Tech / Scale-Up",
       "match_score": 75,
       "readiness_level": "1 Month Intensive Roadmap",
-      "why_recommended": "Demonstrated backend API development foundation, but requires scaling up database indexing and distributed system concurrency skills.",
+      "why_recommended": "Demonstrated backend API development foundation, requiring scaled database indexing and distributed system skills.",
       "missing_skills": ["Kafka Event Streaming", "Distributed Locking", "Database Query Profiling"],
       "suggested_next_steps": [
         "Study Kafka message queue pub/sub architecture in Interview Lab",
@@ -172,17 +227,24 @@ Return a strict JSON object (and ONLY JSON, no extra text or markdown formatting
         return data
     except Exception as e:
         logger.warning(f"AI Opportunity Matcher fallback activated due to: {e}")
-        # Heuristic Fallback
+        # Heuristic Fallback based on real activity
+        challenges_score = min(35, profile['completed_challenges_count'] * 5)
+        interview_score = min(25, int(profile['avg_interview_score'] * 0.25)) if profile['interview_count'] > 0 else 0
+        project_score = min(25, profile['project_count'] * 8)
+        roadmap_score = min(15, profile['roadmap_completed_count'] * 3)
+
+        calc_readiness = min(95, max(15, challenges_score + interview_score + project_score + roadmap_score))
+
         return {
-            "overall_readiness_score": min(95, 60 + (profile['xp'] // 100)),
-            "career_gap_summary": f"Demonstrated solid progress as {profile['rank'].capitalize()}. To transition into Tech Lead or Senior positions, focus on distributed system scalability and system design.",
+            "overall_readiness_score": calc_readiness,
+            "career_gap_summary": f"Demonstrated progress as {profile['rank'].capitalize()} with {profile['completed_challenges_count']} challenges solved and {profile['project_count']} showcase projects. Focus on distributed systems and cloud architecture to increase senior role readiness.",
             "roles": [
                 {
                     "role_title": "Full Stack Software Engineer",
                     "company_type": "Tier-1 Tech & Product Startups",
-                    "match_score": min(92, 70 + (profile['completed_challenges_count'] * 2)),
-                    "readiness_level": "Immediate Fit (Ready to Apply)",
-                    "why_recommended": f"Strong alignment across your {profile['project_count']} showcase projects and {profile['completed_challenges_count']} solved challenges.",
+                    "match_score": min(92, max(20, calc_readiness + 5)),
+                    "readiness_level": "Developing Fit",
+                    "why_recommended": f"Alignment across your {profile['project_count']} showcase projects and {profile['completed_challenges_count']} solved challenges.",
                     "missing_skills": ["Redis Caching", "Docker Containerization", "CI/CD Pipeline Setup"],
                     "suggested_next_steps": [
                         "Add Redis caching layer to your primary API project",
@@ -192,20 +254,20 @@ Return a strict JSON object (and ONLY JSON, no extra text or markdown formatting
                 {
                     "role_title": "Frontend Engineer / UI Architect",
                     "company_type": "SaaS & Consumer Tech",
-                    "match_score": 85,
-                    "readiness_level": "1-2 Weeks Prep",
-                    "why_recommended": f"High proficiency in component architecture and solid mock interview rating ({profile['avg_interview_score']}/100).",
+                    "match_score": min(90, max(15, calc_readiness)),
+                    "readiness_level": "Targeted Prep",
+                    "why_recommended": f"Proficiency in component architecture and mock interview activity.",
                     "missing_skills": ["Web Vitals Optimization", "State Management at Scale"],
                     "suggested_next_steps": [
-                        "Profile and optimize Web Vitals metrics on landing projects",
-                        "Review Redux Toolkit / Zustand state patterns"
+                        "Profile and optimize Web Vitals metrics on projects",
+                        "Review Redux / Zustand state patterns"
                     ]
                 },
                 {
                     "role_title": "Backend Systems Developer",
                     "company_type": "Enterprise & Cloud Services",
-                    "match_score": 76,
-                    "readiness_level": "3-4 Weeks Roadmap Target",
+                    "match_score": min(85, max(10, calc_readiness - 5)),
+                    "readiness_level": "Roadmap Target",
                     "why_recommended": "Demonstrated API development foundation with growing system design awareness.",
                     "missing_skills": ["Database Query Tuning", "System Load Balancing", "Microservices Architecture"],
                     "suggested_next_steps": [

@@ -61,7 +61,7 @@ function GuestGuard({ children, hash }) {
 }
 
 const VALID_ROUTES = [
-  '/', '/login', '/register', '/challenges', '/arena', '/fundamentals', '/interview', '/showcase', '/mentor', '/progress', '/profile', '/roadmap', '/codereview', '/resume', '/privacy', '/terms', '/about', '/contact', '/revision'
+  '/', '/login', '/register', '/challenges', '/arena', '/fundamentals', '/interview', '/showcase', '/mentor', '/progress', '/profile', '/roadmap', '/codereview', '/peer-review', '/resume', '/privacy', '/terms', '/about', '/contact', '/revision'
 ]
 
 const isRouteValid = (pathname) => {
@@ -69,6 +69,7 @@ const isRouteValid = (pathname) => {
   if (pathname.startsWith('/challenges/')) return true
   if (pathname.startsWith('/interview/')) return true
   if (pathname.startsWith('/roadmap/learn/')) return true
+  if (pathname.startsWith('/peer-review')) return true
   return false
 }
 
