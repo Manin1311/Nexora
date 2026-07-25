@@ -152,6 +152,7 @@ export default function LoginPage() {
     if (!form.email) e.email = 'Email is required'
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Invalid email'
     if (!form.password) e.password = 'Password is required'
+    else if (form.password.length < 8) e.password = 'Password must be at least 8 characters'
     return e
   }
 
@@ -250,13 +251,17 @@ export default function LoginPage() {
                   style={{
                     position: 'absolute',
                     right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
                     color: 'var(--text-muted)',
                     display: 'flex',
                     alignItems: 'center',
-                    padding: 0
+                    justifyContent: 'center',
+                    padding: 0,
+                    zIndex: 2
                   }}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}

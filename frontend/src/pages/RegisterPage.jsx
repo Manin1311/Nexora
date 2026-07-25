@@ -163,8 +163,13 @@ export default function RegisterPage() {
     if (!form.full_name.trim()) e.full_name = 'Name is required'
     if (!form.email) e.email = 'Email is required'
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Invalid email'
-    if (!form.password) e.password = 'Password is required'
-    else if (form.password.length < 8) e.password = 'Minimum 8 characters'
+    if (!form.password) {
+      e.password = 'Password is required'
+    } else if (form.password.length < 8) {
+      e.password = 'Password must be at least 8 characters'
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(form.password)) {
+      e.password = 'Password must contain uppercase, lowercase & a number'
+    }
     if (form.password !== form.password_confirm) e.password_confirm = 'Passwords do not match'
     if (!agreedToTerms) e.terms = 'You must agree to the Terms & Privacy Policy'
     return e
@@ -286,13 +291,17 @@ export default function RegisterPage() {
                   style={{
                     position: 'absolute',
                     right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
                     color: 'var(--text-muted)',
                     display: 'flex',
                     alignItems: 'center',
-                    padding: 0
+                    justifyContent: 'center',
+                    padding: 0,
+                    zIndex: 2
                   }}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -332,13 +341,17 @@ export default function RegisterPage() {
                   style={{
                     position: 'absolute',
                     right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
                     color: 'var(--text-muted)',
                     display: 'flex',
                     alignItems: 'center',
-                    padding: 0
+                    justifyContent: 'center',
+                    padding: 0,
+                    zIndex: 2
                   }}
                 >
                   {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}

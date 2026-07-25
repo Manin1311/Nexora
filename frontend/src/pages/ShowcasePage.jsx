@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import { 
   Plus, Link2, ExternalLink, Trash2, Edit2, Tag, X, Rocket, 
-  Globe, Heart, Bot, Terminal, Sparkles, AlertCircle, Loader2 
+  Globe, Heart, Bot, Terminal, Sparkles, AlertCircle, Loader2, Users
 } from 'lucide-react'
 import { showcaseService } from '@/services/showcaseService'
 import { useAuth } from '@/context/AuthContext'
@@ -311,22 +312,40 @@ function ProjectCard({ project, onEdit, onDelete, isOwn, onSelect, onLike }) {
               by <span style={{ color:'var(--text-color)', fontWeight: 700 }}>{project.owner_name || 'Developer'}</span>
             </span>
             
-            <button
-              onClick={(e) => { e.stopPropagation(); onLike(project.id) }}
-              title={project.is_liked ? "Remove Upvote" : "Upvote Project"}
-              style={{
-                background: project.is_liked ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)', 
-                border:`1px solid ${project.is_liked ? 'rgba(239,68,68,0.25)' : 'var(--glass-border)'}`, 
-                borderRadius: 20, padding:'4px 10px', outline:'none', cursor:'pointer',
-                display:'flex', alignItems:'center', gap:6, color: project.is_liked ? '#ef4444' : 'var(--text-muted)',
-                fontSize:11, fontWeight:800, transition:'all 0.2s'
-              }}
-              onMouseEnter={e => { if(!project.is_liked) e.currentTarget.style.borderColor='rgba(99,102,241,0.3)' }}
-              onMouseLeave={e => { if(!project.is_liked) e.currentTarget.style.borderColor='var(--glass-border)' }}
-            >
-              <Heart size={12} fill={project.is_liked ? '#ef4444' : 'none'} style={{ transition:'fill 0.2s' }} />
-              <span>{project.likes_count || 0}</span>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button
+                onClick={(e) => { e.stopPropagation(); navigate(`/peer-review?project=${project.id}`) }}
+                title="Request Peer Review for this project"
+                style={{
+                  background: 'rgba(139,92,246,0.1)',
+                  border: '1px solid rgba(139,92,246,0.25)',
+                  borderRadius: 20, padding: '4px 10px', outline: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 5, color: '#a78bfa',
+                  fontSize: 11, fontWeight: 800, transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.2)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.1)' }}
+              >
+                <Users size={11} /> Review
+              </button>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); onLike(project.id) }}
+                title={project.is_liked ? "Remove Upvote" : "Upvote Project"}
+                style={{
+                  background: project.is_liked ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)', 
+                  border:`1px solid ${project.is_liked ? 'rgba(239,68,68,0.25)' : 'var(--glass-border)'}`, 
+                  borderRadius: 20, padding:'4px 10px', outline:'none', cursor:'pointer',
+                  display:'flex', alignItems:'center', gap:6, color: project.is_liked ? '#ef4444' : 'var(--text-muted)',
+                  fontSize:11, fontWeight:800, transition:'all 0.2s'
+                }}
+                onMouseEnter={e => { if(!project.is_liked) e.currentTarget.style.borderColor='rgba(99,102,241,0.3)' }}
+                onMouseLeave={e => { if(!project.is_liked) e.currentTarget.style.borderColor='var(--glass-border)' }}
+              >
+                <Heart size={12} fill={project.is_liked ? '#ef4444' : 'none'} style={{ transition:'fill 0.2s' }} />
+                <span>{project.likes_count || 0}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

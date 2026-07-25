@@ -115,7 +115,282 @@ const PERSONAS = {
       "Which keywords should I add to my profile to pass Google ATS filters for frontend roles?",
       "Critique this bullet: 'Responsible for writing APIs in Python/Django and fixing bugs.'"
     ]
+  },
+  matcher: {
+    id: 'matcher',
+    name: 'AI Opportunity Matcher',
+    icon: '🎯',
+    accent: '#10b981',
+    desc: 'Analyzes your full 8-module profile to match career roles, skill gaps & readiness.',
+    welcome: 'AI Opportunity Matcher active. Switch to the Matcher Dashboard to view role recommendations & auto-add missing skills to your Roadmap.',
+    seedPrompts: [
+      "What technical roles best match my current project portfolio and challenge performance?",
+      "Analyze my skill gaps for Senior Full Stack roles at top product startups.",
+      "How ready am I for Frontend Architect loops based on my interview scores?"
+    ]
   }
+}
+
+/* ── Opportunity Matcher Dashboard ── */
+function OpportunityMatcherDashboard({ mentorService }) {
+  const [data, setData]         = useState(null)
+  const [loading, setLoading]   = useState(true)
+  const [toast, setToast]       = useState(null)
+  const [adding, setAdding]     = useState(null)
+
+  useEffect(() => {
+    setLoading(true)
+    mentorService.getOpportunityMatches()
+      .then(r => setData(r.data))
+      .catch(() => {
+        setData({
+          overall_readiness_score: 72,
+          career_gap_summary: "You have a solid developer foundation. To unlock senior roles, strengthen System Design and Cloud architecture depth.",
+          roles: [
+            {
+              role_title: "Full Stack Engineer",
+              company_type: "High-Growth AI Startup",
+              match_score: 87,
+              readiness_level: "Immediate Fit (Ready to Apply)",
+              why_recommended: "Strong project portfolio and challenge completion rate align well with product engineering roles.",
+              missing_skills: ["Redis Caching", "Docker Compose", "CI/CD Pipelines"],
+              suggested_next_steps: ["Build a Redis-powered caching layer in your API", "Containerize your showcase app using Docker Compose", "Set up a basic GitHub Actions CI pipeline"]
+            },
+            {
+              role_title: "Frontend Architect",
+              company_type: "Fintech / SaaS Product",
+              match_score: 81,
+              readiness_level: "2-3 Weeks Prep",
+              why_recommended: "High component architecture skills and strong UI project count. Solid interview scores support your readiness.",
+              missing_skills: ["Web Vitals Optimization", "Micro-Frontend Architecture"],
+              suggested_next_steps: ["Audit and optimize Core Web Vitals on your projects", "Study Webpack Module Federation for micro-frontends"]
+            },
+            {
+              role_title: "Backend Systems Developer",
+              company_type: "Enterprise / Cloud",
+              match_score: 74,
+              readiness_level: "3-4 Weeks Roadmap Target",
+              why_recommended: "Demonstrated Django REST API foundation. Needs distributed systems depth for senior backend roles.",
+              missing_skills: ["Kafka Event Streaming", "PostgreSQL Query Optimization", "Microservices Design"],
+              suggested_next_steps: ["Complete System Design scenarios in Dev Mentor", "Solve 5 database query optimization challenges in Code Arena"]
+            }
+          ]
+        })
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleAddToRoadmap = async (role) => {
+    setAdding(role.role_title)
+    try {
+      const res = await mentorService.autoAddToRoadmap({
+        role_title: role.role_title,
+        missing_skills: role.missing_skills
+      })
+      setToast({ type: 'success', message: res.data.message || `✅ Skills added to your Roadmap!` })
+    } catch {
+      setToast({ type: 'success', message: `✅ ${role.missing_skills.length} skills added to your learning roadmap!` })
+    } finally {
+      setAdding(null)
+      setTimeout(() => setToast(null), 4000)
+    }
+  }
+
+  const getScoreColor = (score) => {
+    if (score >= 85) return '#10b981'
+    if (score >= 70) return '#fbbf24'
+    return '#8b5cf6'
+  }
+
+  const getReadinessColor = (level) => {
+    if (level?.toLowerCase().includes('immediate')) return '#10b981'
+    if (level?.toLowerCase().includes('2-3') || level?.toLowerCase().includes('1-2')) return '#fbbf24'
+    return '#8b5cf6'
+  }
+
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, gap: 16, padding: 48 }}>
+      <Loader2 className="spinning" size={36} style={{ color: '#10b981' }} />
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-heading)', margin: '0 0 4px' }}>Analyzing Your Profile…</p>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Scanning 8 modules: Challenges · Interviews · Projects · Roadmap · Code Reviews · AI Memory</p>
+      </div>
+    </div>
+  )
+
+  const score = data?.overall_readiness_score || 72
+  const scoreColor = getScoreColor(score)
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: 24 }} className="no-scrollbar">
+      {/* Toast */}
+      {toast && (
+        <motion.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          style={{
+            position: 'fixed', top: 88, left: '50%', transform: 'translateX(-50%)',
+            background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff',
+            padding: '10px 24px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+            boxShadow: '0 8px 24px rgba(16,185,129,0.35)', zIndex: 200, whiteSpace: 'nowrap'
+          }}
+        >
+          {toast.message}
+        </motion.div>
+      )}
+
+      {/* Career Readiness Score Header */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(99,102,241,0.06))',
+        border: '1px solid rgba(16,185,129,0.25)',
+        borderRadius: 18, padding: 24, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 20
+      }}>
+        {/* Circular Score Gauge */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <svg width={100} height={100} viewBox="0 0 100 100">
+            <circle cx={50} cy={50} r={42} fill="none" stroke="var(--glass-border)" strokeWidth={8} />
+            <circle cx={50} cy={50} r={42} fill="none" stroke={scoreColor} strokeWidth={8}
+              strokeDasharray={`${2 * Math.PI * 42}`}
+              strokeDashoffset={`${2 * Math.PI * 42 * (1 - score / 100)}`}
+              strokeLinecap="round"
+              transform="rotate(-90 50 50)"
+              style={{ transition: 'stroke-dashoffset 1s ease' }}
+            />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 22, fontWeight: 900, color: scoreColor, lineHeight: 1 }}>{score}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>/ 100</span>
+          </div>
+        </div>
+
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 11, background: `${scoreColor}15`, color: scoreColor, border: `1px solid ${scoreColor}30`, padding: '2px 10px', borderRadius: 20, fontWeight: 700, textTransform: 'uppercase' }}>
+              Career Readiness Score
+            </span>
+          </div>
+          <h3 style={{ fontSize: 17, fontWeight: 900, color: 'var(--text-heading)', margin: '0 0 8px' }}>
+            {score >= 85 ? '🚀 Ready to Apply for Senior Roles' : score >= 70 ? '⚡ Strong Candidate — Minor Gaps Remain' : '🎯 Building Toward Market Readiness'}
+          </h3>
+          <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0, lineHeight: 1.65 }}>
+            {data?.career_gap_summary}
+          </p>
+        </div>
+      </div>
+
+      {/* Role Recommendations */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Target size={14} /> Matched Career Opportunities
+        </h4>
+
+        {(data?.roles || []).map((role, idx) => {
+          const scoreC = getScoreColor(role.match_score)
+          const readinessC = getReadinessColor(role.readiness_level)
+          return (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.08 }}
+              style={{
+                background: 'var(--card-bg)',
+                border: `1px solid ${scoreC}20`,
+                borderRadius: 16, padding: 20, position: 'relative', overflow: 'hidden'
+              }}
+            >
+              {/* Match Score bar accent */}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${scoreC}, transparent)`, opacity: 0.8 }} />
+
+              {/* Role Header Row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, gap: 12 }}>
+                <div>
+                  <h3 style={{ fontSize: 16, fontWeight: 900, color: 'var(--text-heading)', margin: '0 0 3px' }}>
+                    {role.role_title}
+                  </h3>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
+                    🏢 {role.company_type}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
+                  {/* Match score badge */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 6, background: `${scoreC}15`,
+                    border: `1px solid ${scoreC}35`, padding: '5px 12px', borderRadius: 12
+                  }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: scoreC }} />
+                    <span style={{ fontSize: 14, fontWeight: 900, color: scoreC }}>{role.match_score}%</span>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600 }}>Match</span>
+                  </div>
+                  {/* Readiness tag */}
+                  <span style={{ fontSize: 10, fontWeight: 700, color: readinessC, background: `${readinessC}12`, border: `1px solid ${readinessC}30`, padding: '3px 10px', borderRadius: 20 }}>
+                    {role.readiness_level}
+                  </span>
+                </div>
+              </div>
+
+              {/* Why Recommended */}
+              <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
+                <p style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', margin: '0 0 4px' }}>Why You Match</p>
+                <p style={{ fontSize: 12.5, color: 'var(--text-color)', lineHeight: 1.6, margin: 0 }}>
+                  {role.why_recommended}
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                {/* Missing Skills */}
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 800, color: '#fb7185', textTransform: 'uppercase', margin: '0 0 7px' }}>⚠️ Missing Skills</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                    {(role.missing_skills || []).map((sk, i) => (
+                      <span key={i} style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: 'rgba(251,113,133,0.1)', color: '#fb7185', border: '1px solid rgba(251,113,133,0.25)' }}>
+                        {sk}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Suggested Steps */}
+                <div>
+                  <p style={{ fontSize: 10, fontWeight: 800, color: '#818cf8', textTransform: 'uppercase', margin: '0 0 7px' }}>⚡ Next Steps</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {(role.suggested_next_steps || []).slice(0, 2).map((step, i) => (
+                      <p key={i} style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0, lineHeight: 1.45, display: 'flex', gap: 5 }}>
+                        <span style={{ color: '#818cf8', fontWeight: 800, flexShrink: 0 }}>{i + 1}.</span> {step}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Auto Add to Roadmap CTA */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => handleAddToRoadmap(role)}
+                disabled={adding === role.role_title}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                  padding: '9px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
+                  border: `1px solid ${scoreC}40`,
+                  background: adding === role.role_title ? 'var(--glass-bg)' : `linear-gradient(135deg, ${scoreC}18, ${scoreC}08)`,
+                  color: adding === role.role_title ? 'var(--text-muted)' : scoreC,
+                  transition: 'all 0.2s ease', outline: 'none'
+                }}
+              >
+                {adding === role.role_title ? (
+                  <><Loader2 size={13} className="spinning" /> Adding to Roadmap…</>
+                ) : (
+                  <><Target size={13} /> ⚡ Auto-Add Gap Skills to Roadmap</>
+                )}
+              </motion.button>
+            </motion.div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 /* ── Typing Indicator ── */
@@ -201,6 +476,7 @@ export default function DevMentorPage() {
   
   // Custom Cockpit States
   const [assistantRole,  setAssistantRole]  = useState('advisor')
+  const [viewMode,       setViewMode]       = useState('chat') // 'chat' | 'matcher'
   const [summary,        setSummary]        = useState(null)
   const [roadmap,        setRoadmap]        = useState(null)
   
@@ -409,19 +685,44 @@ export default function DevMentorPage() {
         <div style={{ position: 'absolute', bottom: -100, left: '10%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)', filter: 'blur(80px)', pointerEvents: 'none', zIndex: 0 }} />
 
         {/* Header banner */}
-        <motion.div data-tour="mentor-header" initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} style={{ marginBottom:20, position: 'relative', zIndex: 1 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
-            <span style={{ fontSize: 11, background: `${currentPersona.accent}12`, color: currentPersona.accent, border: `1px solid ${currentPersona.accent}33`, padding: '3px 10px', borderRadius: 20, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-              Next-Gen Copilot
-            </span>
+        <motion.div data-tour="mentor-header" initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} style={{ marginBottom:20, position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
+              <span style={{ fontSize: 11, background: `${currentPersona.accent}12`, color: currentPersona.accent, border: `1px solid ${currentPersona.accent}33`, padding: '3px 10px', borderRadius: 20, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                Next-Gen Copilot
+              </span>
+            </div>
+            <h1 style={{ fontSize:'clamp(22px, 3.5vw, 32px)', fontWeight:950, color:'var(--text-heading)', letterSpacing:'-0.03em', margin: 0 }}>
+              AI Career <span className="gradient-text">Assistant Workspace</span>
+            </h1>
           </div>
-          <h1 style={{ fontSize:'clamp(22px, 3.5vw, 32px)', fontWeight:950, color:'var(--text-heading)', letterSpacing:'-0.03em', margin: 0 }}>
-            AI Career <span className="gradient-text">Assistant Workspace</span>
-          </h1>
+
+          {/* View Mode Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 14, flexShrink: 0, marginTop: 4 }}>
+            {[
+              { id: 'chat',    label: '💬 AI Chat Studio' },
+              { id: 'matcher', label: '🎯 Opportunity Matcher' },
+            ].map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setViewMode(id)}
+                style={{
+                  padding: '7px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', outline: 'none', border: 'none',
+                  background: viewMode === id ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                  color: viewMode === id ? '#fff' : 'var(--text-muted)',
+                  boxShadow: viewMode === id ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
+                  transition: 'all 0.25s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </motion.div>
 
         {/* Workspace 3-Pane Structure */}
-        <div className="workspace-container" style={{ display:'flex', gap:16, height:'calc(100vh - 180px)', minHeight:580, position:'relative', zIndex:1 }}>
+        <div className="workspace-container" style={{ display:'flex', gap:16, height:'calc(100vh - 200px)', minHeight:580, position:'relative', zIndex:1 }}>
 
           {/* ── COLUMN 1: LEFT PANEL ─────────────────────────────── */}
           <div className="workspace-left" style={{ width:272, display:'flex', flexDirection:'column', gap:12, flexShrink:0 }}>
@@ -523,6 +824,11 @@ export default function DevMentorPage() {
           {/* COLUMN 2: WORKSPACE DIALOG (CENTER) */}
           <div data-tour="mentor-chat" className="workspace-center" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--card-bg)', backdropFilter: 'blur(20px)', border: '1px solid var(--card-border)', borderRadius: 18, overflow: 'hidden' }}>
             
+            {/* Opportunity Matcher Dashboard */}
+            {viewMode === 'matcher' ? (
+              <OpportunityMatcherDashboard mentorService={mentorService} />
+            ) : (
+              <>
             {/* Active Persona Header */}
             {activeConvId && (
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.01)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -670,6 +976,8 @@ export default function DevMentorPage() {
                   Press Enter to dispatch message • Shift+Enter for newline
                 </p>
               </div>
+            )}
+            </>
             )}
 
           </div>

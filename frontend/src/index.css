@@ -5,6 +5,22 @@
    NEXORA — GLOBAL DESIGN SYSTEM
 ═══════════════════════════════════════════════ */
 
+/* Hide default browser password reveal icons */
+input::-ms-reveal,
+input::-ms-clear,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
+
+/* Hide default browser password reveal icons */
+input::-ms-reveal,
+input::-ms-clear,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
+
 :root {
   --bg-color: #000000;
   --font-display: 'Playfair Display', Georgia, serif;

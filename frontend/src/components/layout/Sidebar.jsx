@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
 import {
   Menu, X, Zap, ChevronDown, ChevronLeft, ChevronRight,
-  LogOut, User, Trophy, Sun, Moon, Search,
+  LogOut, User, Trophy, Sun, Moon, Search, Users,
   Swords, FlaskConical, Map, Palette, BarChart3, BrainCircuit, FileText,
   Gamepad2, Bell, CheckSquare, Trash2, BookMarked, Cpu, MapPin, GitPullRequestArrow
 } from 'lucide-react'
@@ -19,6 +19,7 @@ const NAV_LINKS = [
   { to: '/interview',  label: 'Interview Lab', Icon: FlaskConical,        tourId: 'tour-interview' },
   { to: '/roadmap',    label: 'My Roadmap',    Icon: Map,                 tourId: 'tour-roadmap' },
   { to: '/codereview', label: 'Code Review',   Icon: GitPullRequestArrow, tourId: 'tour-codereview' },
+  { to: '/peer-review',label: 'Peer Review',   Icon: Users,               tourId: 'tour-peerreview' },
   { to: '/resume',     label: 'Resume Hub',    Icon: FileText,            tourId: 'tour-resume' },
   { to: '/revision',   label: 'Revision Hub',  Icon: BookMarked,          tourId: 'tour-revision' },
   { to: '/showcase',   label: 'Showcase',      Icon: Palette,             tourId: 'tour-showcase' },

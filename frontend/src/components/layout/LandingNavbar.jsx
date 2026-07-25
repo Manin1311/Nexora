@@ -37,7 +37,8 @@ export default function LandingNavbar() {
         maxWidth: '1400px',
         zIndex: 100,
         height: '72px',
-        display: 'flex',
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
         alignItems: 'center',
         padding: '0 32px',
         transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -50,24 +51,26 @@ export default function LandingNavbar() {
       }}>
 
         {/* ── Logo ── */}
-        <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
-          <motion.div whileHover={{ scale: 1.08, rotate: 8 }} style={{
-            width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center',
-            justifyContent: 'center', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
-            boxShadow: '0 4px 16px rgba(99,102,241,0.4)',
-          }}>
-            <Zap size={17} color="#fff" strokeWidth={2.5} />
-          </motion.div>
-          <span className="gradient-text" style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', fontFamily: 'var(--font-display)' }}>Nexora</span>
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+          <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <motion.div whileHover={{ scale: 1.08, rotate: 8 }} style={{
+              width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+              boxShadow: '0 4px 16px rgba(99,102,241,0.4)',
+            }}>
+              <Zap size={17} color="#fff" strokeWidth={2.5} />
+            </motion.div>
+            <span className="gradient-text" style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', fontFamily: 'var(--font-display)' }}>Nexora</span>
+          </Link>
+        </div>
 
         {/* ── Desktop Nav Links (center) ── */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 auto' }} className="landing-nav-desktop">
+        <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }} className="landing-nav-desktop">
           {NAV_LINKS.map(link => {
             const isHash = link.to.startsWith('/#')
             return (
-              <NavLink key={link.hash}
-                to={isAuthenticated && !isHash ? link.to : link.to}
+              <Link key={link.hash}
+                to={link.to}
                 onClick={(e) => {
                   if (isHash) {
                     e.preventDefault();
@@ -77,40 +80,36 @@ export default function LandingNavbar() {
                     }
                   }
                 }}
-                style={({ isActive }) => {
-                  const active = isActive && !isHash
-                  return {
-                    padding: '7px 16px',
-                    borderRadius: 9999,
-                    fontSize: 14,
-                    fontWeight: 500,
-                    textDecoration: 'none',
-                    transition: 'all 0.2s ease',
-                    color: active ? '#818cf8' : 'var(--text-color)',
-                    background: active ? 'rgba(99,102,241,0.12)' : 'var(--glass-bg)',
-                    border: active ? '1px solid rgba(99,102,241,0.4)' : '1px solid var(--glass-border)',
-                  }
+                style={{
+                  padding: '8px 18px',
+                  borderRadius: 9999,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                  color: 'var(--text-color)',
+                  background: 'var(--glass-bg)',
+                  border: '1px solid rgba(99, 102, 241, 0.25)',
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.color = '#818cf8'
-                  e.currentTarget.style.borderColor = 'rgba(99,102,241,0.4)'
-                  e.currentTarget.style.background = 'rgba(99,102,241,0.08)'
+                  e.currentTarget.style.background = 'rgba(99, 102, 241, 0.12)'
+                  e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)'
                 }}
                 onMouseLeave={e => {
-                  const isCurrentlyActive = e.currentTarget.classList.contains('active') && !isHash
-                  e.currentTarget.style.color = isCurrentlyActive ? '#818cf8' : 'var(--text-color)'
-                  e.currentTarget.style.borderColor = isCurrentlyActive ? 'rgba(99,102,241,0.4)' : 'var(--glass-border)'
-                  e.currentTarget.style.background = isCurrentlyActive ? 'rgba(99,102,241,0.12)' : 'var(--glass-bg)'
+                  e.currentTarget.style.color = 'var(--text-color)'
+                  e.currentTarget.style.background = 'var(--glass-bg)'
+                  e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.25)'
                 }}
               >
                 {link.label}
-              </NavLink>
+              </Link>
             )
           })}
         </nav>
 
         {/* ── Right Actions ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }} className="landing-nav-desktop">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12 }} className="landing-nav-desktop">
           {/* Theme Toggle */}
           <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} onClick={toggleTheme}
             style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',

@@ -519,9 +519,11 @@ Current user context:
 - Challenges Completed: {user_context.get('challenges_completed', 0)}
 - Recent Activity: {user_context.get('recent_activity', 'Getting started')}
 
+{user_context.get('ai_memory_context', '')}
+
 Guidelines:
-- Give personalized, actionable advice based on their current level and progress
-- Be encouraging but realistic and specific
+- Give personalized, actionable advice based on their persistent AI Memory and learning journey
+- Reference their strengths, weak areas, or recurring coding mistakes naturally when helpful
 - Keep responses concise (2-4 paragraphs max) unless asked for detail
 - Use markdown formatting for code examples when helpful"""
 

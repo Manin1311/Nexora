@@ -17,21 +17,17 @@ const Twitter = (props) => (
 const PLATFORM = [
   { to:'/#features', label:'Features'   },
   { to:'/roadmap',    label:'AI Roadmaps' },
-  { to:'/roadmap',    label:'Academy Courses'   },
   { to:'/challenges', label:'Coding Sandbox' },
   { to:'/interview',  label:'Interview Lab'     },
 ]
 const COMPANY = [
   { to:'/about',   label:'About'    },
-  { to:'/',        label:'Blog'     },
   { to:'/mentor',  label:'Careers'  },
   { to:'/privacy', label:'Privacy'  },
   { to:'/terms',   label:'Terms'    },
 ]
 const SOCIAL = [
-  { icon: Globe,   href:'#', label:'Website'  },
-  { icon: Github,  href:'#', label:'GitHub'   },
-  { icon: Twitter, href:'#', label:'Twitter'  },
+  { icon: Github,  href:'https://github.com', label:'GitHub'   },
 ]
 
 export default function Footer() {

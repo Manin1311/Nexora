@@ -135,3 +135,22 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.title}"
+
+
+class UserAIMemory(models.Model):
+    """Persistent long-term AI memory engine profile for a user across all 10 Nexora modules."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='ai_memory')
+    skills_mastery = models.JSONField(default=dict, blank=True)
+    strengths = models.JSONField(default=list, blank=True)
+    weaknesses = models.JSONField(default=list, blank=True)
+    recurring_mistakes = models.JSONField(default=list, blank=True)
+    interview_stats = models.JSONField(default=dict, blank=True)
+    career_goals = models.JSONField(default=dict, blank=True)
+    learning_habits = models.JSONField(default=dict, blank=True)
+    activity_log = models.JSONField(default=list, blank=True)
+    ai_summary = models.TextField(blank=True, default="Developer profile initialized. AI Memory Engine is actively tracking your learning journey across all modules.")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"AI Memory — {self.user.email}"
+

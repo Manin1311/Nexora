@@ -16,12 +16,18 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if data['password'] != data['password_confirm']:
             raise serializers.ValidationError({'password_confirm': 'Passwords do not match.'})
+        import re
+        pwd = data['password']
+        if len(pwd) < 8:
+            raise serializers.ValidationError({'password': 'Password must be at least 8 characters long.'})
+        if not re.search(r'[A-Z]', pwd) or not re.search(r'[a-z]', pwd) or not re.search(r'\d', pwd):
+            raise serializers.ValidationError({'password': 'Password must contain uppercase, lowercase & a number.'})
         return data
 
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         user = User.objects.create_user(**validated_data)
-        UserProfile.objects.create(user=user)
+        UserProfile.objects.get_or_create(user=user)
         return user
 
 

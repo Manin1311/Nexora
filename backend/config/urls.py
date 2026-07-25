@@ -57,6 +57,7 @@ urlpatterns = [
     path('api/progress/',   include('progress.urls')),
     path('api/roadmap/',    include('roadmap.urls')),
     path('api/codereview/', include('codereview.urls')),
+    path('api/peer-reviews/', include('peer_reviews.urls')),
     path('api/arena/',      include('arena.urls')),
     path('api/health/',     root_health_check),
     # Catch-all rule for React SPA routing (e.g. /arena, /challenges, /profile, /roadmap)

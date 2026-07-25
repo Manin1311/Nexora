@@ -1,13 +1,16 @@
-# Django
+# Django & Python
 *.pyc
-__pycache__/
 *.pyo
+__pycache__/
+*.py[cod]
 db.sqlite3
+db.sqlite3-journal
 /staticfiles/
 /media/
 .env
+.env.*
 
-# Python
+# Python Envs
 *.egg-info/
 dist/
 build/
@@ -17,9 +20,9 @@ venv/
 env/
 ENV/
 
-# IDE
+# IDE & Logs
 .vscode/
 .idea/
 *.swp
-# Generated artifacts
-artifacts/
+*.log
+artifacts/

@@ -6,7 +6,7 @@ from .views import (
     ResumeGetOrCreateView, ResumeAnalyzeView, ResumeAuditView, ResumePremiumUnlockView,
     ResumeTailorView,
     NotificationListView, NotificationReadAllView, NotificationReadView, NotificationClearView,
-    GoogleLoginView,
+    GoogleLoginView, AIMemoryView, RecordActivityView,
 )
 
 urlpatterns = [
@@ -32,4 +32,7 @@ urlpatterns = [
     path('notifications/clear/', NotificationClearView.as_view(), name='notifications-clear'),
     # Google Login
     path('google-login/',      GoogleLoginView.as_view(),      name='google-login'),
+    # AI Memory Engine
+    path('memory/',            AIMemoryView.as_view(),         name='ai-memory'),
+    path('memory/record/',     RecordActivityView.as_view(),   name='ai-memory-record'),
 ]

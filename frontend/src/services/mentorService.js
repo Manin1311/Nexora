@@ -5,4 +5,6 @@ export const mentorService = {
   createConversation: (data) => api.post('/mentor/', data),
   getConversation: (id) => api.get(`/mentor/${id}/`),
   sendMessage: (id, data) => api.post(`/mentor/${id}/message/`, data),
+  getOpportunityMatches: () => api.get('/mentor/opportunities/'),
+  autoAddToRoadmap: (data) => api.post('/mentor/opportunities/add-to-roadmap/', data),
 }

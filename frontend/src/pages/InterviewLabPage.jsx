@@ -38,7 +38,6 @@ const MODES = [
   { id:'hr',          icon:'🤝', title:'HR / Behavioral',desc:'Situational questions, leadership, conflict resolution, and soft skills assessment.',                           xp:100, duration:'15-30 min', accent:'#8b5cf6', code: 'BEHAV_SIM_02' },
   { id:'mixed',       icon:'🔀', title:'Mixed Mode',     desc:'A balanced combination of technical and behavioral questions for a complete interview experience.',              xp:120, duration:'25-45 min', accent:'#06b6d4', code: 'MIXED_SIM_03' },
   { id:'rapid_fire',  icon:'⚡', title:'Rapid Fire',     desc:'Quick-answer questions under time pressure. Test your instincts and recall speed.',                            xp:80,  duration:'10-20 min', accent:'#f59e0b', code: 'RAPID_SIM_04' },
-  { id:'boardroom',   icon:'🎙️', title:'FAANG Boardroom Debate', desc:'Enter a Google Meet with Aravind, Sofia, and Marcus. Face active cross-questioning and real-time screen sharing.', xp:200, duration:'30-50 min', accent:'#10b981', code: 'FAANG_SIM_05' },
 ]
 
 const DIFFICULTIES = [

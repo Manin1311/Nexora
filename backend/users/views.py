@@ -469,3 +469,41 @@ class GoogleLoginView(APIView):
             }
         }, status=status.HTTP_200_OK)
 
+
+from .memory_service import get_or_create_ai_memory, record_module_activity
+
+class AIMemoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        memory = get_or_create_ai_memory(request.user)
+        return Response({
+            'skills_mastery': memory.skills_mastery,
+            'strengths': memory.strengths,
+            'weaknesses': memory.weaknesses,
+            'recurring_mistakes': memory.recurring_mistakes,
+            'career_goals': memory.career_goals,
+            'learning_habits': memory.learning_habits,
+            'activity_log': memory.activity_log[:30],
+            'ai_summary': memory.ai_summary,
+            'updated_at': memory.updated_at
+        }, status=status.HTTP_200_OK)
+
+
+class RecordActivityView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        module_name = request.data.get('module')
+        action_title = request.data.get('action')
+        details = request.data.get('details', {})
+        if not module_name or not action_title:
+            return Response({'error': 'Module name and action title are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        memory = record_module_activity(request.user, module_name, action_title, details)
+        return Response({
+            'message': 'Activity recorded in AI Memory Engine.',
+            'activity_log': memory.activity_log[:10] if memory else []
+        }, status=status.HTTP_200_OK)
+
+

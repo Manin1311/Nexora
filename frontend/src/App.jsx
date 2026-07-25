@@ -22,6 +22,7 @@ import ProfilePage from '@/pages/ProfilePage'
 import RoadmapPage from '@/pages/RoadmapPage'
 import RoadmapLearnPage from '@/pages/RoadmapLearnPage'
 import CodeReviewPage from '@/pages/CodeReviewPage'
+import PeerCodeReviewPage from '@/pages/PeerCodeReviewPage'
 import ResumePage from '@/pages/ResumePage'
 import CodeArenaPage from '@/pages/CodeArenaPage'
 import FundamentalsPage from '@/pages/FundamentalsPage'
@@ -184,6 +185,7 @@ function AppRoutes() {
               <ProtectedRoute><RoadmapLearnPage /></ProtectedRoute>
             } />
             <Route path="/codereview" element={<ProtectedRoute><CodeReviewPage /></ProtectedRoute>} />
+            <Route path="/peer-review" element={<ProtectedRoute><PeerCodeReviewPage /></ProtectedRoute>} />
             <Route path="/resume"     element={<ProtectedRoute><ResumePage /></ProtectedRoute>} />
             <Route path="/revision"   element={<ProtectedRoute><RevisionPage /></ProtectedRoute>} />
             <Route path="/privacy"            element={<PrivacyPage />} />
