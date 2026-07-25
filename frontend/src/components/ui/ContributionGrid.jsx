@@ -43,11 +43,21 @@ export default function ContributionGrid() {
   const totalSubmissions = Object.values(activity).reduce((a, b) => a + b, 0)
   const maxSolves = Object.values(activity).reduce((a, b) => Math.max(a, b), 0)
 
+  // Format date as YYYY-MM-DD in LOCAL timezone (not UTC).
+  // toISOString() returns UTC which is +1 day for IST (+5:30) after ~6:30 PM UTC
+  // e.g. Sat 11 PM IST = Sun 5:30 AM UTC → shows as Sunday. Wrong!
+  const formatDateStr = (date) => {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+
   // Calculate current streak
   let currentStreak = 0
   let checkDate = new Date()
   while (true) {
-    const dateStr = checkDate.toISOString().split('T')[0]
+    const dateStr = formatDateStr(checkDate)
     if (activity[dateStr] && activity[dateStr] > 0) {
       currentStreak++
       checkDate.setDate(checkDate.getDate() - 1)
@@ -59,10 +69,6 @@ export default function ContributionGrid() {
       }
       break
     }
-  }
-
-  const formatDateStr = (date) => {
-    return date.toISOString().split('T')[0]
   }
 
   const getIntensityColor = (count) => {

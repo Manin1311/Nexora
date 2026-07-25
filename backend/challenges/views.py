@@ -330,11 +330,21 @@ class UserActivityGridView(APIView):
         from django.db.models.functions import TruncDate
         from django.db.models import Count
         from challenges.models import ChallengeSubmission
+        import pytz
+        from django.utils import timezone as dj_timezone
 
-        # Group evaluated submissions by date
+        # Use IST timezone for date grouping.
+        # TruncDate defaults to UTC - this causes late-night IST submissions
+        # (e.g. Sat 11 PM IST = Sun 05:30 AM UTC) to appear on the wrong day.
+        try:
+            ist = pytz.timezone('Asia/Kolkata')
+        except Exception:
+            ist = dj_timezone.utc
+
+        # Group evaluated submissions by local (IST) date
         submissions = (
             ChallengeSubmission.objects.filter(user=request.user, status='evaluated')
-            .annotate(date=TruncDate('submitted_at'))
+            .annotate(date=TruncDate('submitted_at', tzinfo=ist))
             .values('date')
             .annotate(count=Count('id'))
             .order_by('date')

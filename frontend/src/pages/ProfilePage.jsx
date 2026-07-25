@@ -336,142 +336,7 @@ export default function ProfilePage() {
             </div>
           </motion.div>
 
-          {/* ══ XP REWARDS & PERKS SYSTEM ══════════════════════════ */}
-          <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.15 }} style={{ marginBottom:20 }}>
-            <div style={{ ...S.card, padding:28 }}>
-              <div style={{ position:'absolute', top:0, left:'20%', right:'20%', height:1,
-                background:'linear-gradient(90deg,transparent,rgba(251,191,36,0.4),transparent)' }} />
 
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
-                <div>
-                  <h2 style={{ fontSize:18, fontWeight:950, color:'var(--text-heading)', margin:0, display:'flex', alignItems:'center', gap:10 }}>
-                    <span style={{ fontSize:22 }}>🎁</span> XP Rewards &amp; Perks System
-                  </h2>
-                  <p style={{ fontSize:13, color:'var(--text-muted)', margin:'4px 0 0' }}>
-                    Earn XP across daily challenges, interview labs, and project showcases to unlock exclusive perks and platform benefits.
-                  </p>
-                </div>
-                <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(251,191,36,0.08)', border:'1px solid rgba(251,191,36,0.2)', padding:'6px 14px', borderRadius:20 }}>
-                  <Trophy size={15} color="#fbbf24" />
-                  <span style={{ fontSize:12, fontWeight:800, color:'#fbbf24' }}>
-                    {[500, 2000, 5000, 15000].filter(t => xp >= t).length} of 4 Perks Unlocked
-                  </span>
-                </div>
-              </div>
-
-              {/* Rewards Grid */}
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))', gap:16 }}>
-                {[
-                  {
-                    tier: 'Builder Perk Pack',
-                    minXp: 500,
-                    badge: '🔨 Builder',
-                    color: '#34d399',
-                    accent: 'rgba(52,211,153,0.1)',
-                    perks: [
-                      '🔓 Community Builder Profile Badge',
-                      '⚡ +10% Daily Streak XP Multiplier',
-                      '🎯 Priority AI Mock Interview Feedback'
-                    ]
-                  },
-                  {
-                    tier: 'Creator Perk Pack',
-                    minXp: 2000,
-                    badge: '🎨 Creator',
-                    color: '#60a5fa',
-                    accent: 'rgba(96,165,250,0.1)',
-                    perks: [
-                      '🔓 Custom Holographic Profile Aura',
-                      '🚀 Project Sandbox Exhibition Highlight',
-                      '🤖 Unlimited AI Code Health Scans'
-                    ]
-                  },
-                  {
-                    tier: 'Architect Perk Pack',
-                    minXp: 5000,
-                    badge: '🏛️ Architect',
-                    color: '#a78bfa',
-                    accent: 'rgba(167,139,250,0.1)',
-                    perks: [
-                      '🔓 Verifiable System Architect PDF Certificate',
-                      '🏆 Direct AI Resume Pitch Auditor Access',
-                      '⚡ Exclusive High-Load System Design Labs'
-                    ]
-                  },
-                  {
-                    tier: 'Legend Perk Pack',
-                    minXp: 15000,
-                    badge: '👑 Legend',
-                    color: '#fbbf24',
-                    accent: 'rgba(251,191,36,0.1)',
-                    perks: [
-                      '🔓 Golden "Legendary Developer" Crown Icon',
-                      '🌟 Nexora Elite Hall of Fame Profile Spot',
-                      '💼 1-on-1 AI Pitch & Portfolio Review'
-                    ]
-                  }
-                ].map(r => {
-                  const isUnlocked = xp >= r.minXp
-                  const neededXp = Math.max(0, r.minXp - xp)
-                  const progressPct = Math.min(100, Math.round((xp / r.minXp) * 100))
-
-                  return (
-                    <motion.div
-                      key={r.minXp}
-                      whileHover={{ y:-4 }}
-                      style={{
-                        borderRadius:16, padding:20, position:'relative', overflow:'hidden',
-                        background: isUnlocked ? r.accent : 'var(--glass-bg)',
-                        border: `1px solid ${isUnlocked ? r.color + '50' : 'var(--glass-border)'}`,
-                        boxShadow: isUnlocked ? `0 8px 24px ${r.color}15` : 'none',
-                        transition: 'all 0.3s'
-                      }}
-                    >
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-                        <span style={{ fontSize:11, fontWeight:800, color: r.color, background: r.accent, padding:'3px 10px', borderRadius:20, border:`1px solid ${r.color}30` }}>
-                          {r.badge}
-                        </span>
-                        <span style={{ fontSize:10, fontWeight:700, color: isUnlocked ? '#10b981' : 'var(--text-muted)', display:'flex', alignItems:'center', gap:4 }}>
-                          {isUnlocked ? '✓ UNLOCKED' : `🔒 ${r.minXp.toLocaleString()} XP`}
-                        </span>
-                      </div>
-
-                      <h4 style={{ fontSize:15, fontWeight:900, color:'var(--text-heading)', margin:'0 0 10px' }}>
-                        {r.tier}
-                      </h4>
-
-                      <ul style={{ paddingLeft:0, listStyle:'none', margin:'0 0 14px', display:'flex', flexDirection:'column', gap:6 }}>
-                        {r.perks.map((p, pIdx) => (
-                          <li key={pIdx} style={{ fontSize:12, color: isUnlocked ? 'var(--text-color)' : 'var(--text-muted)', display:'flex', alignItems:'center', gap:6, opacity: isUnlocked ? 1 : 0.65 }}>
-                            <span>{p}</span>
-                          </li>
-                        ))}
-                      </ul>
-
-                      {/* Progress bar if locked */}
-                      {!isUnlocked ? (
-                        <div>
-                          <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'var(--text-muted)', marginBottom:4 }}>
-                            <span>Unlock Progress</span>
-                            <span>{neededXp.toLocaleString()} XP needed</span>
-                          </div>
-                          <div style={{ height:4, borderRadius:99, background:'var(--card-border)', overflow:'hidden' }}>
-                            <div style={{ height:'100%', width:`${progressPct}%`, background: r.color, borderRadius:99 }} />
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ textAlign:'center', paddingTop:4 }}>
-                          <span style={{ fontSize:11, fontWeight:800, color: r.color, background: r.color + '20', padding:'4px 12px', borderRadius:10, display:'inline-block' }}>
-                            🎉 Perk Active &amp; Applied
-                          </span>
-                        </div>
-                      )}
-                    </motion.div>
-                  )
-                })}
-              </div>
-            </div>
-          </motion.div>
 
           {/* ══ GITHUB CARD ════════════════════════════════════════ */}
           <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.2 }}>
@@ -610,7 +475,7 @@ export default function ProfilePage() {
                   <button onClick={() => setGhExpanded(e => !e)}
                     style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
                       padding:'10px 0', background:'none', border:'none', cursor:'pointer',
-                      color:'var(--text-muted)', fontSize:13, fontWeight:700, borderTop:'1px solid var(--card-border)' }}>
+                      color:'var(--text-muted)', fontSize:13, fontWeight:700 }}>
                     <span>Repositories ({ghData.repos?.length || 0})</span>
                     <span style={{ fontSize:10 }}>{ghExpanded ? '▲ Collapse' : '▼ Expand'}</span>
                   </button>
