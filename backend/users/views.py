@@ -412,12 +412,19 @@ class GoogleLoginView(APIView):
     def post(self, request):
         token = request.data.get('token')
         if not token:
+            print("[GoogleLoginView Error] Token missing in request")
             return Response({'error': 'Token is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validate token with Google tokeninfo endpoint
-        response = requests.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={token}")
+        try:
+            response = requests.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={token}", timeout=10)
+        except Exception as e:
+            print(f"[GoogleLoginView Error] Failed to connect to Google: {str(e)}")
+            return Response({'error': f'Failed to connect to Google authentication server: {str(e)}'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
         if response.status_code != 200:
-            return Response({'error': 'Invalid Google token.'}, status=status.HTTP_400_BAD_REQUEST)
+            print(f"[GoogleLoginView Error] Google token validation failed ({response.status_code}): {response.text}")
+            return Response({'error': f'Invalid or expired Google token (Code {response.status_code}).'}, status=status.HTTP_400_BAD_REQUEST)
 
         token_info = response.json()
         
@@ -425,11 +432,13 @@ class GoogleLoginView(APIView):
         client_id = getattr(django_settings, 'GOOGLE_CLIENT_ID', '262401890252-9rvc6los0skfju4i5om4jqvqnnlj606p.apps.googleusercontent.com')
         aud = token_info.get('aud')
         if aud != client_id:
-            return Response({'error': 'Audience mismatch. Invalid Client ID.'}, status=status.HTTP_400_BAD_REQUEST)
+            print(f"[GoogleLoginView Error] Audience mismatch. Token aud: '{aud}', Server client_id: '{client_id}'")
+            return Response({'error': 'Audience mismatch. Client ID does not match expected client ID.'}, status=status.HTTP_400_BAD_REQUEST)
 
         email = token_info.get('email')
         if not email:
-            return Response({'error': 'Google account email not found.'}, status=status.HTTP_400_BAD_REQUEST)
+            print("[GoogleLoginView Error] Email missing in Google token_info")
+            return Response({'error': 'Google account email not found in token.'}, status=status.HTTP_400_BAD_REQUEST)
 
         full_name = token_info.get('name') or email.split('@')[0]
 
@@ -445,10 +454,13 @@ class GoogleLoginView(APIView):
         if created:
             user.set_unusable_password()
             user.save()
-            UserProfile.objects.create(user=user)
+        
+        # Ensure UserProfile always exists
+        UserProfile.objects.get_or_create(user=user)
 
         refresh = RefreshToken.for_user(user)
         
+        print(f"[GoogleLoginView Success] User authenticated: {email}")
         return Response({
             'user': UserSerializer(user).data,
             'tokens': {
@@ -456,3 +468,4 @@ class GoogleLoginView(APIView):
                 'refresh': str(refresh),
             }
         }, status=status.HTTP_200_OK)
+

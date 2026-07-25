@@ -107,16 +107,39 @@ export default function RegisterPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    /* global google */
+    const initGoogle = () => {
+      /* global google */
+      if (window.google) {
+        try {
+          google.accounts.id.initialize({
+            client_id: (import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_ID.trim())
+              ? import.meta.env.VITE_GOOGLE_CLIENT_ID.trim()
+              : '262401890252-9rvc6los0skfju4i5om4jqvqnnlj606p.apps.googleusercontent.com',
+            callback: handleGoogleCredentialResponse,
+          })
+          const btn = document.getElementById('google-signup-btn')
+          if (btn) {
+            google.accounts.id.renderButton(
+              btn,
+              { theme: 'outline', size: 'large', width: 348, text: 'signup_with' }
+            )
+          }
+        } catch (e) {
+          console.error("Google Auth initialization error:", e)
+        }
+      }
+    }
+
     if (window.google) {
-      google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '262401890252-9rvc6los0skfju4i5om4jqvqnnlj606p.apps.googleusercontent.com',
-        callback: handleGoogleCredentialResponse,
-      })
-      google.accounts.id.renderButton(
-        document.getElementById('google-signup-btn'),
-        { theme: 'outline', size: 'large', width: 348, text: 'signup_with' }
-      )
+      initGoogle()
+    } else {
+      const timer = setInterval(() => {
+        if (window.google) {
+          initGoogle()
+          clearInterval(timer)
+        }
+      }, 200)
+      return () => clearInterval(timer)
     }
   }, [])
 
@@ -126,7 +149,8 @@ export default function RegisterPage() {
       await loginWithGoogle(response.credential)
       navigate('/challenges')
     } catch (err) {
-      setErrors({ general: 'Google signup failed. Please try again.' })
+      const msg = err.response?.data?.error || 'Google signup failed. Please try again.'
+      setErrors({ general: msg })
     } finally {
       setLoading(false)
     }

@@ -159,8 +159,15 @@ SIMPLE_JWT = {
 }
 
 # CORS & Security Headers
-_default_cors = 'http://localhost:5173,http://127.0.0.1:5173,https://nexora-final-6x57.onrender.com'
+CORS_ALLOW_ALL_ORIGINS = True
+_default_cors = 'http://localhost:5173,http://127.0.0.1:5173,https://nexora-final-6x57.onrender.com,https://nexora-backend-v4k6.onrender.com'
 CORS_ALLOWED_ORIGINS = [o.strip() for o in os.getenv('CORS_ALLOWED_ORIGINS', _default_cors).split(',') if o.strip()]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+    r"^https://.*\.onrender\.com$",
+    r"^http://localhost:\d+$",
+    r"^http://127\.0\.0\.1:\d+$",
+]
 CORS_ALLOW_CREDENTIALS = True
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 

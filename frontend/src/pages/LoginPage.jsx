@@ -95,16 +95,39 @@ export default function LoginPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    /* global google */
+    const initGoogle = () => {
+      /* global google */
+      if (window.google) {
+        try {
+          google.accounts.id.initialize({
+            client_id: (import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_ID.trim())
+              ? import.meta.env.VITE_GOOGLE_CLIENT_ID.trim()
+              : '262401890252-9rvc6los0skfju4i5om4jqvqnnlj606p.apps.googleusercontent.com',
+            callback: handleGoogleCredentialResponse,
+          })
+          const btn = document.getElementById('google-signin-btn')
+          if (btn) {
+            google.accounts.id.renderButton(
+              btn,
+              { theme: 'outline', size: 'large', width: 348, text: 'signin_with' }
+            )
+          }
+        } catch (e) {
+          console.error("Google Auth initialization error:", e)
+        }
+      }
+    }
+
     if (window.google) {
-      google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '262401890252-9rvc6los0skfju4i5om4jqvqnnlj606p.apps.googleusercontent.com',
-        callback: handleGoogleCredentialResponse,
-      })
-      google.accounts.id.renderButton(
-        document.getElementById('google-signin-btn'),
-        { theme: 'outline', size: 'large', width: 348, text: 'signin_with' }
-      )
+      initGoogle()
+    } else {
+      const timer = setInterval(() => {
+        if (window.google) {
+          initGoogle()
+          clearInterval(timer)
+        }
+      }, 200)
+      return () => clearInterval(timer)
     }
   }, [])
 
@@ -116,7 +139,9 @@ export default function LoginPage() {
       sessionStorage.removeItem('nexora_redirect_after_login')
       navigate(redirectTo, { replace: true })
     } catch (err) {
-      setErrors({ general: 'Google sign-in failed. Please try again.' })
+      console.error("[Google Auth Error]:", err)
+      const msg = err.response?.data?.error || err.message || 'Google sign-in failed. Please try again.'
+      setErrors({ general: msg })
     } finally {
       setLoading(false)
     }
