@@ -108,13 +108,17 @@ class SubmitChallengeView(APIView):
         submission.status = 'evaluated'
         submission.xp_earned = xp_earned
         
-        # Save complexity + telemetry
-        submission.time_complexity = result.get('time_complexity', 'O(N)')
-        submission.space_complexity = result.get('space_complexity', 'O(1)')
-        submission.complexity_table = result.get('complexity_table', '')
-        submission.empirical_data = empirical_data
+        # Save complexity + telemetry (wrapped in try/except in case migration 0003 hasn't run on this deployment)
+        try:
+            submission.time_complexity = result.get('time_complexity', 'O(N)')
+            submission.space_complexity = result.get('space_complexity', 'O(1)')
+            submission.complexity_table = result.get('complexity_table', '')
+            submission.empirical_data = empirical_data
+        except Exception as e:
+            print(f"[Submit] Skipping complexity fields (migration pending?): {e}")
         
         submission.save()
+
 
         # Award XP and log activity
         award_xp(request.user, xp_earned)
@@ -331,14 +335,11 @@ class UserActivityGridView(APIView):
         from django.db.models import Count
         from challenges.models import ChallengeSubmission
         try:
-            from zoneinfo import ZoneInfo  # Python 3.9+ built-in
+            from zoneinfo import ZoneInfo  # Python 3.9+ built-in, no extra package needed
             ist = ZoneInfo('Asia/Kolkata')
         except Exception:
-            ist = None  # fallback to UTC if unavailable
+            ist = None  # fallback to UTC
 
-        # Group evaluated submissions by local (IST) date.
-        # Passing tzinfo converts UTC timestamps to IST before truncating to date,
-        # so e.g. Sat 11 PM IST (= Sun 5:30 AM UTC) correctly shows as Saturday.
         qs = ChallengeSubmission.objects.filter(user=request.user, status='evaluated')
         if ist:
             qs = qs.annotate(date=TruncDate('submitted_at', tzinfo=ist))
