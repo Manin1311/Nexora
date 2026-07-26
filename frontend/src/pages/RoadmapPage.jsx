@@ -366,6 +366,8 @@ export default function RoadmapPage() {
       } else {
         setRoadmap(data)
         setWizardStep('active')
+        // Sync the role selector to the current roadmap's target role
+        if (data.target_role) setSelectedRole(data.target_role)
         // Auto-expand first incomplete week
         const firstIncomplete = data.weeks?.find(w => !w.is_completed)
         if (firstIncomplete) {

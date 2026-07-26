@@ -27,11 +27,13 @@ def build_user_full_skill_profile(user) -> dict:
     completed_challenges_count = 0
     try:
         from challenges.models import ChallengeSubmission
-        completed_challenges_count = ChallengeSubmission.objects.filter(
-            user=user, status='passed'
-        ).values('challenge_id').distinct().count()
+        sub_qs = ChallengeSubmission.objects.filter(user=user)
+        completed_challenges_count = sub_qs.values('challenge_id').distinct().count()
+        if completed_challenges_count == 0 and hasattr(user, 'submissions'):
+            completed_challenges_count = user.submissions.count()
     except Exception:
-        pass
+        if hasattr(user, 'submissions'):
+            completed_challenges_count = user.submissions.count()
 
     # 3. Interview Ratings
     avg_interview_score = 0
@@ -102,10 +104,12 @@ def get_opportunity_recommendations(user) -> dict:
     """
     Queries Groq / Gemini with full profile context to output high-value career role matches,
     match percentages, readiness levels, why recommended rationale, missing skills, and next steps.
+    For fresh accounts with 0 completed activities, returns score 0.
+    For active accounts with completed challenges/XP, calculates actual real-time match scores.
     """
     profile = build_user_full_skill_profile(user)
 
-    # For fresh accounts with no activity data across platform
+    # 1. Fresh account with zero completed activities across platform
     if not profile['has_activity']:
         return {
             "overall_readiness_score": 0,
@@ -151,12 +155,21 @@ def get_opportunity_recommendations(user) -> dict:
             ]
         }
 
+    # 2. Active account with completed activities — calculate real dynamic score
+    challenges_score = min(40, profile['completed_challenges_count'] * 15)
+    interview_score = min(25, int(profile['avg_interview_score'] * 0.25)) if profile['interview_count'] > 0 else 0
+    project_score = min(20, profile['project_count'] * 10)
+    roadmap_score = min(15, profile['roadmap_completed_count'] * 5)
+    xp_score = min(20, int(profile['xp'] / 15))
+
+    calc_readiness = min(98, max(25, challenges_score + interview_score + project_score + roadmap_score + xp_score))
+
     prompt = f"""You are an elite Tech Career Strategist and AI Opportunity Matcher for Nexora platform.
 Analyze this developer's complete 8-module profile:
 
 Developer Profile Data:
 - Name: {profile['name']}
-- Dev Rank: {profile['rank'].capitalize()} | Total XP: {profile['xp']}
+- Dev Rank: {profile['rank'].capitalize()}
 - Challenges Solved: {profile['completed_challenges_count']}
 - Mock Interviews Completed: {profile['interview_count']} (Average Score: {profile['avg_interview_score'] if profile['interview_count'] > 0 else 'N/A'}/100)
 - Showcase Projects: {profile['project_count']} (Tech Stack: {', '.join(profile['project_tech_stack']) or 'General Software Development'})
@@ -164,6 +177,8 @@ Developer Profile Data:
 - Skill Competencies: {json.dumps(profile['skills_mastery'])}
 - Strengths: {', '.join(profile['strengths']) or 'Building platform foundation'}
 - Target Focus / Weaknesses: {', '.join(profile['weaknesses']) or 'System Design, Caching'}
+
+RULE: Do NOT mention "XP" or numeric XP points anywhere in your output. Refer to rank, challenges solved, projects, or readiness level instead.
 
 Return a strict JSON object (and ONLY JSON, no extra text or markdown formatting outside JSON) with this exact schema:
 {{

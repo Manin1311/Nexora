@@ -59,8 +59,8 @@ const ACTIVITY_ICONS = {
   streak_milestone:    '🔥',
 }
 
-const TABS = ['overview','ai_memory','activity','achievements','certificates']
-const TAB_ICONS = { overview:'📊', ai_memory:'🧠 AI Memory Engine', activity:'⏱️', achievements:'⭐', certificates:'🏅' }
+const TABS = ['overview','activity','achievements','certificates']
+const TAB_ICONS = { overview:'📊', activity:'⏱️', achievements:'⭐', certificates:'🏅' }
 
 const stagger = {
   container: { hidden:{}, show:{ transition:{ staggerChildren:0.06 } } },
@@ -74,7 +74,6 @@ export default function ProgressPage() {
   const [activities,   setActivities]   = useState([])
   const [achievements, setAchievements] = useState([])
   const [certificates, setCertificates] = useState([])
-  const [aiMemory,     setAiMemory]     = useState(null)
   const [loading,      setLoading]      = useState(true)
   const [activeTab,    setActiveTab]    = useState('overview')
 
@@ -84,13 +83,11 @@ export default function ProgressPage() {
       progressService.getActivity(),
       progressService.getAchievements(),
       progressService.getCertificates(),
-      api.get('/auth/memory/').catch(() => ({ data: null })),
-    ]).then(([s, a, ach, cert, mem]) => {
+    ]).then(([s, a, ach, cert]) => {
       setSummary(s.data)
       setActivities(a.data.results || a.data)
       setAchievements(ach.data.results || ach.data)
       setCertificates(cert.data.results || cert.data)
-      if (mem?.data) setAiMemory(mem.data)
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
@@ -377,107 +374,7 @@ export default function ProgressPage() {
             </motion.div>
           )}
 
-          {/* AI MEMORY ENGINE TAB */}
-          {activeTab === 'ai_memory' && (
-            <motion.div key="ai_memory" initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0 }}>
-              <div style={{ display: 'grid', gap: 24 }}>
-                {/* AI Summary Banner */}
-                <div style={{ ...S.card, padding: 28, background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05))', border: '1px solid rgba(99,102,241,0.25)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                      <Brain size={22} />
-                    </div>
-                    <div>
-                      <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-heading)', margin: 0 }}>
-                        Intelligent AI Memory Engine
-                      </h3>
-                      <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-                        Active long-term memory across Challenges, Code Arena, Interview Lab, Roadmap, Code Review, Resume Hub, Revision Hub, Showcase, Progress & Dev Mentor.
-                      </p>
-                    </div>
-                  </div>
 
-                  <div style={{ padding: 16, borderRadius: 14, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', marginTop: 16 }}>
-                    <p style={{ fontSize: 13.5, color: 'var(--text-heading)', lineHeight: 1.7, margin: 0 }}>
-                      {aiMemory?.ai_summary || "Developer profile initialized. The AI Memory Engine is continuously learning from your coding style, interview responses, and roadmap progress to power Dev Mentor."}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Topic Mastery & Skill Matrix */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
-                  <div style={{ ...S.card, padding: 24 }}>
-                    <h4 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-heading)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      🎯 Topic Mastery & Competency
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                      {Object.entries(aiMemory?.skills_mastery || {
-                        'Data Structures & Algorithms': 60,
-                        'Frontend & React': 70,
-                        'Backend & Python/Node': 65,
-                        'System Design': 50,
-                        'Database & SQL': 55,
-                        'Clean Code & Testing': 60
-                      }).map(([topic, level]) => (
-                        <div key={topic}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, fontWeight: 700, marginBottom: 6, color: 'var(--text-heading)' }}>
-                            <span>{topic}</span>
-                            <span style={{ color: '#818cf8' }}>{level}%</span>
-                          </div>
-                          <div style={{ height: 6, borderRadius: 3, background: 'var(--scrollbar-track)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${level}%`, background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', borderRadius: 3, transition: 'width 0.4s ease' }} />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Strengths & Weaknesses */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                    <div style={{ ...S.card, padding: 24, border: '1px solid rgba(52,211,153,0.25)', background: 'rgba(52,211,153,0.03)' }}>
-                      <h4 style={{ fontSize: 14, fontWeight: 800, color: '#34d399', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        ⚡ Verified Technical Strengths
-                      </h4>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        {(aiMemory?.strengths || ["Clean Code Practices", "Component Architecture", "Problem Solving"]).map((str, idx) => (
-                          <span key={idx} style={{ fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20, background: 'rgba(52,211,153,0.12)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)' }}>
-                            ✓ {str}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div style={{ ...S.card, padding: 24, border: '1px solid rgba(251,113,133,0.25)', background: 'rgba(251,113,133,0.03)' }}>
-                      <h4 style={{ fontSize: 14, fontWeight: 800, color: '#fb7185', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        🎯 Target Improvement Areas
-                      </h4>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                        {(aiMemory?.weaknesses || ["Graph Algorithms", "Database Query Optimization", "Concurrency"]).map((weak, idx) => (
-                          <span key={idx} style={{ fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20, background: 'rgba(251,113,133,0.12)', color: '#fb7185', border: '1px solid rgba(251,113,133,0.3)' }}>
-                            Focus: {weak}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Recurring Coding Mistakes & Patterns */}
-                <div style={{ ...S.card, padding: 24, border: '1px solid rgba(251,191,36,0.25)', background: 'rgba(251,191,36,0.03)' }}>
-                  <h4 style={{ fontSize: 14, fontWeight: 800, color: '#fbbf24', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    ⚠️ Recurring Coding Patterns & Common Mistakes
-                  </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
-                    {(aiMemory?.recurring_mistakes || ["Boundary value checking in loops", "Null/undefined dereference handling"]).map((mistake, idx) => (
-                      <div key={idx} style={{ padding: 12, borderRadius: 12, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', fontSize: 12.5, color: 'var(--text-heading)', fontWeight: 600 }}>
-                        🔍 {mistake}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
 
           {/* ACTIVITY (TIMELINE STREAM - FULL HISTORICAL VIEW) */}
           {activeTab === 'activity' && (
