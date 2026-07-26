@@ -514,7 +514,6 @@ You have deep expertise in web development, system design, algorithms, and caree
 Current user context:
 - Name: {user_context.get('name', 'Developer')}
 - Rank: {user_context.get('rank', 'Explorer')}
-- Total XP: {user_context.get('xp', 0)}
 - Streak Days: {user_context.get('streak_days', 0)}
 - Challenges Completed: {user_context.get('challenges_completed', 0)}
 - Recent Activity: {user_context.get('recent_activity', 'Getting started')}
@@ -525,7 +524,8 @@ Guidelines:
 - Give personalized, actionable advice based on their persistent AI Memory and learning journey
 - Reference their strengths, weak areas, or recurring coding mistakes naturally when helpful
 - Keep responses concise (2-4 paragraphs max) unless asked for detail
-- Use markdown formatting for code examples when helpful"""
+- Use markdown formatting for code examples when helpful
+- ABSOLUTE MANDATORY RULE: NEVER mention "XP", "XP points", or numeric XP values in any response. Refer to developer rank, challenges completed, streak days, or learning progress instead."""
 
     messages = [{"role": "system", "content": system}]
     for msg in conversation_history[-10:]:
@@ -1487,12 +1487,14 @@ def compile_revision_guide(company: str, role: str, resume_skills: list, weak_to
     user resume skills, weak topics, and failed questions history.
     """
     system = (
-        "You are an elite developer career coach. Compile dynamic, custom-tailored last-minute study sheets "
-        "and active recall flashcards. Return ONLY a valid JSON object."
+        f"You are an elite developer career coach specializing exclusively in {company} technical hiring standards for {role} positions. "
+        f"Compile dynamic, custom-tailored last-minute study sheets and active recall flashcards specifically for {company}. "
+        f"STRICT RULE: You MUST ONLY refer to {company} in your response. NEVER mention other companies like Google or Amazon unless the user target is explicitly that company. "
+        "Return ONLY a valid JSON object."
     )
-    prompt = f"""Generate a personalized revision study guide for candidate preparing for:
-Company: {company}
-Role: {role}
+    prompt = f"""Generate a highly specific, customized revision study guide for a candidate preparing for:
+Target Company: {company}
+Target Role: {role}
 
 CANDIDATE HISTORY & PROFILE DATA:
 - Candidate Resume Stack: {', '.join(resume_skills) if resume_skills else 'None declared'}
@@ -1501,55 +1503,122 @@ CANDIDATE HISTORY & PROFILE DATA:
 {chr(10).join(f'  * Q: {q}' for q in failed_questions) if failed_questions else '  * No past mistakes logged'}
 
 INSTRUCTIONS:
-1. 'company_focus': Outline what {company} values most in technical loops for {role} (e.g. system design patterns, algorithm runtime).
-2. 'resume_bridge': A brief 1-2 sentence cheat sheet mapping their current resume stack to the company's preferences.
-3. 'mistake_corrections': If they have past mock mistakes, explain the exact technical template solution for them in 1-2 short sentences.
-4. 'short_summary': Provide an array of 3-5 concise, bullet-pointed high-yield quick revision notes/formulas/facts tailored to the candidate's focus area and company values.
-5. 'flashcards': Create at least 8 interactive active recall flashcards (exactly 2 for each of the 4 loop stages: Round 1 = Resume Screen, Round 2 = Algorithms/DSA, Round 3 = System Design, Round 4 = Behavioral STAR) specifically targeted to help them pass {company}'s loops.
+1. 'company_focus': Outline what {company} values most in technical loops for a {role} candidate (e.g., specific architectural priorities, scalability standards, engineering culture).
+2. 'resume_bridge': A 1-2 sentence cheat sheet mapping their current resume stack directly to {company}'s specific preferences for {role}.
+3. 'mistake_corrections': If they have past mock mistakes, explain the exact technical solution for them in 1-2 short sentences.
+4. 'short_summary': Provide an array of 3-5 concise, bullet-pointed high-yield quick revision notes/formulas/facts tailored to {company}'s loops for a {role}.
+5. 'flashcards': Create at least 8 interactive active recall flashcards (exactly 2 for each of the 4 loop stages: Round 1 = Resume Screen, Round 2 = Algorithms/DSA, Round 3 = System Design, Round 4 = Behavioral STAR) specifically targeted to help them pass {company}'s {role} loops.
+
+CRITICAL MANDATORY REQUIREMENT: Your output MUST be 100% uniquely specific to {company} and {role}. Do NOT output generic templates. {company}'s technical expectations, coding style, and behavioral principles are DIFFERENT from other companies.
 
 Return ONLY a JSON object (no markdown, no preamble) with this exact structure:
 {{
-  "company_focus": "<text description>",
-  "resume_bridge": "<text description>",
+  "company_focus": "<specific text for {company} {role}>",
+  "resume_bridge": "<specific text for {company} {role}>",
   "mistake_corrections": ["<correction 1>", "<correction 2>"],
-  "short_summary": ["<key revision summary point 1>", "<key revision summary point 2>", "<key revision summary point 3>"],
+  "short_summary": ["<key revision point 1 for {company}>", "<key revision point 2 for {role}>", "<key revision point 3>"],
   "flashcards": [
     {{"front": "<question/term>", "back": "<concise explanation>", "category": "<topic name>", "round": 2}}
   ]
 }}"""
 
     try:
-        text = _call_groq(prompt, system=system, temperature=0.5)
+        text = _call_groq(prompt, system=system, temperature=0.85)
         text = re.sub(r'^```(?:json)?\s*', '', text.strip())
         text = re.sub(r'\s*```$', '', text)
         match = re.search(r'\{.*\}', text, re.DOTALL)
         if match:
-            return json.loads(match.group())
+            res = json.loads(match.group())
+            if isinstance(res, dict):
+                return res
     except Exception as e:
         print(f"[AI] compile_revision_guide failed: {e}")
 
-    # Solid generic fallback
+    # Company-tailored rich dictionary fallback
+    company_data = {
+        "Google": {
+            "company_focus": "Google prioritizes scalable distributed systems (MapReduce/Spanner), Big-O algorithmic efficiency, protocol buffers (gRPC), Spanner database consistency, and Googley collaborative culture.",
+            "resume_bridge": f"Highlight how your proficiency in {', '.join(resume_skills[:4]) if resume_skills else 'core software development'} directly aligns with Google's technical stack for {role} positions.",
+            "short_summary": [
+                f"Google {role} Core Blueprint: Master Big-O space/time complexity, graph traversals, and scalable RPC interface design.",
+                "MapReduce & Spanner Scale: Understand global database consistency, TrueTime atomic clock synchronization, and consistent hashing ring partitions.",
+                "Googliness Attributes: Demonstrate intellectual humility, proactive technical ownership, and navigating ambiguous requirements."
+            ]
+        },
+        "Microsoft": {
+            "company_focus": "Microsoft prioritizes enterprise system reliability, Azure cloud integrations (Cosmos DB, Azure Service Bus), ASP.NET Core & TypeScript ecosystems, and Growth Mindset team collaboration.",
+            "resume_bridge": f"Highlight how your skills in {', '.join(resume_skills[:4]) if resume_skills else 'software engineering'} map to Microsoft's enterprise architecture requirements for {role} roles.",
+            "short_summary": [
+                f"Microsoft {role} Core Blueprint: Focus on clean SOLID object-oriented design, async/await concurrency, and ASP.NET Core middleware pipelines.",
+                "Cosmos DB & Azure Architecture: Understand multi-master global database replication, RBAC enterprise security, and microservice isolation.",
+                "Growth Mindset Culture: Demonstrate adaptability, taking constructive feedback during coding loops, and continuous learning."
+            ]
+        },
+        "Amazon": {
+            "company_focus": "Amazon prioritizes Operational Excellence, AWS cloud scalability (DynamoDB single-table sharding, SQS queues, Lambda), p99 latency SLAs, and strict alignment with Amazon's 16 Leadership Principles.",
+            "resume_bridge": f"Map your experience in {', '.join(resume_skills[:4]) if resume_skills else 'software development'} to Amazon's AWS cloud architecture and Customer Obsession standards for {role} roles.",
+            "short_summary": [
+                f"Amazon {role} Core Blueprint: Work backwards from customer requirements, design modular microservices, and optimize p99 latency.",
+                "AWS & DynamoDB Scale: Master partition key strategies, SQS message decoupling, and serverless concurrency management.",
+                "Leadership Principles: Prepare STAR stories highlighting Customer Obsession, Ownership, Bias for Action, and Frugality."
+            ]
+        },
+        "Netflix": {
+            "company_focus": "Netflix prioritizes microservice fault tolerance, Chaos Engineering resilience, high-concurrency Java/RxJava video telemetry pipelines, Cassandra NoSQL sharding, and Freedom & Responsibility culture.",
+            "resume_bridge": f"Map your technical stack in {', '.join(resume_skills[:4]) if resume_skills else 'software engineering'} to Netflix's high-throughput video streaming infrastructure for {role} candidates.",
+            "short_summary": [
+                f"Netflix {role} Core Blueprint: Design resilient, decoupled streaming pipelines with Hystrix/Resilience4j circuit breakers and client-side load balancing.",
+                "Chaos Engineering: Build graceful degradation strategies for microservices during regional infrastructure outages.",
+                "Freedom & Responsibility: Demonstrate high individual ownership, direct technical communication, and self-directed execution."
+            ]
+        },
+        "Meta": {
+            "company_focus": "Meta prioritizes rapid problem-solving execution speed (solving 2 coding problems in 45 min), GraphQL/React UI performance, Relay state management, RocksDB storage engines, and Move Fast culture.",
+            "resume_bridge": f"Highlight how your skills in {', '.join(resume_skills[:4]) if resume_skills else 'software development'} align with Meta's high-velocity product engineering standards for {role} positions.",
+            "short_summary": [
+                f"Meta {role} Core Blueprint: Solve 2 LeetCode Medium/Hard algorithmic problems cleanly within 45 minutes with rapid dry-running.",
+                "GraphQL & UI Architecture: Master optimistic UI updates, normalized client-side state, and query batching.",
+                "Move Fast Culture: Demonstrate rapid iteration, unblocking team bottlenecks, and pragmatic engineering execution."
+            ]
+        },
+        "Apple": {
+            "company_focus": "Apple prioritizes low-level system performance, C++/Swift memory management (ARC), thread safety, hardware-software integration, privacy-first architecture, and extreme attention to detail.",
+            "resume_bridge": f"Map your background in {', '.join(resume_skills[:4]) if resume_skills else 'software development'} to Apple's low-level performance and privacy standards for {role} roles.",
+            "short_summary": [
+                f"Apple {role} Core Blueprint: Manage CPU cache lines, thread pools, and memory layout to eliminate latency spikes.",
+                "Privacy-First Architecture: Design on-device computations and secure enclave integrations protecting user data.",
+                "Craftsmanship & Detail: Demonstrate meticulous attention to code quality, edge-case handling, and elegant API interfaces."
+            ]
+        },
+        "Stripe": {
+            "company_focus": "Stripe prioritizes financial-grade API idempotency, ACID ledger database consistency, developer ergonomics (SDKs & REST docs), zero-downtime database migrations, and robust error handling.",
+            "resume_bridge": f"Highlight how your experience in {', '.join(resume_skills[:4]) if resume_skills else 'software engineering'} directly maps to Stripe's financial infrastructure requirements for {role} positions.",
+            "short_summary": [
+                f"Stripe {role} Core Blueprint: Build idempotent API endpoints using unique idempotency keys to prevent duplicate financial mutations.",
+                "ACID Consistency: Master Postgres multi-table transactions with serializable isolation levels and distributed Saga patterns.",
+                "Developer Ergonomics: Design intuitive, self-describing REST APIs with clear error contracts and SDK compatibility."
+            ]
+        }
+    }
+
+    selected = company_data.get(company, company_data["Google"])
+
     return {
-        "company_focus": f"General engineering practices for {company} loops. Focus heavily on concurrency, REST/gRPC API structures, and scale bottlenecks.",
-        "resume_bridge": f"Leverage your skills in {', '.join(resume_skills[:4]) if resume_skills else 'software development'} to design highly decoupled system layers.",
+        "company_focus": selected["company_focus"],
+        "resume_bridge": selected["resume_bridge"],
         "mistake_corrections": [
             "Explain consistent hashing by walking through ring hashing partitions and virtual nodes.",
             "Compare replication lag bottlenecks across primary-replica databases vs event log streams."
         ],
-        "short_summary": [
-            "Consistent Hashing Partitioning: Distributes data across a ring node map using virtual nodes to prevent server hot-spotting.",
-            "CAP Theorem Trade-Offs: CP systems choose consistency over availability on partition, AP systems choose availability.",
-            "LRU Cache Optimization: Implement with a Doubly Linked List and a Hash Map for fast O(1) query and eviction runtime.",
-            "Indexes runtime limits: B-Trees scale reads/writes at O(log N) whereas Hash indexes scale exact matches at O(1) but lack range query capabilities."
-        ],
+        "short_summary": selected["short_summary"],
         "flashcards": [
-            {"front": "Elevator Pitch (Resume Screen)", "back": "Walk through your background in 60s using chronological flow: Past (experience), Present (skills), and Future (why this role fit).", "category": "Resume Fit", "round": 1},
+            {"front": f"Elevator Pitch for {company}", "back": f"Walk through your technical journey in 60s focusing on how your background fits {company}'s {role} needs.", "category": "Resume Fit", "round": 1},
             {"front": "System Scale Context", "back": "Quantify your achievements (e.g., 'managed 15k QPS', 'improved query latency by 35%', 'reduced cloud spend by $12k/yr').", "category": "HM screening", "round": 1},
             {"front": "LRU Cache Eviction", "back": "Evicts least recently used items. Can be implemented in O(1) time complexity using a Doubly Linked List and a Hash Map.", "category": "Data Structures", "round": 2},
             {"front": "Binary Search template", "back": "Utilized to find elements in sorted space. Loop pattern: while left <= right: mid = left + (right - left) // 2.", "category": "Algorithms", "round": 2},
             {"front": "CAP Theorem", "back": "States that a distributed data store can simultaneously provide at most two of: Consistency, Availability, Partition Tolerance.", "category": "System Design", "round": 3},
             {"front": "Database Sharding", "back": "Horizontal partitioning of database rows across multiple servers based on a shard key to support high read/write throughput.", "category": "Databases", "round": 3},
-            {"front": "Technical Disagreement Resolution", "back": "State conflict neutrally using facts, explain consensus building approach, and how you agreed to disagree and commit.", "category": "Behavioral STAR", "round": 4},
+            {"front": f"Cultural Values at {company}", "back": f"Align behavioral STAR responses with {company}'s core leadership principles and engineering ownership.", "category": "Behavioral STAR", "round": 4},
             {"front": "Handling Ambiguous Requirements", "back": "Clarify design scope, define minimal viable boundaries, align with stakeholders early, and build iterative releases.", "category": "Leadership STAR", "round": 4}
         ]
     }

@@ -989,43 +989,91 @@ Your project solution should include:
         User = get_user_model()
         first_user = User.objects.first()
 
-        if first_user and Project.objects.count() == 0:
+        if first_user:
             sample_projects = [
+                # EASY PROJECTS
                 {
                     'title': 'StudyVerse',
                     'description': 'AI powered platform for students for learning with interactive flashcards, adaptive quiz engines, and study group collaboration spaces.',
                     'github_url': 'https://github.com/example/studyverse',
                     'live_url': 'https://studyverse.demo.com',
-                    'tags': ['react', 'python', 'ai']
+                    'tags': ['easy', 'react', 'python', 'ai']
                 },
+                {
+                    'title': 'DevNotes',
+                    'description': 'Lightweight Markdown Live Previewer & Developer Snippet Manager with syntax highlighting and instant local storage persistence.',
+                    'github_url': 'https://github.com/example/devnotes',
+                    'live_url': 'https://devnotes.demo.com',
+                    'tags': ['easy', 'javascript', 'markdown', 'frontend']
+                },
+                {
+                    'title': 'WeatherFlow',
+                    'description': 'Real-time weather forecast & geolocation analytics dashboard featuring interactive map layers and dynamic weather telemetry.',
+                    'github_url': 'https://github.com/example/weatherflow',
+                    'live_url': 'https://weatherflow.demo.com',
+                    'tags': ['easy', 'react', 'weather-api', 'css']
+                },
+                # MEDIUM PROJECTS
                 {
                     'title': 'SkillBridge',
                     'description': 'SkillBridge is a freelance collaboration platform that connects skilled freelancers directly with clients without unnecessary middlemen. Built to simplify job matching and escrow contracts.',
                     'github_url': 'https://github.com/example/skillbridge',
                     'live_url': 'https://skillbridge.demo.com',
-                    'tags': ['c#', 'dotnet', 'django']
+                    'tags': ['medium', 'django', 'c#', 'rest-api']
                 },
+                {
+                    'title': 'TaskHelix',
+                    'description': 'Real-time Kanban workspace & team task management board with drag-and-drop workflow status, webhooks, and assignment telemetry.',
+                    'github_url': 'https://github.com/example/taskhelix',
+                    'live_url': 'https://taskhelix.demo.com',
+                    'tags': ['medium', 'react', 'node', 'socket.io']
+                },
+                {
+                    'title': 'ChatPulse Engine',
+                    'description': 'High-performance WebSocket multi-room chat server and real-time event notification pipeline built with Python Asyncio.',
+                    'github_url': 'https://github.com/example/chatpulse',
+                    'live_url': 'https://chatpulse.demo.com',
+                    'tags': ['medium', 'python', 'asyncio', 'websockets']
+                },
+                # HARD PROJECTS
                 {
                     'title': 'FairLens',
                     'description': 'FairLens is an AI-powered bias detection and auditing platform that analyzes datasets and model predictions to ensure fairness and compliance with ethical ML standards.',
                     'github_url': 'https://github.com/example/fairlens',
                     'live_url': 'https://fairlens.demo.com',
-                    'tags': ['python', 'machine-learning', 'react']
+                    'tags': ['hard', 'python', 'machine-learning', 'pytorch']
+                },
+                {
+                    'title': 'ApexQueue',
+                    'description': 'Distributed high-throughput async message broker & distributed job queue engine built for low-latency microservice task execution.',
+                    'github_url': 'https://github.com/example/apexqueue',
+                    'live_url': 'https://apexqueue.demo.com',
+                    'tags': ['hard', 'system-design', 'redis', 'distributed']
+                },
+                {
+                    'title': 'CloudScale Engine',
+                    'description': 'Enterprise Kubernetes orchestration blueprint & automated load balancing pipeline with zero-downtime Canary deployment controllers.',
+                    'github_url': 'https://github.com/example/cloudscale',
+                    'live_url': 'https://cloudscale.demo.com',
+                    'tags': ['hard', 'docker', 'kubernetes', 'devops']
                 }
             ]
 
             for sp in sample_projects:
-                proj = Project.objects.create(
-                    user=first_user,
+                proj, created = Project.objects.get_or_create(
                     title=sp['title'],
-                    description=sp['description'],
-                    github_url=sp['github_url'],
-                    live_url=sp['live_url'],
-                    is_featured=True
+                    defaults={
+                        'user': first_user,
+                        'description': sp['description'],
+                        'github_url': sp['github_url'],
+                        'live_url': sp['live_url'],
+                        'is_featured': True
+                    }
                 )
                 for tag_name in sp['tags']:
                     tag_obj, _ = ProjectTag.objects.get_or_create(name=tag_name)
                     proj.tags.add(tag_obj)
-                self.stdout.write(f"  [+] Seeded showcase project: {sp['title']}")
+                if created:
+                    self.stdout.write(f"  [+] Seeded showcase project: {sp['title']}")
 
         self.stdout.write(self.style.SUCCESS('\n[Seed Completed] Seed data completed successfully!'))

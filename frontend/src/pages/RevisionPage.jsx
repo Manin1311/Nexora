@@ -53,20 +53,156 @@ const S = {
   }
 }
 
+const COMPANY_PROFILES = {
+  Google: {
+    focus: "Google loops evaluate Big-O algorithmic speed, MapReduce/Spanner distributed concepts, Go/C++/Java concurrency, and Googley 5 attributes.",
+    blueprint: "Focus on MapReduce data pipelines, Monorepo code standards, Protocol Buffers (gRPC), Spanner database consistency, and micro-optimization under high QPS.",
+    signals: [
+      { label: "Algorithmic Precision", desc: "Demonstrating fast discrete math and Big-O runtime analysis under time constraints." },
+      { label: "Spanner & Distributed Scale", desc: "Understanding TrueTime atomic clocks, Multi-Region replication, and consistent hashing." },
+      { label: "Googliness & Ownership", desc: "Navigating ambiguous requirements with intellectual humility and collaborative problem-solving." }
+    ],
+    redFlags: [
+      { flag: "Big-O Ignorance", detail: "Coding without analyzing space and time complexity bounds before implementation." },
+      { flag: "Scale Oversight", detail: "Failing to ask about scale boundaries (e.g. 100M daily active users)." },
+      { flag: "Rigid Thinking", detail: "Defending a single solution without exploring alternative algorithmic trade-offs." }
+    ]
+  },
+  Netflix: {
+    focus: "Netflix loops evaluate microservice fault tolerance, Chaos Engineering resilience, high-concurrency Java/RxJava streaming pipelines, and Freedom & Responsibility culture.",
+    blueprint: "Focus on client-side load balancing (Ribbon/Eureka), Hystrix/Resilience4j circuit breakers, Cassandra NoSQL sharding, and real-time telemetry.",
+    signals: [
+      { label: "Chaos Engineering", desc: "Designing systems that gracefully degrade during regional dependency outages." },
+      { label: "High-Throughput Streaming", desc: "Optimizing video playback telemetry, async event loops, and Cassandra row partitioning." },
+      { label: "Freedom & Responsibility", desc: "Demonstrating high individual ownership, direct feedback, and self-management." }
+    ],
+    redFlags: [
+      { flag: "Single Point of Failure", detail: "Designing microservices without circuit breakers or fallback degraded UI states." },
+      { flag: "Tight Coupling", detail: "Creating synchronous cascading dependencies across streaming microservices." },
+      { flag: "Blamestorming", detail: "Attributing past failures to cross-team friction rather than systemic resilience gaps." }
+    ]
+  },
+  Amazon: {
+    focus: "Amazon loops evaluate deep Operational Excellence, AWS cloud architecture, DynamoDB single-table sharding, and strict alignment with Amazon's 16 Leadership Principles.",
+    blueprint: "Focus on DynamoDB partition key design, SQS message queues, Lambda serverless concurrency limits, and Customer Obsession STAR stories.",
+    signals: [
+      { label: "Customer Obsession", desc: "Working backwards from customer pain points to drive technical architectural choices." },
+      { label: "Operational Excellence", desc: "Understanding p99 latency metrics, CloudWatch alarms, and post-mortem root cause analysis." },
+      { label: "Frugality & Scale", desc: "Optimizing cloud resource consumption and AWS infrastructure costs." }
+    ],
+    redFlags: [
+      { flag: "Lack of Ownership", detail: "Not taking direct personal responsibility for past production incidents." },
+      { flag: "Over-Engineering", detail: "Building unnecessarily complex solutions instead of simple, scalable architectures." },
+      { flag: "Superficial Metrics", detail: "Discussing system scale without quoting concrete numerical benchmarks." }
+    ]
+  },
+  Meta: {
+    focus: "Meta loops evaluate rapid problem-solving speed (2 coding questions in 45 min), GraphQL/React UI performance, Hack/C++ backend services, and Move Fast culture.",
+    blueprint: "Focus on fast recursive/iterative DSA execution, Relay/GraphQL query batching, RocksDB storage engines, and high-frequency real-time feed architectures.",
+    signals: [
+      { label: "Rapid DSA Execution", desc: "Solving 2 algorithmic problems cleanly within a single 45-minute interview block." },
+      { label: "Product & UI Architecture", desc: "Understanding optimistic updates, GraphQL query caching, and normalized client state." },
+      { label: "Move Fast", desc: "Unblocking team dependencies quickly and executing with pragmatic iteration." }
+    ],
+    redFlags: [
+      { flag: "Slow Coding Velocity", detail: "Spending more than 20 minutes on a single medium DSA problem." },
+      { flag: "Analysis Paralysis", detail: "Over-thinking initial code structure instead of iteratively refining the implementation." },
+      { flag: "Ignoring Client Scale", detail: "Failing to consider mobile memory constraints and network payload serialization." }
+    ]
+  },
+  Microsoft: {
+    focus: "Microsoft loops evaluate enterprise system reliability, Azure cloud integrations, C#/.NET & TypeScript ecosystems, and growth mindset collaboration.",
+    blueprint: "Focus on Cosmos DB multi-master replication, ASP.NET Core middleware pipelines, enterprise security/RBAC, and clean SOLID OOP design.",
+    signals: [
+      { label: "SOLID Architecture", desc: "Designing clean, modular interfaces with clear separation of concerns." },
+      { label: "Growth Mindset", desc: "Embracing constructive feedback during the interview and iterating rapidly." },
+      { label: "Enterprise Security", desc: "Incorporating OAuth2/OIDC, RBAC, and encryption standards into system blueprints." }
+    ],
+    redFlags: [
+      { flag: "Tightly-Coupled Monoliths", detail: "Creating rigid class hierarchies that violate interface segregation." },
+      { flag: "Defensiveness", detail: "Reacting negatively when the interviewer suggests an alternative design approach." },
+      { flag: "Neglecting Security", detail: "Storing credentials or tokens in plain text without secret vaults." }
+    ]
+  },
+  Apple: {
+    focus: "Apple loops evaluate low-level system performance, C++/Swift memory management, hardware-software integration, and extreme attention to detail.",
+    blueprint: "Focus on ARC/manual memory allocation, thread safety, Metal/Core ML optimizations, zero-downtime client sync, and privacy-first architectures.",
+    signals: [
+      { label: "Low-Level Efficiency", desc: "Managing CPU cache lines, thread pools, and memory layout to prevent latency spikes." },
+      { label: "Privacy-First Design", desc: "Building on-device computation features that protect user data integrity." },
+      { label: "Craftsmanship & Detail", desc: "Demonstrating meticulous attention to code readability, edge cases, and API design." }
+    ],
+    redFlags: [
+      { flag: "Memory Leaks", detail: "Failing to account for retain cycles, race conditions, or unmanaged thread locks." },
+      { flag: "Casual Security Stance", detail: "Sending unencrypted telemetry data over public networks." },
+      { flag: "Unpolished Code", detail: "Writing messy, poorly named functions without clear parameter boundaries." }
+    ]
+  },
+  Stripe: {
+    focus: "Stripe loops evaluate financial-grade API idempotency, ACID ledger database consistency, developer experience, and zero-downtime deployments.",
+    blueprint: "Focus on idempotency keys, distributed transaction locks (Saga pattern), Postgres serializable isolation levels, and developer-friendly REST/SDK design.",
+    signals: [
+      { label: "Financial Idempotency", desc: "Guaranteeing that duplicate API requests never result in double payment executions." },
+      { label: "Developer Ergonomics", desc: "Designing intuitive, self-describing REST APIs with clear error codes and documentation." },
+      { label: "ACID Consistency", desc: "Managing multi-table database transactions with strict isolation levels." }
+    ],
+    redFlags: [
+      { flag: "Non-Idempotent Writes", detail: "Allowing mutation endpoints to execute repeatedly on network timeout retries." },
+      { flag: "Ignoring Edge Cases", detail: "Failing to handle partial failures during multi-step financial workflows." },
+      { flag: "Poor API Design", detail: "Exposing internal implementation details or cryptic error responses." }
+    ]
+  }
+}
+
+const ROLE_BLUEPRINTS = {
+  'Software Engineer': {
+    1: (comp) => `The Resume Fit loop at ${comp} evaluates your software engineering fundamentals, OOP principles, and code ownership. ${comp} interviewers check whether you understand why specific frameworks and design patterns were selected. Quantify your contributions using measurable metrics such as latency reduction, query optimization, or bug reduction at ${comp}'s scale.`,
+    2: (comp) => `The Algorithms & Coding loop at ${comp} evaluates your core data structures, algorithmic efficiency, and Big-O runtime analysis for Software Engineer candidates. ${comp} engineers test how methodically you break down complex problems, select appropriate patterns (sliding window, binary search, graph traversals, dynamic programming), and write modular, bug-free code.`,
+    3: (comp) => `The System Design loop at ${comp} tests your ability to architect scalable, fault-tolerant, high-throughput backend services. ${comp} grades candidates on defining clear system boundaries, capacity planning (QPS, storage), selecting database paradigms (SQL vs NoSQL), setting up multi-tier caching (Redis), and implementing load balancers.`,
+    4: (comp) => `The Behavioral & Leadership loop at ${comp} measures your emotional intelligence, cross-functional collaboration, and cultural alignment for Software Engineers. Frame responses using the structured STAR method: Situation, Task, Action, Result. Highlight personal initiative, trade-offs negotiated with leads, and technical disagreement resolutions.`
+  },
+  'Frontend Developer': {
+    1: (comp) => `The Resume Fit loop at ${comp} evaluates your frontend engineering mastery, component design patterns, and UI state architecture. ${comp} interviewers inspect your understanding of Virtual DOM diffing, CSS layout engine performance, and client-side bundler optimizations. Quantify metrics like Core Web Vitals (LCP, CLS, FID) and load time improvements at ${comp}.`,
+    2: (comp) => `The Frontend Coding loop at ${comp} evaluates your JavaScript/TypeScript mastery, DOM manipulation, custom React hooks, and async data fetching. ${comp} engineers grade how methodically you implement UI components, handle debounce/throttle logic, write accessible HTML elements, and manage complex component re-render lifecycles.`,
+    3: (comp) => `The Frontend Architecture loop at ${comp} tests your capacity to design large-scale web applications. ${comp} grades candidates on micro-frontend decomposition, client-side caching (React Query/Zustand), state normalization, code-splitting, CDN asset distribution, and offline-first PWA caching strategies.`,
+    4: (comp) => `The Behavioral loop for Frontend Developers at ${comp} measures your collaboration with UX designers, product managers, and backend teams. Use the STAR method to describe how you negotiated design trade-offs, advocated for user accessibility (a11y), and resolved cross-functional feedback.`
+  },
+  'Backend Developer': {
+    1: (comp) => `The Resume Fit loop at ${comp} evaluates your backend engineering depth, API design decisions, and database schema architectures. ${comp} interviewers inspect your understanding of REST vs gRPC protocols, database indexing strategies, and server latency profiles. Articulate your contributions using throughput (QPS), memory efficiency, and uptime SLAs at ${comp}.`,
+    2: (comp) => `The Backend Coding loop at ${comp} evaluates your data structure utilization, concurrency control, stream processing, and multi-threading primitives. ${comp} engineers test how you handle race conditions, implement thread-safe connection pools, build custom middleware, and structure clean API handlers under load.`,
+    3: (comp) => `The Backend System Design loop at ${comp} tests your ability to design enterprise-grade backend infrastructure. ${comp} grades candidates on database sharding, read-replicas, multi-tier Redis caching, message queue decoupling (Kafka/RabbitMQ), rate-limiting middleware, and zero-downtime deployment strategies.`,
+    4: (comp) => `The Behavioral loop for Backend Developers at ${comp} measures your ownership during production incidents, on-call debugging, and post-mortem analysis. Use the STAR method to highlight how you managed critical outages, communicated status to stakeholders, and implemented preventive measures.`
+  },
+  'Full Stack Developer': {
+    1: (comp) => `The Resume Fit loop at ${comp} evaluates your end-to-end full stack architecture, from React/Vue UI components down to Django/Node APIs and PostgreSQL database models. ${comp} interviewers inspect how seamlessly you integrate frontend state with backend microservices and manage deployment pipelines.`,
+    2: (comp) => `The Full Stack Coding loop at ${comp} tests both algorithmic problem solving and end-to-end feature implementation. ${comp} engineers evaluate your ability to write clean frontend components, construct REST/GraphQL endpoints, implement server-side validation, and handle database queries efficiently.`,
+    3: (comp) => `The Full Stack System Design loop at ${comp} tests your capacity to architect full web applications. ${comp} grades candidates on SSR vs CSR hydration strategies, API gateway routing, database schema normalization, Redis caching layers, CDN static asset delivery, and CI/CD automated test pipelines.`,
+    4: (comp) => `The Behavioral loop for Full Stack Developers at ${comp} measures your versatility, cross-domain communication, and balancing frontend UX priorities with backend infrastructure constraints. Frame your STAR responses around team velocity and product delivery at ${comp}.`
+  },
+  'System Architect': {
+    1: (comp) => `The Resume Fit loop at ${comp} evaluates your senior architectural vision, distributed systems track record, and technical leadership. ${comp} interviewers inspect your past high-scale projects, failure domain isolations, and multi-year infrastructure roadmaps. Highlight scale metrics (e.g. handling 500k QPS, multi-region failovers).`,
+    2: (comp) => `The Technical Deep-Dive loop for System Architects at ${comp} evaluates low-level network protocol trade-offs, consensus algorithms (Raft/Paxos), distributed locking mechanisms, and memory-mapped file storage. ${comp} engineers test your rigorous complexity analysis and distributed edge-case handling.`,
+    3: (comp) => `The System Design loop at ${comp} tests your blueprinting of global, fault-tolerant platforms. ${comp} grades candidates on CAP theorem trade-offs, global DNS load balancing, Kafka event log streams, multi-region database sharding, circuit breaking, and disaster recovery SLA guarantees.`,
+    4: (comp) => `The Architectural Leadership loop at ${comp} measures your technical influence, driving consensus across engineering teams, and managing technical debt vs feature velocity. Use the STAR method to demonstrate mentoring senior staff and setting platform standards.`
+  },
+  'ML Engineer': {
+    1: (comp) => `The Resume Fit loop at ${comp} evaluates your Machine Learning engineering background, model architecture choices, and ML pipeline deployments. ${comp} interviewers inspect your understanding of PyTorch/TensorFlow frameworks, feature store pipelines, and model evaluation metrics (Precision, Recall, F1, AUC-ROC).`,
+    2: (comp) => `The ML Coding & Algorithms loop at ${comp} evaluates matrix operations, tensor manipulation, gradient descent optimization, and data preprocessing algorithms. ${comp} engineers test your proficiency in vectorized NumPy/Pandas computations, custom loss function implementations, and Big-O algorithm efficiency.`,
+    3: (comp) => `The ML System Design loop at ${comp} tests your capacity to architect production ML infrastructure. ${comp} grades candidates on real-time feature extraction pipelines, vector database search (Pinecone/Milvus), GPU inference latency optimization, model quantization, and automated CI/CD model retraining.`,
+    4: (comp) => `The Behavioral loop for ML Engineers at ${comp} measures your collaboration with data scientists, product managers, and backend infrastructure teams. Use the STAR method to explain how you navigated model bias, trade-offs between model accuracy vs inference latency, and data governance.`
+  }
+}
+
+const getRoleBlueprint = (roundNum, comp, rTitle) => {
+  const roleMap = ROLE_BLUEPRINTS[rTitle] || ROLE_BLUEPRINTS['Software Engineer']
+  const fn = roleMap[roundNum] || ROLE_BLUEPRINTS['Software Engineer'][roundNum]
+  return fn(comp)
+}
+
 const PLAYBOOK_DATA = {
   1: {
     roundName: "Resume Fit & Hiring Manager Screen",
     tagline: "Unlocking the hidden signals of ownership, scope, and technical depth.",
-    hiddenSignals: [
-      { label: "Technical Ownership", desc: "Do you understand *why* a framework or stack was chosen, or did you just build what you were told?" },
-      { label: "Scope & Scale", desc: "Whether your code was tested at 100 QPS or 100k QPS, and how you managed resource limits." },
-      { label: "Business Impact", desc: "Translating latency decreases or code optimizations into concrete dollar values or team velocity." }
-    ],
-    redFlags: [
-      { flag: "Buzzword Overload", detail: "Listing Docker, Kubernetes, Kafka, and Redis without explaining their specific utility in your architecture." },
-      { flag: "Passive Framing", detail: "Saying 'we migrated' or 'the project was completed' rather than highlighting your specific architectural decisions." },
-      { flag: "Rigid Trade-offs", detail: "Defending a past choice blindly without acknowledging its flaws or what you would change today." }
-    ],
     tradeoffsTitle: "⚡ Key Architectural Decision Matrix (Resume Projects)",
     tradeoffs: [
       {
@@ -86,16 +222,6 @@ const PLAYBOOK_DATA = {
   2: {
     roundName: "Algorithms, Coding & DSA Loop",
     tagline: "Demonstrating clean coding principles, pattern recognition, and complexity analysis.",
-    hiddenSignals: [
-      { label: "Pattern Recognition", desc: "Mapping a complex problem to standard templates (Sliding Window, DFS, Two-Pointer, Union-Find)." },
-      { label: "Systematic Optimization", desc: "Moving from a naive brute force O(N^2) solution to O(N log N) or O(N) by introducing optimal auxiliary structures." },
-      { label: "Edge Case Coverage", desc: "Proactively handling null values, empty structures, integer overflow, and extreme index bounds." }
-    ],
-    redFlags: [
-      { flag: "Coding Too Early", detail: "Writing code before stating your approach, clarifying constraints, and getting the interviewer's alignment." },
-      { flag: "Silent Coding", detail: "Failing to explain your thoughts out loud, leaving the interviewer blind to your problem-solving process." },
-      { flag: "Dry Run Failure", detail: "Submitting code without manually tracing it with a test input vector to catch syntax/off-by-one errors." }
-    ],
     tradeoffsTitle: "⚡ Algorithm Patterns & Complexity Trade-offs",
     tradeoffs: [
       {
@@ -115,16 +241,6 @@ const PLAYBOOK_DATA = {
   3: {
     roundName: "Architecture & System Design Loop",
     tagline: "Evaluating high-level scaling blueprints, failure recovery, and distributed data modeling.",
-    hiddenSignals: [
-      { label: "Distributed Trade-offs", desc: "Understanding how CAP Theorem dictates consistency vs availability in partitioned networks." },
-      { label: "Failure Domain Analysis", desc: "Designing backups, database replicas, circuit breakers, and load balancer fallbacks to avoid single points of failure." },
-      { label: "Bottleneck Identification", desc: "Knowing exactly where the system will fail first (e.g. database disk I/O, network bandwidth, CPU bounds)." }
-    ],
-    redFlags: [
-      { flag: "Buzzword Design", detail: "Throwing Redis, Kafka, and ElasticSearch at a problem without performing capacity calculations." },
-      { flag: "Abstract Sketching", detail: "Drawing generic load balancers and databases without defining schemas, API endpoints, and caching lifecycles." },
-      { flag: "Lack of Scale Nuance", detail: "Designing the same system for 10 users and 100 million users without changing storage or sharding strategies." }
-    ],
     tradeoffsTitle: "⚡ Architectural Blueprint Decision Matrix",
     tradeoffs: [
       {
@@ -148,16 +264,6 @@ const PLAYBOOK_DATA = {
   4: {
     roundName: "Behavioral, STAR & Leadership Fit",
     tagline: "Validating your values alignment, collaboration standards, and conflict management.",
-    hiddenSignals: [
-      { label: "Disagree and Commit", desc: "Supporting a different decision once finalized, regardless of your personal stance, for the speed of the team." },
-      { label: "Empathy & Mentorship", desc: "Examples of how you uplift junior engineers, delegate responsibilities, and handle team performance issues constructively." },
-      { label: "Pragmatic Prioritization", desc: "Balancing strict deadlines, technical debt, and business priorities without burning out." }
-    ],
-    redFlags: [
-      { flag: "Blame Distribution", detail: "Stating that a past project failed because 'product managers were bad' or 'developers were incompetent'." },
-      { flag: "Credit Hoarding", detail: "Saying 'I did everything' instead of explaining how you collaborated, guided, and delegated tasks." },
-      { flag: "Defensiveness", detail: "Reacting negatively when asked what you could have done better or what you learned from a major failure." }
-    ],
     tradeoffsTitle: "⚡ Leadership & Team Decision Matrix",
     tradeoffs: [
       {
@@ -465,20 +571,20 @@ export default function RevisionPage() {
                     <div style={{ ...S.card, background: 'linear-gradient(135deg, rgba(16,185,129,0.05), rgba(6,182,212,0.03))', border: '1px solid rgba(16,185,129,0.25)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                         <h4 style={{ fontSize: 14, fontWeight: 900, color: '#10b981', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span>📚</span> Topic Summary &amp; Core Blueprint (150–200 Words)
+                          <span>📚</span> {company} {role} — Resume Screen Blueprint
                         </h4>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>~150 Words</span>
                       </div>
                       <p style={{ fontSize: 13, color: 'var(--text-color)', lineHeight: 1.75, margin: 0 }}>
-                        The Resume Fit and Hiring Manager loop evaluates your real-world software engineering depth, project ownership, and technical decision-making logic. Interviewers look beyond bullet points to inspect whether you truly understand why specific frameworks, databases, or cloud infrastructure choices were made, or if you simply implemented pre-defined instructions. To stand out, articulate your individual contribution using quantifiable metrics—such as reducing server latency by 45%, cutting cloud infrastructure costs, or scaling database throughput to handle tens of thousands of concurrent requests. Be prepared to discuss architectural trade-offs, edge cases encountered during production deployment, and lessons learned from technical failures. Avoid buzzword overload without substance; instead, frame every project around business impact, team velocity, and technical ownership. Demonstrating clear communication, self-awareness of system limitations, and an ability to justify stack selections will prove your maturity as a candidate engineer.
+                        {getRoleBlueprint(1, company, role)}
                       </p>
                     </div>
 
                     <div style={{ ...S.card, background: 'rgba(16,185,129,0.02)', border: '1px solid rgba(16,185,129,0.15)' }}>
-                      <h4 style={{ fontSize: 14, fontWeight: 800, color: '#10b981', margin: '0 0 10px' }}>Key Strategy Notes:</h4>
+                      <h4 style={{ fontSize: 14, fontWeight: 800, color: '#10b981', margin: '0 0 10px' }}>{company} Strategy Notes ({role}):</h4>
                       <ul style={{ paddingLeft: 20, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
                         <li>Highlight metrics-driven impact (e.g. latency reduced by X%, load handled Y%).</li>
-                        <li>Prepare 1-minute elevator pitch highlighting technical skills matching {role}.</li>
+                        <li>Prepare 1-minute elevator pitch highlighting technical skills matching {role} at {company}.</li>
                         <li>Expect basic screening questions regarding framework choices listed in your profile.</li>
                       </ul>
                     </div>
@@ -493,10 +599,10 @@ export default function RevisionPage() {
                     <div style={{ ...S.card }}>
                       <div style={{ position:'absolute', top:0, left:'20%', right:'20%', height:1, background: 'linear-gradient(90deg,transparent,#6366f1,transparent)' }} />
                       <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-heading)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span>💻</span> Algorithms &amp; Problem Solving
+                        <span>💻</span> {company} Algorithms &amp; Problem Solving ({role})
                       </h3>
                       <p style={{ fontSize: 14, color: 'var(--text-color)', lineHeight: 1.7, margin: 0 }}>
-                        Focus loops at {company} evaluate code clarity, optimal time/space complexity, and edge case coverage. Practice key algorithmic structures.
+                        Focus loops at {company} for {role} candidates evaluate code clarity, optimal time/space complexity, and edge case coverage. Practice key algorithmic structures.
                       </p>
                     </div>
 
@@ -504,12 +610,12 @@ export default function RevisionPage() {
                     <div style={{ ...S.card, background: 'linear-gradient(135deg, rgba(99,102,241,0.05), rgba(139,92,246,0.03))', border: '1px solid rgba(99,102,241,0.25)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                         <h4 style={{ fontSize: 14, fontWeight: 900, color: '#818cf8', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span>📚</span> Topic Summary &amp; Core Blueprint (150–200 Words)
+                          <span>📚</span> {company} {role} — Coding Blueprint
                         </h4>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: 'rgba(99,102,241,0.12)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)' }}>~152 Words</span>
                       </div>
                       <p style={{ fontSize: 13, color: 'var(--text-color)', lineHeight: 1.75, margin: 0 }}>
-                        The Technical Coding and Data Structures loop assesses your problem-solving process, algorithmic efficiency, and ability to translate abstract requirements into clean, production-grade code under time pressure. Top tech companies evaluate how methodically you break down complex problems, identify pattern primitives—such as dynamic programming, graph traversals, sliding window, or two-pointer techniques—and analyze time and space complexity using Big-O notation. Avoid jumping straight into coding; begin by clarifying constraints, verifying input boundaries, and talking through your thought process out loud. Present a brute-force approach first before proposing an optimized solution. Write modular, readable code with descriptive variable names, handling edge cases such as empty inputs, null references, integer overflows, and single-element collections. Thoroughly walk through test cases step by step to catch logic bugs before declaring completion, demonstrating strong technical rigour and engineering confidence.
+                        {getRoleBlueprint(2, company, role)}
                       </p>
                     </div>
 
@@ -523,10 +629,10 @@ export default function RevisionPage() {
                     <div style={{ ...S.card }}>
                       <div style={{ position:'absolute', top:0, left:'20%', right:'20%', height:1, background: 'linear-gradient(90deg,transparent,#f59e0b,transparent)' }} />
                       <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-heading)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span>⚙️</span> Distributed Systems &amp; Scale
+                        <span>⚙️</span> {company} Distributed Systems &amp; Scale ({role})
                       </h3>
                       <p style={{ fontSize: 14, color: 'var(--text-color)', lineHeight: 1.7, margin: 0 }}>
-                        Design scalable blueprints covering load balancing, replication, network protocols, database sharding, and latency bottlenecks.
+                        Design scalable blueprints covering load balancing, replication, network protocols, database sharding, and latency bottlenecks for {company}'s scale.
                       </p>
                     </div>
 
@@ -534,12 +640,12 @@ export default function RevisionPage() {
                     <div style={{ ...S.card, background: 'linear-gradient(135deg, rgba(245,158,11,0.05), rgba(251,191,36,0.03))', border: '1px solid rgba(245,158,11,0.25)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                         <h4 style={{ fontSize: 14, fontWeight: 900, color: '#f59e0b', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span>📚</span> Topic Summary &amp; Core Blueprint (150–200 Words)
+                          <span>📚</span> {company} {role} — System Architecture Blueprint
                         </h4>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' }}>~150 Words</span>
                       </div>
                       <p style={{ fontSize: 13, color: 'var(--text-color)', lineHeight: 1.75, margin: 0 }}>
-                        The System Design and Architecture loop tests your capacity to architect distributed, fault-tolerant, high-throughput systems that scale seamlessly across millions of active users. Interviewers grade candidates on defining clear system requirements, estimating capacity scale (QPS, storage, bandwidth), and structuring modular component blueprints. Key topics include selecting between SQL and NoSQL database paradigms, implementing multi-tier caching strategies with Redis or Memcached, setting up load balancers, and utilizing asynchronous message queues like Kafka or RabbitMQ to decouple worker processing. Candidates must demonstrate deep understanding of fundamental distributed systems principles, including the CAP theorem, database sharding, replication topologies, consistent hashing, and API gateway routing. Address real-world challenges such as single points of failure, rate limiting, data consistency trade-offs, and monitoring observability to prove your ability to design robust, enterprise-scale engineering infrastructure.
+                        {getRoleBlueprint(3, company, role)}
                       </p>
                     </div>
 
@@ -553,10 +659,10 @@ export default function RevisionPage() {
                     <div style={{ ...S.card }}>
                       <div style={{ position:'absolute', top:0, left:'20%', right:'20%', height:1, background: 'linear-gradient(90deg,transparent,#ec4899,transparent)' }} />
                       <h3 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-heading)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span>🤝</span> Leadership &amp; Soft Skills Focus
+                        <span>🤝</span> {company} Leadership &amp; Behavioral Fit ({role})
                       </h3>
                       <p style={{ fontSize: 13, color: 'var(--text-color)', lineHeight: 1.6, margin: 0 }}>
-                        Expect questions regarding past projects, handling conflicts, adapting to design changes, and prioritizing deliverables.
+                        Expect questions regarding past projects, handling conflicts, adapting to design changes, and prioritizing deliverables for {company}'s culture.
                         Use the <b>STAR method</b> (Situation, Task, Action, Result) to format your response with measurable metrics.
                       </p>
                     </div>
@@ -565,17 +671,17 @@ export default function RevisionPage() {
                     <div style={{ ...S.card, background: 'linear-gradient(135deg, rgba(236,72,153,0.05), rgba(244,63,94,0.03))', border: '1px solid rgba(236,72,153,0.25)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                         <h4 style={{ fontSize: 14, fontWeight: 900, color: '#ec4899', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span>📚</span> Topic Summary &amp; Core Blueprint (150–200 Words)
+                          <span>📚</span> {company} {role} — Cultural Blueprint
                         </h4>
                         <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: 'rgba(236,72,153,0.12)', color: '#ec4899', border: '1px solid rgba(236,72,153,0.3)' }}>~153 Words</span>
                       </div>
                       <p style={{ fontSize: 13, color: 'var(--text-color)', lineHeight: 1.75, margin: 0 }}>
-                        The Behavioral and Leadership loop measures your emotional intelligence, cross-functional collaboration, technical communication, and alignment with organizational culture and engineering principles. Senior interviewers look for concrete examples of ownership, adaptability, and conflict resolution during high-stakes projects. Frame all responses using the structured STAR method: clearly describe the Situation, specify your designated Task, detail the concrete Action you personally took, and highlight the measurable Result achieved. Focus on highlighting personal initiative, trade-offs negotiated with product managers or engineering leads, and how you navigated technical disagreements respectfully. When asked about past failures, demonstrate growth by explaining root cause post-mortems and preventive measures implemented afterwards. Showing resilience under pressure, a growth mindset, mentoring junior teammates, and prioritizing team execution over individual ego signals top-tier software engineering leadership readiness.
+                        {getRoleBlueprint(4, company, role)}
                       </p>
                     </div>
 
                     <div style={{ ...S.card, background: 'rgba(236,72,153,0.02)', border: '1px solid rgba(236,72,153,0.15)' }}>
-                      <h4 style={{ fontSize: 14, fontWeight: 800, color: '#ec4899', margin: '0 0 10px' }}>FAANG Behavioral Checklist:</h4>
+                      <h4 style={{ fontSize: 14, fontWeight: 800, color: '#ec4899', margin: '0 0 10px' }}>{company} Behavioral Checklist ({role}):</h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {["Tell me about a time you had a technical disagreement with a colleague. How did you resolve it?",
                           "Describe a challenging bug you fixed. What was the action taken and what did you learn?",
@@ -635,9 +741,10 @@ export default function RevisionPage() {
 
             </div>
 
-            {/* ── FAANG LOOP STRATEGY & ARCHITECTURAL TRADE-OFFS PLAYBOOK ── */}
+            {/* ── COMPANY LOOP STRATEGY & ARCHITECTURAL TRADE-OFFS PLAYBOOK ── */}
             {(() => {
               const roundData = PLAYBOOK_DATA[activeRound]
+              const compProf = COMPANY_PROFILES[company] || COMPANY_PROFILES.Google
               if (!roundData) return null
 
               return (
@@ -653,10 +760,10 @@ export default function RevisionPage() {
                         </span>
                         <div>
                           <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-heading)', margin: 0, letterSpacing: '-0.02em' }}>
-                            {roundData.roundName} Playbook
+                            {company} {roundData.roundName} Playbook
                           </h3>
                           <p style={{ fontSize: 12, color: '#818cf8', fontWeight: 600, margin: '2px 0 0' }}>
-                            {company} Core Evaluation Blueprint
+                            {company} ({role}) Core Evaluation Blueprint
                           </p>
                         </div>
                       </div>
@@ -667,7 +774,7 @@ export default function RevisionPage() {
                   </div>
 
                   <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24, fontStyle: 'italic', background: 'var(--glass-bg)', padding: '12px 16px', borderRadius: 12, borderLeft: '3px solid #818cf8' }}>
-                    &ldquo;{roundData.tagline}&rdquo;
+                    &ldquo;{compProf.focus}&rdquo;
                   </p>
 
                   {/* Playbook Grid */}
@@ -676,10 +783,10 @@ export default function RevisionPage() {
                     {/* Left: Key Evaluation Signals */}
                     <div style={{ background: 'rgba(16,185,129,0.01)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 14, padding: 20 }}>
                       <h4 style={{ fontSize: 14, fontWeight: 800, color: '#10b981', display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 16px' }}>
-                        <CheckCircle size={16} /> Key Evaluation Signals
+                        <CheckCircle size={16} /> {company} Evaluation Signals
                       </h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                        {roundData.hiddenSignals.map((sig, sIdx) => (
+                        {compProf.signals.map((sig, sIdx) => (
                           <div key={sIdx} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                             <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-heading)' }}>{sig.label}</span>
                             <span style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5 }}>{sig.desc}</span>
@@ -691,10 +798,10 @@ export default function RevisionPage() {
                     {/* Right: Red Flags to Avoid */}
                     <div style={{ background: 'rgba(239,68,68,0.01)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: 14, padding: 20 }}>
                       <h4 style={{ fontSize: 14, fontWeight: 800, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 16px' }}>
-                        <HelpCircle size={16} style={{ color: '#ef4444' }} /> Critical Red Flags
+                        <HelpCircle size={16} style={{ color: '#ef4444' }} /> {company} Critical Red Flags
                       </h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                        {roundData.redFlags.map((flag, fIdx) => (
+                        {compProf.redFlags.map((flag, fIdx) => (
                           <div key={fIdx} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                             <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-heading)', display: 'flex', alignItems: 'center', gap: 6 }}>
                               ⚠️ {flag.flag}

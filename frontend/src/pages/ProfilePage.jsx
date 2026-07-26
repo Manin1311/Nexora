@@ -481,7 +481,7 @@ export default function ProfilePage() {
                   </button>
 
                   {ghExpanded && (
-                    <div style={{ display:'flex', flexDirection:'column', gap:8, maxHeight:320, overflowY:'auto', marginTop:10 }}>
+                    <div style={{ display:'flex', flexDirection:'column', gap:8, marginTop:10 }}>
                       {ghData.repos?.slice(0, 15).map(repo => (
                         <a key={repo.name} href={repo.url} target="_blank" rel="noopener"
                           style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', borderRadius:10,

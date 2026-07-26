@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import peerReviewService from '@/services/peerReviewService'
 import { showcaseService } from '@/services/showcaseService'
+import { challengeService } from '@/services/challengeService'
 import { useAuth } from '@/context/AuthContext'
 import PageWrapper from '@/components/layout/PageWrapper'
 import PageTour, { HelpButton } from '@/components/ui/PageTour'
@@ -71,14 +72,15 @@ export default function PeerCodeReviewPage() {
   // Create Modal
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [userProjects, setUserProjects] = useState([])
+  const [userChallenges, setUserChallenges] = useState([])
   const [createForm, setCreateForm] = useState({
     title: '',
     description: '',
-    source_type: 'snippet',
+    source_type: 'project',
     project_id: '',
     project_title: '',
+    challenge_id: '',
     challenge_title: '',
-    code_snippet: '',
     language: 'javascript',
     github_url: '',
     focus_areas: ['readability', 'architecture'],
@@ -151,6 +153,9 @@ export default function PeerCodeReviewPage() {
     if (showCreateModal && user) {
       showcaseService.getMyProjects()
         .then(res => setUserProjects(res.data?.results || res.data || []))
+        .catch(() => {})
+      challengeService.getAll()
+        .then(res => setUserChallenges(res.data?.results || res.data || []))
         .catch(() => {})
     }
   }, [showCreateModal, user])
@@ -350,7 +355,6 @@ export default function PeerCodeReviewPage() {
               { id: 'all',       label: '🌐 All Feed' },
               { id: 'project',   label: '📦 Showcase Projects' },
               { id: 'challenge', label: '⚔️ Challenge Solutions' },
-              { id: 'snippet',   label: '💻 Code Snippets' },
               { id: 'me',        label: '👤 My Requests' },
             ].map(tab => (
               <button
@@ -748,7 +752,6 @@ export default function PeerCodeReviewPage() {
                   <label style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Review Source</label>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {[
-                      { id: 'snippet',   label: '💻 Code Snippet' },
                       { id: 'project',   label: '📦 Showcase Project' },
                       { id: 'challenge', label: '⚔️ Challenge' },
                     ].map(s => (
@@ -790,6 +793,31 @@ export default function PeerCodeReviewPage() {
                       <option value="">-- Choose one of your published Showcase projects --</option>
                       {userProjects.map(p => (
                         <option key={p.id} value={p.id}>{p.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* If Challenge source selected */}
+                {createForm.source_type === 'challenge' && (
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Select Challenge</label>
+                    <select
+                      value={createForm.challenge_id}
+                      onChange={e => {
+                        const ch = userChallenges.find(c => String(c.id) === String(e.target.value))
+                        setCreateForm(prev => ({
+                          ...prev,
+                          challenge_id: e.target.value,
+                          challenge_title: ch ? ch.title : '',
+                          title: ch ? `Peer Review: ${ch.title}` : prev.title,
+                        }))
+                      }}
+                      style={{ width: '100%', padding: '9px 14px', borderRadius: 10, fontSize: 12.5, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', outline: 'none' }}
+                    >
+                      <option value="">-- Choose a challenge --</option>
+                      {userChallenges.map(c => (
+                        <option key={c.id} value={c.id}>{c.title}</option>
                       ))}
                     </select>
                   </div>
@@ -842,18 +870,6 @@ export default function PeerCodeReviewPage() {
                     onChange={e => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Explain what your code does, edge cases you are worried about, or specific questions..."
                     style={{ width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 12.5, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', outline: 'none', resize: 'vertical' }}
-                  />
-                </div>
-
-                {/* Code Snippet Paste */}
-                <div>
-                  <label style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Code Snippet (Optional)</label>
-                  <textarea
-                    rows={5}
-                    value={createForm.code_snippet}
-                    onChange={e => setCreateForm(prev => ({ ...prev, code_snippet: e.target.value }))}
-                    placeholder="// Paste relevant code function or class here..."
-                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 12, fontFamily: 'monospace', background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', color: '#e2e8f0', outline: 'none', resize: 'vertical' }}
                   />
                 </div>
 
