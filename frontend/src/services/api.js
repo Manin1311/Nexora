@@ -7,10 +7,23 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Attach access token to every request
+// Public endpoints that must NOT carry a Bearer token
+// (JWT middleware would reject a stale token before AllowAny view runs)
+const PUBLIC_PATHS = [
+  '/auth/login/',
+  '/auth/register/',
+  '/auth/google-login/',
+  '/auth/token/',
+  '/auth/token/refresh/',
+]
+
+// Attach access token to every request EXCEPT public auth endpoints
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('nexora_access')
-  if (token) config.headers.Authorization = `Bearer ${token}`
+  const isPublic = PUBLIC_PATHS.some(p => config.url?.includes(p))
+  if (!isPublic) {
+    const token = localStorage.getItem('nexora_access')
+    if (token) config.headers.Authorization = `Bearer ${token}`
+  }
   return config
 })
 
