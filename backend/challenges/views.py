@@ -330,32 +330,27 @@ class UserActivityGridView(APIView):
         from django.db.models.functions import TruncDate
         from django.db.models import Count
         from challenges.models import ChallengeSubmission
-        import pytz
-        from django.utils import timezone as dj_timezone
-
-        # Use IST timezone for date grouping.
-        # TruncDate defaults to UTC - this causes late-night IST submissions
-        # (e.g. Sat 11 PM IST = Sun 05:30 AM UTC) to appear on the wrong day.
         try:
-            ist = pytz.timezone('Asia/Kolkata')
+            from zoneinfo import ZoneInfo  # Python 3.9+ built-in
+            ist = ZoneInfo('Asia/Kolkata')
         except Exception:
-            ist = dj_timezone.utc
+            ist = None  # fallback to UTC if unavailable
 
-        # Group evaluated submissions by local (IST) date
-        submissions = (
-            ChallengeSubmission.objects.filter(user=request.user, status='evaluated')
-            .annotate(date=TruncDate('submitted_at', tzinfo=ist))
-            .values('date')
-            .annotate(count=Count('id'))
-            .order_by('date')
-        )
+        # Group evaluated submissions by local (IST) date.
+        # Passing tzinfo converts UTC timestamps to IST before truncating to date,
+        # so e.g. Sat 11 PM IST (= Sun 5:30 AM UTC) correctly shows as Saturday.
+        qs = ChallengeSubmission.objects.filter(user=request.user, status='evaluated')
+        if ist:
+            qs = qs.annotate(date=TruncDate('submitted_at', tzinfo=ist))
+        else:
+            qs = qs.annotate(date=TruncDate('submitted_at'))
 
-        # Convert to dictionary of YYYY-MM-DD -> count
+        submissions = qs.values('date').annotate(count=Count('id')).order_by('date')
+
         activity_data = {}
         for entry in submissions:
             if entry['date']:
-                date_str = entry['date'].strftime('%Y-%m-%d')
-                activity_data[date_str] = entry['count']
+                activity_data[entry['date'].strftime('%Y-%m-%d')] = entry['count']
 
         return Response(activity_data)
 
