@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexora — Database Schema</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root{--bg:#0a0a0f;--card:#12121a;--card2:#1a1a26;--border:#2a2a3a;--accent:#6c63ff;--accent2:#a78bfa;--green:#34d399;--orange:#fb923c;--pink:#f472b6;--blue:#38bdf8;--text:#e2e8f0;--muted:#94a3b8;--dim:#64748b;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;}
+  code{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(52,211,153,.12);padding:2px 7px;border-radius:5px;color:#34d399;}
+  @media print{
+    body{background:#fff!important;color:#111!important;}
+    .hero{background:linear-gradient(135deg,#0a2e1a,#0a2a0a)!important;}
+    .hero h1{-webkit-text-fill-color:#fff!important;}
+    .card,.card2,.model-card,.field-table{background:#f8f8ff!important;border:1px solid #ddd!important;}
+    .section-title{color:#4338ca!important;}
+    p,li,td,th{color:#333!important;}
+    h2,h3,h4{color:#111!important;}
+    code{background:#e8fff0!important;color:#166534!important;}
+    .tag{background:#d1fae5!important;color:#065f46!important;border:none!important;}
+    .th{background:#e8e8f8!important;color:#111!important;}
+    .page-header .logo{color:#6c63ff!important;}
+    .rel-arrow{color:#999!important;}
+    .footer{color:#666!important;}
+  }
+  .page{max-width:1100px;margin:0 auto;padding:36px 32px;}
+  .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+  .page-header .logo{font-size:19px;font-weight:900;color:#6c63ff;}
+  .page-header .doc-info{font-size:11.5px;color:var(--dim);text-align:right;}
+  .hero{background:linear-gradient(135deg,#0a2e1a 0%,#0a1a2e 100%);border:1px solid rgba(52,211,153,.3);border-radius:20px;padding:40px 44px;margin-bottom:32px;}
+  .hero h1{font-size:42px;font-weight:900;background:linear-gradient(135deg,#34d399,#38bdf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+  .hero p{font-size:15px;color:#94a3b8;}
+  .section{margin-bottom:32px;}
+  .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent2);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+  /* MODEL CARDS */
+  .model-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:0;overflow:hidden;margin-bottom:16px;}
+  .model-header{display:flex;align-items:center;gap:10px;padding:14px 18px;background:rgba(52,211,153,.05);border-bottom:1px solid var(--border);}
+  .model-name{font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;color:#34d399;}
+  .model-app{font-size:11.5px;color:var(--dim);background:rgba(255,255,255,.05);padding:2px 8px;border-radius:5px;font-family:'JetBrains Mono',monospace;}
+  .model-desc{font-size:12.5px;color:var(--muted);padding:10px 18px 8px;font-style:italic;}
+
+  /* FIELD TABLE */
+  .field-table{width:100%;border-collapse:collapse;}
+  .field-table th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--dim);padding:8px 14px;text-align:left;background:rgba(255,255,255,.03);border-bottom:1px solid var(--border);}
+  .field-table td{font-size:12.5px;padding:7px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:top;}
+  .field-table tr:last-child td{border-bottom:none;}
+  .field-table td:first-child{font-family:'JetBrains Mono',monospace;font-size:12px;color:#34d399;font-weight:600;}
+  .field-table td:nth-child(2){color:#38bdf8;font-family:'JetBrains Mono',monospace;font-size:11.5px;}
+  .field-table td:nth-child(3){color:var(--muted);}
+  .pk-row td:first-child{color:#fb923c!important;}
+  .fk-row td:first-child{color:#f472b6!important;}
+  .json-row td:first-child{color:#a78bfa!important;}
+
+  /* RELATIONSHIP DIAGRAM */
+  .rel-container{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;}
+  .rel-model{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;min-width:140px;}
+  .rel-model h4{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#34d399;margin-bottom:6px;}
+  .rel-model ul{list-style:none;padding:0;}
+  .rel-model li{font-size:11.5px;color:var(--muted);padding:2px 0;}
+  .rel-arrow{font-size:22px;color:var(--dim);align-self:center;}
+
+  .tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600;}
+  .tag-purple{background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);color:#a78bfa;}
+  .tag-green{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#34d399;}
+  .tag-blue{background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);color:#38bdf8;}
+  .tag-orange{background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.3);color:#fb923c;}
+
+  .info-box{background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.25);border-left:4px solid #38bdf8;border-radius:10px;padding:14px 18px;margin-bottom:16px;}
+  .info-box h4{font-size:13px;color:#38bdf8;margin-bottom:5px;}
+  .info-box p{font-size:12px;}
+  .green-box{background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.25);border-left:4px solid #34d399;border-radius:10px;padding:14px 18px;margin-bottom:16px;}
+  .green-box h4{font-size:13px;color:#34d399;margin-bottom:5px;}
+  .green-box p{font-size:12px;}
+
+  .stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;}
+  .stat-box{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+  .stat-box .num{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;color:#34d399;}
+  .stat-box .lbl{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;}
+
+  h2{font-size:19px;font-weight:800;margin-bottom:10px;}
+  h3{font-size:15px;font-weight:700;margin-bottom:8px;}
+  h4{font-size:13.5px;font-weight:700;margin-bottom:5px;}
+  p{font-size:13px;color:var(--muted);line-height:1.7;}
+  ul{padding-left:18px;}
+  li{font-size:13px;color:var(--muted);margin-bottom:5px;line-height:1.6;}
+  li strong{color:var(--text);}
+  .footer{text-align:center;padding:24px 0 14px;color:var(--dim);font-size:11.5px;border-top:1px solid var(--border);margin-top:32px;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-header">
+    <div class="logo">⬡ NEXORA</div>
+    <div class="doc-info">Project Presentation · Document 5 of 6<br><span style="color:#34d399">Database — PostgreSQL Schema</span></div>
+  </div>
+
+  <div class="hero">
+    <h1>🗄️ Database Schema</h1>
+    <p>PostgreSQL database with 20+ models across 12 Django apps. ACID compliant, JSON fields for flexible AI data, OneToOne relationships for user extensions, and UUID primary keys for security-sensitive models.</p>
+  </div>
+
+  <!-- STATS -->
+  <div class="stat-row">
+    <div class="stat-box"><div class="num">20+</div><div class="lbl">DB Models</div></div>
+    <div class="stat-box"><div class="num">12</div><div class="lbl">Django Apps</div></div>
+    <div class="stat-box"><div class="num">8</div><div class="lbl">JSONFields</div></div>
+    <div class="stat-box"><div class="num">4</div><div class="lbl">O2O Relations</div></div>
+    <div class="stat-box"><div class="num">UUID</div><div class="lbl">Secure PKs</div></div>
+  </div>
+
+  <!-- USERS APP -->
+  <div class="section">
+    <div class="section-title">users app — Authentication &amp; Profile System</div>
+
+    <div class="model-card">
+      <div class="model-header"><span class="model-name">User</span><span class="model-app">users</span><span style="font-size:12px;color:var(--muted);margin-left:8px;">Extends AbstractBaseUser</span></div>
+      <div class="model-desc">Custom user model — replaces Django's default username-based auth with email-based. All other models reference this via ForeignKey or OneToOneField.</div>
+      <table class="field-table">
+        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+        <tr class="pk-row"><td>id</td><td>AutoField (PK)</td><td>Auto-incremented primary key</td></tr>
+        <tr><td>email</td><td>EmailField(unique=True)</td><td>LOGIN FIELD — replaces username</td></tr>
+        <tr><td>full_name</td><td>CharField(150)</td><td>Required on registration</td></tr>
+        <tr><td>is_active</td><td>BooleanField</td><td>Soft disable without deletion</td></tr>
+        <tr><td>is_staff</td><td>BooleanField</td><td>Django admin access</td></tr>
+        <tr><td>date_joined</td><td>DateTimeField</td><td>Registration timestamp</td></tr>
+      </table>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header"><span class="model-name">UserProfile</span><span class="model-app">users</span><span style="font-size:12px;color:var(--muted);margin-left:8px;">OneToOne → User</span></div>
+      <div class="model-desc">Extended profile data. Created automatically via signal when User registers. Contains the gamification system (XP, rank, streak).</div>
+      <table class="field-table">
+        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+        <tr class="fk-row"><td>user</td><td>OneToOneField(User)</td><td>CASCADE delete. related_name='profile'</td></tr>
+        <tr><td>bio</td><td>TextField(blank)</td><td>User's bio description</td></tr>
+        <tr><td>avatar</td><td>ImageField</td><td>Stored in media/avatars/</td></tr>
+        <tr><td>dev_rank</td><td>CharField choices</td><td>explorer / builder / creator / architect / legend</td></tr>
+        <tr><td>total_xp</td><td>IntegerField(default=0)</td><td>Cumulative XP across all modules</td></tr>
+        <tr><td>streak_days</td><td>IntegerField</td><td>Consecutive active days</td></tr>
+        <tr><td>github_username</td><td>CharField</td><td>For GitHub integration</td></tr>
+        <tr><td>github_connected</td><td>BooleanField</td><td>Has connected GitHub account</td></tr>
+        <tr><td>code_health_score</td><td>IntegerField</td><td>Last AI code health scan score</td></tr>
+        <tr class="json-row"><td>github_repos_json</td><td>JSONField(list)</td><td>Cached list of user's GitHub repos</td></tr>
+      </table>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header"><span class="model-name">Resume</span><span class="model-app">users</span><span style="font-size:12px;color:var(--muted);margin-left:8px;">OneToOne → User</span></div>
+      <div class="model-desc">Stores entire resume in structured JSON sections. Also holds ATS score and AI audit report.</div>
+      <table class="field-table">
+        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+        <tr class="json-row"><td>personal_info</td><td>JSONField(dict)</td><td>{name, title, email, phone, linkedin, github, website, summary}</td></tr>
+        <tr class="json-row"><td>experience</td><td>JSONField(list)</td><td>[{company, role, location, start, end, current, bullets:[]}]</td></tr>
+        <tr class="json-row"><td>projects</td><td>JSONField(list)</td><td>[{name, tech_stack:[], description, url, bullets:[]}]</td></tr>
+        <tr class="json-row"><td>skills</td><td>JSONField(list)</td><td>[{category, items:[]}] e.g. Languages, Frameworks</td></tr>
+        <tr class="json-row"><td>education</td><td>JSONField(list)</td><td>[{institution, degree, field, year, gpa}]</td></tr>
+        <tr class="json-row"><td>certifications</td><td>JSONField(list)</td><td>[{name, issuer, year, url}]</td></tr>
+        <tr><td>target_role</td><td>CharField</td><td>Job role for ATS analysis targeting</td></tr>
+        <tr><td>ats_score</td><td>IntegerField</td><td>Last AI ATS score (0-100)</td></tr>
+        <tr class="json-row"><td>audit_report</td><td>JSONField(dict)</td><td>{strengths, weaknesses, keyword_gaps, checklist, tips}</td></tr>
+      </table>
+    </div>
+
+    <div class="model-card">
+      <div class="model-header"><span class="model-name">UserAIMemory</span><span class="model-app">users</span><span style="font-size:12px;color:var(--muted);margin-left:8px;">OneToOne → User — AI Engine</span></div>
+      <div class="model-desc">The AI Memory Engine. Accumulates user's learning profile across ALL modules. Read by every AI function to personalize output.</div>
+      <table class="field-table">
+        <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+        <tr class="json-row"><td>skills_mastery</td><td>JSONField(dict)</td><td>{topic: score} e.g. {"React": 75, "System Design": 40}</td></tr>
+        <tr class="json-row"><td>strengths</td><td>JSONField(list)</td><td>Identified strong areas from AI evaluations</td></tr>
+        <tr class="json-row"><td>weaknesses</td><td>JSONField(list)</td><td>Recurring weak areas — used for roadmap prioritization</td></tr>
+        <tr class="json-row"><td>recurring_mistakes</td><td>JSONField(list)</td><td>Patterns of errors across challenge submissions</td></tr>
+        <tr class="json-row"><td>interview_stats</td><td>JSONField(dict)</td><td>{avg_score, sessions_completed, best_mode, filler_avg}</td></tr>
+        <tr class="json-row"><td>career_goals</td><td>JSONField(dict)</td><td>{target_role, timeline, companies_interested}</td></tr>
+        <tr class="json-row"><td>activity_log</td><td>JSONField(list)</td><td>Recent actions log shared with AI for context</td></tr>
+        <tr><td>ai_summary</td><td>TextField</td><td>Natural language summary of user profile, injected into all AI prompts</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- CHALLENGES APP -->
+  <div class="section">
+    <div class="section-title">challenges + interviews + arena apps</div>
+    <div class="two-col">
+      <div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">Challenge</span><span class="model-app">challenges</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr><td>title</td><td>CharField(255)</td><td>Challenge title</td></tr>
+            <tr><td>description</td><td>TextField</td><td>Full problem statement</td></tr>
+            <tr class="json-row"><td>requirements</td><td>JSONField(list)</td><td>List of requirement strings</td></tr>
+            <tr><td>difficulty</td><td>CharField choices</td><td>easy / medium / hard</td></tr>
+            <tr class="fk-row"><td>topic</td><td>FK → ChallengeTopic</td><td>SET_NULL on delete</td></tr>
+            <tr><td>challenge_type</td><td>CharField choices</td><td>daily / weekly / topic</td></tr>
+            <tr><td>xp_reward</td><td>IntegerField</td><td>Base XP before AI multiplier</td></tr>
+            <tr class="json-row"><td>tags</td><td>JSONField(list)</td><td>Search/filter tags</td></tr>
+          </table>
+        </div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">ChallengeSubmission</span><span class="model-app">challenges</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>user</td><td>FK → User</td><td>CASCADE delete</td></tr>
+            <tr class="fk-row"><td>challenge</td><td>FK → Challenge</td><td>CASCADE delete</td></tr>
+            <tr><td>content</td><td>TextField</td><td>User's submitted code/answer</td></tr>
+            <tr><td>score</td><td>IntegerField(null)</td><td>0-100, set by AI evaluation</td></tr>
+            <tr><td>feedback</td><td>TextField</td><td>AI feedback text</td></tr>
+            <tr><td>status</td><td>CharField choices</td><td>pending / evaluated / failed</td></tr>
+            <tr><td>time_complexity</td><td>CharField</td><td>Big-O e.g. O(N log N)</td></tr>
+            <tr><td>space_complexity</td><td>CharField</td><td>Big-O e.g. O(1)</td></tr>
+            <tr class="json-row"><td>empirical_data</td><td>JSONField</td><td>Runtime benchmarks</td></tr>
+            <tr><td colspan="3"><span class="tag tag-orange">Meta: unique_together = (user, challenge)</span></td></tr>
+          </table>
+        </div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">AssessmentSession</span><span class="model-app">challenges</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="pk-row"><td>id</td><td>UUIDField (PK)</td><td>UUID4 — prevents ID enumeration attacks</td></tr>
+            <tr class="fk-row"><td>user</td><td>FK → User</td><td>CASCADE</td></tr>
+            <tr><td>company</td><td>CharField(50)</td><td>google / amazon / microsoft etc.</td></tr>
+            <tr><td>status</td><td>CharField</td><td>active / completed / flagged</td></tr>
+            <tr><td>time_limit_seconds</td><td>IntegerField</td><td>Default 3600 (1 hour)</td></tr>
+            <tr><td>total_warnings</td><td>IntegerField</td><td>Anti-cheat warning count</td></tr>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">InterviewSession</span><span class="model-app">interviews</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>user</td><td>FK → User</td><td>CASCADE delete</td></tr>
+            <tr><td>mode</td><td>CharField choices</td><td>technical/hr/mixed/rapid_fire/boardroom</td></tr>
+            <tr><td>difficulty</td><td>CharField</td><td>junior / mid / senior</td></tr>
+            <tr><td>topic</td><td>CharField(100)</td><td>e.g. "React", "System Design"</td></tr>
+            <tr><td>total_questions</td><td>IntegerField</td><td>Max 10 per session</td></tr>
+            <tr><td>score</td><td>FloatField(null)</td><td>Avg score across all answers</td></tr>
+            <tr><td>xp_earned</td><td>IntegerField</td><td>XP awarded on completion</td></tr>
+            <tr><td>status</td><td>CharField</td><td>active / completed / abandoned</td></tr>
+          </table>
+        </div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">InterviewQuestion</span><span class="model-app">interviews</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>session</td><td>FK → InterviewSession</td><td>CASCADE delete</td></tr>
+            <tr><td>question_text</td><td>TextField</td><td>The AI-generated question</td></tr>
+            <tr><td>user_answer</td><td>TextField</td><td>User's spoken/typed answer</td></tr>
+            <tr><td>ai_feedback</td><td>TextField</td><td>AI evaluation feedback</td></tr>
+            <tr><td>score</td><td>FloatField</td><td>0-10 score for this answer</td></tr>
+            <tr><td>filler_words_count</td><td>IntegerField</td><td>um/uh/like count from frontend</td></tr>
+            <tr><td>speaking_pace</td><td>IntegerField</td><td>WPM from frontend timer</td></tr>
+            <tr><td>eye_contact_score</td><td>IntegerField</td><td>0-100 from AI vision analysis</td></tr>
+            <tr><td>posture_score</td><td>IntegerField</td><td>0-100 from AI vision analysis</td></tr>
+            <tr><td>behavioral_feedback</td><td>TextField</td><td>JSON string for boardroom debate</td></tr>
+            <tr><td>order</td><td>IntegerField</td><td>Question sequence number</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS + ROADMAP + OTHERS -->
+  <div class="section">
+    <div class="section-title">progress + roadmap + peer_reviews + mentor apps</div>
+    <div class="three-col">
+      <div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">UserActivity</span><span class="model-app">progress</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>user</td><td>FK → User</td><td>CASCADE</td></tr>
+            <tr><td>activity_type</td><td>CharField</td><td>challenge_completed / interview_completed / rank_up etc.</td></tr>
+            <tr><td>description</td><td>CharField(255)</td><td>Human-readable activity desc</td></tr>
+            <tr><td>xp_earned</td><td>IntegerField</td><td>XP gained from this activity</td></tr>
+            <tr class="json-row"><td>metadata</td><td>JSONField</td><td>Extra data (challenge_id, score etc.)</td></tr>
+          </table>
+        </div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">Certificate</span><span class="model-app">progress</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>user</td><td>FK → User</td><td>CASCADE</td></tr>
+            <tr><td>title</td><td>CharField(255)</td><td>Certificate name</td></tr>
+            <tr class="fk-row"><td>challenge</td><td>FK → Challenge</td><td>SET_NULL — source challenge</td></tr>
+            <tr><td>certificate_id</td><td>CharField(unique)</td><td>UUID-based unique cert ID</td></tr>
+          </table>
+        </div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">ScheduledTask</span><span class="model-app">progress</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>user</td><td>FK → User</td><td>CASCADE</td></tr>
+            <tr><td>task_type</td><td>CharField</td><td>challenge / interview / study</td></tr>
+            <tr><td>scheduled_date</td><td>DateField</td><td>Day the task is planned</td></tr>
+            <tr><td>priority</td><td>IntegerField</td><td>1=Low, 2=Medium, 3=High</td></tr>
+            <tr class="fk-row"><td>roadmap_week</td><td>FK → RoadmapWeek</td><td>SET_NULL — roadmap source</td></tr>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">LearningPath</span><span class="model-app">roadmap</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>user</td><td>FK → User</td><td>CASCADE — user's roadmap</td></tr>
+            <tr><td>target_role</td><td>CharField choices</td><td>faang_swe / frontend_dev / backend_dev / fullstack_dev / devops / ml_engineer / product</td></tr>
+            <tr><td>summary</td><td>TextField</td><td>AI-generated roadmap overview text</td></tr>
+            <tr><td>is_active</td><td>BooleanField</td><td>Current active roadmap</td></tr>
+          </table>
+        </div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">WeekTask</span><span class="model-app">roadmap</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>week</td><td>FK → RoadmapWeek</td><td>CASCADE</td></tr>
+            <tr><td>task_type</td><td>CharField</td><td>challenge / interview / study</td></tr>
+            <tr><td>title</td><td>CharField(255)</td><td>Task description</td></tr>
+            <tr><td>challenge_id</td><td>IntegerField(null)</td><td>Link to actual Challenge in DB</td></tr>
+            <tr><td>interview_mode</td><td>CharField</td><td>technical/hr/mixed — direct link</td></tr>
+            <tr><td>is_done</td><td>BooleanField</td><td>Completion status</td></tr>
+            <tr class="json-row"><td>cached_content</td><td>JSONField(null)</td><td>Pre-fetched challenge/topic data</td></tr>
+          </table>
+        </div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">MentorConversation</span><span class="model-app">mentor</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>user</td><td>FK → User</td><td>CASCADE</td></tr>
+            <tr><td>title</td><td>CharField</td><td>Conversation title (auto or user-set)</td></tr>
+          </table>
+        </div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">MentorMessage</span><span class="model-app">mentor</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>conversation</td><td>FK → MentorConversation</td><td>CASCADE</td></tr>
+            <tr><td>role</td><td>CharField</td><td>user / assistant</td></tr>
+            <tr><td>content</td><td>TextField</td><td>Full message text</td></tr>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">PeerReviewRequest</span><span class="model-app">peer_reviews</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>author</td><td>FK → User</td><td>CASCADE</td></tr>
+            <tr><td>title</td><td>CharField(200)</td><td>Review request title</td></tr>
+            <tr><td>source_type</td><td>CharField</td><td>project / challenge / snippet</td></tr>
+            <tr><td>code_snippet</td><td>TextField</td><td>The code to review</td></tr>
+            <tr><td>language</td><td>CharField(50)</td><td>python / javascript etc.</td></tr>
+            <tr><td>focus_areas</td><td>CharField</td><td>Comma-sep: security,performance</td></tr>
+            <tr><td>status</td><td>CharField</td><td>open / closed</td></tr>
+            <tr class="fk-row"><td>upvotes</td><td>M2M → User</td><td>Upvote/downvote system</td></tr>
+          </table>
+        </div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">PeerReviewComment</span><span class="model-app">peer_reviews</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>request</td><td>FK → PeerReviewRequest</td><td>CASCADE</td></tr>
+            <tr class="fk-row"><td>author</td><td>FK → User</td><td>CASCADE</td></tr>
+            <tr><td>body</td><td>TextField</td><td>Comment content</td></tr>
+            <tr><td>line_ref</td><td>CharField(50)</td><td>e.g. "L42-L58" line reference</td></tr>
+            <tr><td>comment_type</td><td>CharField</td><td>suggestion/issue/praise/question</td></tr>
+          </table>
+        </div>
+        <div class="model-card">
+          <div class="model-header"><span class="model-name">CodeReview</span><span class="model-app">codereview</span></div>
+          <table class="field-table">
+            <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+            <tr class="fk-row"><td>user</td><td>FK → User</td><td>CASCADE</td></tr>
+            <tr><td>repo_url</td><td>URLField</td><td>Full GitHub repo URL</td></tr>
+            <tr><td>overall_score</td><td>IntegerField(null)</td><td>0-100 health score</td></tr>
+            <tr><td>critical_count</td><td>IntegerField</td><td>Critical severity issue count</td></tr>
+            <tr><td>high_count</td><td>IntegerField</td><td>High severity issue count</td></tr>
+            <tr class="json-row"><td>report_json</td><td>JSONField</td><td>Full structured AI report</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DESIGN DECISIONS -->
+  <div class="section">
+    <div class="section-title">Key Database Design Decisions</div>
+    <div class="two-col">
+      <div>
+        <div class="green-box">
+          <h4>✅ Why JSONField for Resume Data?</h4>
+          <p>Resume sections (experience, projects, skills) have variable structure. Instead of 6+ additional tables with complex joins, we store them as JSON in PostgreSQL's native JSONField. This allows: nested arrays of bullets, flexible field names, and fast single-query fetch. Trade-off: cannot run SQL queries ON resume fields (e.g., SELECT * WHERE resume.skills CONTAINS "Python") — but we never need to.</p>
+        </div>
+        <div class="info-box" style="margin-bottom:0">
+          <h4>🔐 Why UUID for AssessmentSession?</h4>
+          <p>OA simulation sessions use <code>UUIDField</code> as primary key instead of auto-increment. This prevents ID enumeration attacks (guessing other users' session IDs by incrementing). With UUID4, there are 2^122 possible values — practically impossible to guess.</p>
+        </div>
+      </div>
+      <div>
+        <div class="green-box" style="margin-bottom:16px">
+          <h4>✅ Why OneToOne for Profile/Resume/AIMemory?</h4>
+          <p>User has EXACTLY ONE profile, one resume, one AI memory — a strict 1:1 relationship. <code>OneToOneField</code> creates a unique database constraint ensuring duplicates are impossible. Also makes access clean: <code>user.profile</code>, <code>user.resume</code>, <code>user.ai_memory</code> — no queryset needed.</p>
+        </div>
+        <div class="info-box" style="margin-bottom:0">
+          <h4>🔗 unique_together on ChallengeSubmission</h4>
+          <p><code>Meta: unique_together = ('user', 'challenge')</code> — enforced at the database level. Prevents a user from having two submissions for the same challenge. The view uses <code>get_or_create(user, challenge)</code> which safely updates if exists. Without this DB constraint, race conditions could create duplicates.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Nexora — AI Engineering Platform &nbsp;·&nbsp; Document 5/6: Database Schema &nbsp;·&nbsp; Presentation 2026</div>
+</div>
+</body>
+</html>

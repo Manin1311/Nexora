@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexora — Backend Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root { --bg:#0a0a0f; --card:#12121a; --card2:#1a1a26; --border:#2a2a3a; --accent:#6c63ff; --accent2:#a78bfa; --green:#34d399; --orange:#fb923c; --pink:#f472b6; --blue:#38bdf8; --text:#e2e8f0; --muted:#94a3b8; --dim:#64748b; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; line-height:1.6; }
+  code { font-family:'JetBrains Mono',monospace; font-size:12.5px; background:rgba(108,99,255,.15); padding:2px 7px; border-radius:5px; color:#a78bfa; }
+  @media print {
+    body { background:#fff !important; color:#111 !important; }
+    .card,.card2,.app-card,.file-card { background:#f8f8ff !important; border:1px solid #ddd !important; }
+    .code-block { background:#1a1a2e !important; color:#e2e8f0 !important; }
+    .section-title { color:#4338ca !important; }
+    .tag,.badge { background:#ede9fe !important; color:#5b21b6 !important; border:none !important; }
+    p,li,.muted { color:#333 !important; }
+    h1,h2,h3,h4 { color:#111 !important; }
+    .page-header .logo { color:#6c63ff !important; }
+    .hero { background:linear-gradient(135deg,#4338ca,#6d28d9) !important; color:#fff !important; }
+    .hero * { color:#fff !important; }
+    .footer { color:#666 !important; }
+    code { background:#eee !important; color:#4338ca !important; }
+  }
+  .page { max-width:1100px; margin:0 auto; padding:36px 32px; }
+  .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+  .page-header .logo { font-size:19px; font-weight:900; color:#6c63ff; }
+  .page-header .doc-info { font-size:11.5px; color:var(--dim); text-align:right; }
+  .hero { background:linear-gradient(135deg,#1a0a2e 0%,#0f1a3a 100%); border:1px solid #3d2fa0; border-radius:20px; padding:40px 44px; margin-bottom:32px; }
+  .hero h1 { font-size:42px; font-weight:900; background:linear-gradient(135deg,#fff,#a78bfa,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:8px; }
+  .hero p { font-size:15px; color:#94a3b8; }
+  .section { margin-bottom:32px; }
+  .section-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:var(--accent2); margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:22px; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+
+  /* APP CARDS */
+  .app-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; }
+  .app-card { background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:16px; }
+  .app-card .app-icon { font-size:22px; margin-bottom:8px; }
+  .app-card .app-name { font-size:13px; font-weight:700; margin-bottom:4px; }
+  .app-card .app-desc { font-size:11.5px; color:var(--muted); }
+
+  /* FILE EXPLANATION */
+  .file-card { background:var(--card2); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:14px; }
+  .file-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .file-name { font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,.1); padding:3px 10px; border-radius:6px; }
+  .file-role { font-size:12px; color:var(--muted); }
+  .file-points { list-style:none; padding:0; }
+  .file-points li { font-size:12.5px; color:var(--muted); padding:5px 0; border-bottom:1px solid rgba(255,255,255,.04); display:flex; gap:8px; align-items:flex-start; }
+  .file-points li:last-child { border-bottom:none; }
+  .file-points li::before { content:'→'; color:#6c63ff; font-weight:700; flex-shrink:0; }
+
+  /* CODE BLOCK */
+  .code-block {
+    background:#0d0d1a; border:1px solid #2a2a3a; border-radius:12px;
+    padding:18px; margin:12px 0; overflow-x:auto;
+    font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.7;
+  }
+  .code-line { display:block; }
+  .kw { color:#c084fc; } .fn { color:#60a5fa; } .str { color:#34d399; }
+  .cm { color:#475569; font-style:italic; } .num { color:#fb923c; }
+  .cls { color:#f472b6; } .dec { color:#38bdf8; }
+
+  /* FLOW */
+  .flow-v { display:flex; flex-direction:column; gap:0; }
+  .flow-step { display:flex; gap:16px; align-items:flex-start; padding:14px 18px; background:var(--card2); border:1px solid var(--border); }
+  .flow-step:first-child { border-radius:12px 12px 0 0; }
+  .flow-step:last-child { border-radius:0 0 12px 12px; border-top:none; }
+  .flow-step:not(:first-child):not(:last-child) { border-top:none; }
+  .flow-num { min-width:28px; height:28px; background:linear-gradient(135deg,#6c63ff,#a78bfa); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff; flex-shrink:0; }
+  .flow-content h4 { font-size:13.5px; font-weight:700; margin-bottom:3px; }
+  .flow-content p { font-size:12px; color:var(--muted); margin:0; }
+
+  /* TAG */
+  .tag { display:inline-block; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:600; }
+  .tag-purple { background:rgba(108,99,255,.15); border:1px solid rgba(108,99,255,.3); color:#a78bfa; }
+  .tag-green { background:rgba(52,211,153,.15); border:1px solid rgba(52,211,153,.3); color:#34d399; }
+  .tag-blue { background:rgba(56,189,248,.15); border:1px solid rgba(56,189,248,.3); color:#38bdf8; }
+  .tag-orange { background:rgba(251,146,60,.15); border:1px solid rgba(251,146,60,.3); color:#fb923c; }
+
+  .divider { height:1px; background:var(--border); margin:24px 0; }
+  h2 { font-size:19px; font-weight:800; margin-bottom:10px; }
+  h3 { font-size:15px; font-weight:700; margin-bottom:8px; }
+  h4 { font-size:13.5px; font-weight:700; margin-bottom:6px; }
+  p { font-size:13px; color:var(--muted); line-height:1.7; }
+  ul { padding-left:18px; }
+  li { font-size:13px; color:var(--muted); margin-bottom:5px; line-height:1.6; }
+  li strong { color:var(--text); }
+  .footer { text-align:center; padding:24px 0 14px; color:var(--dim); font-size:11.5px; border-top:1px solid var(--border); margin-top:32px; }
+  .note-box { background:rgba(251,146,60,.07); border:1px solid rgba(251,146,60,.25); border-left:4px solid #fb923c; border-radius:10px; padding:14px 18px; margin-bottom:16px; }
+  .note-box h4 { font-size:13px; color:#fb923c; margin-bottom:5px; }
+  .note-box p { font-size:12px; }
+  .info-box { background:rgba(56,189,248,.07); border:1px solid rgba(56,189,248,.25); border-left:4px solid #38bdf8; border-radius:10px; padding:14px 18px; margin-bottom:16px; }
+  .info-box h4 { font-size:13px; color:#38bdf8; margin-bottom:5px; }
+  .info-box p { font-size:12px; }
+  .url-row { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--card2); border:1px solid var(--border); border-radius:9px; margin-bottom:8px; }
+  .url-method { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; padding:3px 8px; border-radius:5px; }
+  .method-get { background:rgba(52,211,153,.2); color:#34d399; }
+  .method-post { background:rgba(56,189,248,.2); color:#38bdf8; }
+  .method-put { background:rgba(251,146,60,.2); color:#fb923c; }
+  .method-delete { background:rgba(244,114,182,.2); color:#f472b6; }
+  .url-path { font-family:'JetBrains Mono',monospace; font-size:12px; color:#e2e8f0; }
+  .url-desc { font-size:12px; color:var(--muted); margin-left:auto; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-header">
+    <div class="logo">⬡ NEXORA</div>
+    <div class="doc-info">Project Presentation · Document 2 of 6<br><span style="color:#6c63ff">Backend — Django Architecture</span></div>
+  </div>
+
+  <div class="hero">
+    <h1>⚙️ Backend Deep Dive</h1>
+    <p>Django 5.1 + Django REST Framework + Django Channels — a production-grade ASGI backend serving REST APIs and real-time WebSockets, powered by dual AI engines with automatic failover.</p>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="section">
+    <div class="section-title">Backend Technology Stack</div>
+    <div class="two-col">
+      <div class="card">
+        <h3>📦 Core Framework Dependencies</h3>
+        <div style="margin-top:10px;">
+          <div class="url-row" style="margin-bottom:6px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#a78bfa;font-weight:700;">django&gt;=5.1</span>
+            <span style="font-size:12px;color:var(--muted);margin-left:8px;">Web framework — ORM, Auth, Admin</span>
+          </div>
+          <div class="url-row" style="margin-bottom:6px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#38bdf8;font-weight:700;">djangorestframework&gt;=3.15</span>
+            <span style="font-size:12px;color:var(--muted);margin-left:8px;">REST API views &amp; serializers</span>
+          </div>
+          <div class="url-row" style="margin-bottom:6px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#34d399;font-weight:700;">simplejwt&gt;=5.3</span>
+            <span style="font-size:12px;color:var(--muted);margin-left:8px;">JWT access + refresh token auth</span>
+          </div>
+          <div class="url-row" style="margin-bottom:6px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#fb923c;font-weight:700;">django-cors-headers&gt;=4.3</span>
+            <span style="font-size:12px;color:var(--muted);margin-left:8px;">Cross-origin requests (Frontend↔API)</span>
+          </div>
+          <div class="url-row" style="margin-bottom:6px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#f472b6;font-weight:700;">channels&gt;=4.1 + daphne&gt;=4.1</span>
+            <span style="font-size:12px;color:var(--muted);margin-left:8px;">ASGI server for WebSockets</span>
+          </div>
+          <div class="url-row" style="margin-bottom:6px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#a78bfa;font-weight:700;">psycopg2-binary&gt;=2.9</span>
+            <span style="font-size:12px;color:var(--muted);margin-left:8px;">PostgreSQL database driver</span>
+          </div>
+          <div class="url-row" style="margin-bottom:6px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#38bdf8;font-weight:700;">groq + google-generativeai</span>
+            <span style="font-size:12px;color:var(--muted);margin-left:8px;">Dual AI engines</span>
+          </div>
+          <div class="url-row" style="margin-bottom:6px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#34d399;font-weight:700;">gunicorn + whitenoise</span>
+            <span style="font-size:12px;color:var(--muted);margin-left:8px;">WSGI server + static files</span>
+          </div>
+          <div class="url-row">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#fb923c;font-weight:700;">pypdf + Pillow</span>
+            <span style="font-size:12px;color:var(--muted);margin-left:8px;">PDF parsing &amp; image processing</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🏗️ Why This Stack?</h3>
+        <ul style="margin-top:10px;">
+          <li><strong>Django ORM</strong> — Pythonic, readable queries. Custom <code>AbstractBaseUser</code> model for email-based auth.</li>
+          <li><strong>DRF Serializers</strong> — Auto-validate request data, serialize querysets to JSON. Reduces boilerplate by 80%.</li>
+          <li><strong>SimpleJWT</strong> — Stateless authentication. Access tokens (5 min) + refresh tokens (7 days) — no session storage needed.</li>
+          <li><strong>Django Channels + Daphne</strong> — Upgrades Django from WSGI (HTTP-only) to ASGI, enabling WebSocket connections for real-time Code Arena battles.</li>
+          <li><strong>Groq API</strong> — LLaMA 3.3 70B inference is ~10x faster than OpenAI GPT-4 at lower cost. Critical for real-time interview feedback.</li>
+          <li><strong>Gemini Multimodal</strong> — Only Gemini supports image + text in a single API call, needed for webcam frame analysis during interviews.</li>
+          <li><strong>PostgreSQL</strong> — ACID compliant, supports JSONField natively (used extensively for AI memory, resume data, roadmap tasks).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACKEND APPS -->
+  <div class="section">
+    <div class="section-title">12 Django Apps — Each a Module</div>
+    <div class="app-grid">
+      <div class="app-card"><div class="app-icon">👤</div><div class="app-name">users</div><div class="app-desc">Custom User, UserProfile, Resume, Notifications, AI Memory Engine</div></div>
+      <div class="app-card"><div class="app-icon">🎯</div><div class="app-name">challenges</div><div class="app-desc">Challenge model, submissions, OA simulation, AI evaluation</div></div>
+      <div class="app-card"><div class="app-icon">🎤</div><div class="app-name">interviews</div><div class="app-desc">InterviewSession, Questions, AI answer scoring, boardroom mode</div></div>
+      <div class="app-card"><div class="app-icon">🤖</div><div class="app-name">mentor</div><div class="app-desc">MentorConversation, MentorMessage, Opportunity Matcher</div></div>
+      <div class="app-card"><div class="app-icon">🗺️</div><div class="app-name">roadmap</div><div class="app-desc">LearningPath, RoadmapWeek, WeekTask — AI-generated plans</div></div>
+      <div class="app-card"><div class="app-icon">📊</div><div class="app-name">progress</div><div class="app-desc">XP awards, Achievements, Certificates, Activity logs, Scheduling</div></div>
+      <div class="app-card"><div class="app-icon">🏆</div><div class="app-name">showcase</div><div class="app-desc">Project portfolio, tags, likes, featured projects</div></div>
+      <div class="app-card"><div class="app-icon">🔍</div><div class="app-name">codereview</div><div class="app-desc">GitHub repo scan, AI issue detection, health score report</div></div>
+      <div class="app-card"><div class="app-icon">👥</div><div class="app-name">peer_reviews</div><div class="app-desc">PeerReviewRequest, PeerReviewComment, focus areas, upvotes</div></div>
+      <div class="app-card"><div class="app-icon">⚡</div><div class="app-name">arena</div><div class="app-desc">WebSocket consumer, room manager, 1v1 battle logic</div></div>
+      <div class="app-card"><div class="app-icon">🧠</div><div class="app-name">core</div><div class="app-desc">AI client (gemini_client.py) — ALL AI functions live here</div></div>
+      <div class="app-card"><div class="app-icon">⚙️</div><div class="app-name">config</div><div class="app-desc">settings/, urls.py, asgi.py — Project configuration hub</div></div>
+    </div>
+  </div>
+
+  <!-- KEY FILES EXPLAINED -->
+  <div class="section">
+    <div class="section-title">Key Files — Detailed Explanation</div>
+
+    <div class="file-card">
+      <div class="file-header">
+        <span class="file-name">core/gemini_client.py</span>
+        <span class="file-role">🧠 Central AI Brain — 1770 lines</span>
+      </div>
+      <ul class="file-points">
+        <li>This is the <strong>most critical file</strong> in the backend. ALL AI interactions from ALL 12 apps go through this single module.</li>
+        <li><code>_call_groq(prompt, system, temperature)</code> — Primary AI caller. Sends prompt to Groq's LLaMA 3.3 70B. Has <strong>multi-key rotation</strong>: tries each Groq API key in random order to distribute load. On 429 rate limit → waits and retries. If ALL keys fail → auto-calls <code>_call_gemini_fallback()</code>.</li>
+        <li><code>_call_gemini_fallback(prompt, image_frame)</code> — Google Gemini fallback. Supports <strong>multimodal input</strong>: if an <code>image_frame</code> (base64 webcam snapshot) is provided, it sends the image WITH the text prompt to Gemini Vision for posture/eye-contact analysis.</li>
+        <li><code>evaluate_challenge_submission()</code> — Evaluates code answers. Returns JSON with score (0-100), strengths, improvements, time/space complexity in Big-O notation, and a markdown complexity table. Has a smart local heuristic fallback if AI fails.</li>
+        <li><code>generate_interview_questions(mode, difficulty, topic, count, resume_context)</code> — Generates personalized interview questions. If user has a resume, builds a context block with their skills, projects, and experience so AI asks questions about THEIR actual work.</li>
+        <li><code>evaluate_interview_answer(question, answer, image_frame)</code> — Evaluates interview answers. Sends webcam snapshot to Gemini Vision for body language analysis alongside the text answer.</li>
+        <li><code>generate_boardroom_debate()</code> — Special multi-panelist mode. AI generates responses from 3 simultaneous panelists: Tech Lead, Architect, and HR Manager, each with different perspectives on the answer.</li>
+        <li><code>generate_roadmap(user_data, target_role)</code> — Creates week-by-week learning paths personalized to user's skill gaps.</li>
+        <li><code>analyze_github_repo()</code> — Fetches repo file tree via GitHub API, reads source code, and generates a structured issue report with severity levels (Critical/High/Medium/Low).</li>
+        <li><code>generate_ats_analysis()</code> — Takes resume JSON + target role, generates ATS score (0-100) with keyword gaps, strengths, checklist items.</li>
+      </ul>
+    </div>
+
+    <div class="file-card">
+      <div class="file-header">
+        <span class="file-name">users/models.py</span>
+        <span class="file-role">👤 User System — 157 lines</span>
+      </div>
+      <ul class="file-points">
+        <li><strong>Custom User Model</strong> — Extends <code>AbstractBaseUser + PermissionsMixin</code>. Uses <strong>email as USERNAME_FIELD</strong> (not username). Django's default username-based auth is replaced with email-based. <code>UserManager</code> handles <code>create_user()</code> and <code>create_superuser()</code>.</li>
+        <li><strong>UserProfile</strong> — One-to-one with User. Stores: bio, avatar image, <code>dev_rank</code> (Explorer/Builder/Creator/Architect/Legend), <code>total_xp</code>, <code>streak_days</code>, GitHub integration fields (username, repos JSON, code health score). <code>update_rank()</code> method auto-upgrades rank based on XP thresholds.</li>
+        <li><strong>Resume</strong> — One-to-one with User. Stores 6 JSON sections: <code>personal_info</code>, <code>experience</code>, <code>projects</code>, <code>skills</code>, <code>education</code>, <code>certifications</code>. Also stores <code>ats_score</code>, <code>audit_report</code> (JSON), and <code>target_role</code>.</li>
+        <li><strong>UserAIMemory</strong> — One-to-one with User. The AI Memory Engine. Stores: <code>skills_mastery</code> (dict), <code>strengths</code> (list), <code>weaknesses</code> (list), <code>recurring_mistakes</code> (list), <code>interview_stats</code> (dict), <code>career_goals</code> (dict), <code>activity_log</code> (list). AI reads this before every response to personalize output.</li>
+        <li><strong>Notification</strong> — User notifications with read/unread status. Created automatically when XP is awarded, rank changes, or achievements are earned.</li>
+      </ul>
+    </div>
+
+    <div class="file-card">
+      <div class="file-header">
+        <span class="file-name">challenges/views.py</span>
+        <span class="file-role">🎯 Challenge API — 702 lines</span>
+      </div>
+      <ul class="file-points">
+        <li><strong>ChallengeListView</strong> — Supports query params: <code>?difficulty=easy&amp;type=daily&amp;topic=5&amp;search=array</code>. Uses Django ORM <code>filter()</code> chains with <code>Q()</code> objects for multi-condition filtering.</li>
+        <li><strong>SubmitChallengeView</strong> — Handles challenge submission. Creates <code>ChallengeSubmission</code>, calls <code>evaluate_challenge_submission()</code> from AI client, saves score/feedback/complexity data, calls <code>award_xp()</code> with XP multiplier from AI evaluation, creates notification.</li>
+        <li><strong>OA Simulation Mode</strong> — <code>oa_challenges.py</code> contains company-specific assessment scenarios (Google, Amazon, etc.) with multi-step problem sets, time limits, and anti-cheat telemetry logging via <code>AssessmentTelemetry</code>.</li>
+        <li><strong>GenerateAIChallengeView</strong> — User can request an AI-generated challenge for any topic. AI generates question, requirements, difficulty, and XP reward dynamically. No pre-seeded challenge needed.</li>
+      </ul>
+    </div>
+
+    <div class="file-card">
+      <div class="file-header">
+        <span class="file-name">interviews/views.py</span>
+        <span class="file-role">🎤 Interview Session API — 207 lines</span>
+      </div>
+      <ul class="file-points">
+        <li><strong>StartInterviewView (POST)</strong> — Creates <code>InterviewSession</code>, optionally loads user's <code>Resume</code> for personalized questions, calls <code>generate_interview_questions(mode, difficulty, topic, count, resume_context)</code>. Creates N <code>InterviewQuestion</code> objects with the AI-generated questions.</li>
+        <li><strong>SubmitAnswerView (POST)</strong> — Receives: <code>answer</code> (text), <code>image_frame</code> (base64 webcam JPEG), <code>filler_words_count</code>, <code>speaking_pace</code> (WPM). Calls AI to evaluate answer with behavioral metrics. Special Boardroom mode generates multi-panelist debate response.</li>
+        <li><strong>CompleteInterviewView (POST)</strong> — Calculates average score across all questions, awards XP, updates AI Memory with interview performance, logs activity, marks session as <code>completed</code>.</li>
+      </ul>
+    </div>
+
+    <div class="file-card">
+      <div class="file-header">
+        <span class="file-name">arena/consumers.py</span>
+        <span class="file-role">⚡ WebSocket Consumer — 437 lines</span>
+      </div>
+      <ul class="file-points">
+        <li>Inherits from <code>AsyncWebsocketConsumer</code> (Django Channels). Uses <strong>async/await</strong> — non-blocking, handles many concurrent connections without threads.</li>
+        <li><strong>connect()</strong> — Authenticates user via JWT in WebSocket scope, gets/creates room from <code>ROOMS</code> dict (in-memory room state), joins channel layer group (<code>arena_{room_code}</code>). Closes with code 4001 (unauthenticated), 4004 (room not found), or 4003 (finished).</li>
+        <li><strong>receive()</strong> — Handles 3 message types from client: <code>progress_update</code> (player solved X tests), <code>battle_finish</code> (all tests passed — declare winner), <code>ping</code> (keepalive heartbeat).</li>
+        <li><strong>Battle broadcast</strong> — Uses <code>channel_layer.group_send()</code> to broadcast events to BOTH players simultaneously: <code>room_state</code>, <code>player_joined</code>, <code>battle_start</code>, <code>progress_update</code>, <code>battle_finish</code>, <code>player_left</code>.</li>
+        <li>Room state is held in module-level <code>ROOMS</code> dict (backed by <code>room_manager.py</code>), not in database — for ultra-fast real-time reads without DB queries during battle.</li>
+      </ul>
+    </div>
+
+    <div class="file-card">
+      <div class="file-header">
+        <span class="file-name">progress/utils.py</span>
+        <span class="file-role">🏆 XP &amp; Gamification Engine</span>
+      </div>
+      <ul class="file-points">
+        <li><code>award_xp(user, amount, reason)</code> — Called from every module (challenges, interviews, arena). Adds XP to <code>UserProfile.total_xp</code>, calls <code>update_rank()</code> to check for rank-up, creates a <code>Notification</code> if rank changes, logs <code>UserActivity</code>.</li>
+        <li><code>log_activity(user, type, description, xp, metadata)</code> — Appends to <code>UserActivity</code> table AND updates <code>UserAIMemory.activity_log</code> JSON array so AI knows what user has been doing across sessions.</li>
+        <li><code>award_certificate(user, challenge)</code> — Generates a <code>Certificate</code> with a unique UUID-based <code>certificate_id</code> for completing hard challenges. Shareable verification link.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- API ENDPOINTS -->
+  <div class="section">
+    <div class="section-title">Key REST API Endpoints</div>
+    <div class="two-col">
+      <div>
+        <h3 style="margin-bottom:10px;">🔐 Auth &amp; Users</h3>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/auth/register/</span><span class="url-desc">Register user</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/auth/token/</span><span class="url-desc">Login → JWT tokens</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/auth/token/refresh/</span><span class="url-desc">Refresh access token</span></div>
+        <div class="url-row"><span class="url-method method-get">GET</span><span class="url-path">/api/users/profile/</span><span class="url-desc">Get user profile + XP</span></div>
+        <div class="url-row"><span class="url-method method-get">GET</span><span class="url-path">/api/users/resume/</span><span class="url-desc">Get resume JSON</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/users/resume/ats-analyze/</span><span class="url-desc">AI ATS score</span></div>
+        <div class="url-row"><span class="url-method method-get">GET</span><span class="url-path">/api/users/notifications/</span><span class="url-desc">User notifications</span></div>
+        <h3 style="margin:16px 0 10px;">🎯 Challenges</h3>
+        <div class="url-row"><span class="url-method method-get">GET</span><span class="url-path">/api/challenges/</span><span class="url-desc">List challenges (filterable)</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/challenges/{id}/submit/</span><span class="url-desc">Submit + AI evaluate</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/challenges/generate/</span><span class="url-desc">AI-generate challenge</span></div>
+        <h3 style="margin:16px 0 10px;">⚡ Arena</h3>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/arena/rooms/create/</span><span class="url-desc">Create battle room</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/arena/rooms/{code}/join/</span><span class="url-desc">Join battle room</span></div>
+        <div class="url-row"><span class="url-method method-get">GET</span><span class="url-path">ws://…/ws/arena/{code}/</span><span class="url-desc">WebSocket connection</span></div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:10px;">🎤 Interviews</h3>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/interviews/sessions/start/</span><span class="url-desc">Start session + gen Qs</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/interviews/sessions/{id}/questions/{qid}/submit/</span><span class="url-desc">Submit answer + AI score</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/interviews/sessions/{id}/complete/</span><span class="url-desc">Complete + award XP</span></div>
+        <h3 style="margin:16px 0 10px;">🤖 Mentor &amp; Roadmap</h3>
+        <div class="url-row"><span class="url-method method-get">GET</span><span class="url-path">/api/mentor/conversations/</span><span class="url-desc">List conversations</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/mentor/conversations/{id}/messages/</span><span class="url-desc">Send message → AI reply</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/roadmap/generate/</span><span class="url-desc">Generate AI roadmap</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/roadmap/tasks/{id}/complete/</span><span class="url-desc">Mark task done + XP</span></div>
+        <h3 style="margin:16px 0 10px;">🔍 Code Review &amp; Peer</h3>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/codereview/</span><span class="url-desc">Analyze GitHub repo</span></div>
+        <div class="url-row"><span class="url-method method-get">GET</span><span class="url-path">/api/peer-reviews/</span><span class="url-desc">List review requests</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/peer-reviews/{id}/comments/</span><span class="url-desc">Add review comment</span></div>
+        <div class="url-row"><span class="url-method method-post">POST</span><span class="url-path">/api/peer-reviews/{id}/upvote/</span><span class="url-desc">Upvote request</span></div>
+        <div class="url-row"><span class="url-method method-get">GET</span><span class="url-path">/api/health/</span><span class="url-desc">API health check</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REQUEST LIFECYCLE -->
+  <div class="section">
+    <div class="section-title">API Request Lifecycle — Challenge Submission Example</div>
+    <div class="flow-v">
+      <div class="flow-step"><div class="flow-num">1</div><div class="flow-content"><h4>Frontend sends POST /api/challenges/42/submit/</h4><p>Axios sends <code>{ content: "def solution(n): return n*(n+1)//2" }</code> with <code>Authorization: Bearer &lt;access_token&gt;</code> header</p></div></div>
+      <div class="flow-step"><div class="flow-num">2</div><div class="flow-content"><h4>SimpleJWT Middleware authenticates token</h4><p>Decodes JWT → gets user ID → attaches <code>request.user</code> object. Rejects with 401 if token expired or invalid.</p></div></div>
+      <div class="flow-step"><div class="flow-num">3</div><div class="flow-content"><h4>SubmitChallengeView.post() runs</h4><p>Fetches Challenge from DB, checks if already submitted (<code>unique_together</code> constraint), gets or creates <code>ChallengeSubmission</code>, calls AI evaluator.</p></div></div>
+      <div class="flow-step"><div class="flow-num">4</div><div class="flow-content"><h4>evaluate_challenge_submission() in core/gemini_client.py</h4><p>Builds prompt with challenge title + description + user answer → sends to Groq LLaMA 3.3 70B → gets JSON response with score, feedback, complexity. Strips markdown fences, parses JSON.</p></div></div>
+      <div class="flow-step"><div class="flow-num">5</div><div class="flow-content"><h4>Saves result, awards XP, creates notification</h4><p>Saves score/feedback/complexity to DB. Calls <code>award_xp(user, xp_reward * xp_multiplier)</code>. Creates XP notification. Calls <code>log_activity()</code> to update AI Memory.</p></div></div>
+      <div class="flow-step"><div class="flow-num">6</div><div class="flow-content"><h4>Returns serialized response to frontend</h4><p>DRF serializes <code>ChallengeSubmission</code> to JSON → 200 OK response. Frontend displays score, feedback, complexity chart, XP earned.</p></div></div>
+    </div>
+  </div>
+
+  <!-- AUTH SYSTEM -->
+  <div class="section">
+    <div class="section-title">Authentication System — JWT Flow</div>
+    <div class="info-box">
+      <h4>🔐 How JWT Authentication Works in Nexora</h4>
+      <p>User logs in → backend verifies password → returns <strong>access token</strong> (expires in 5 minutes) + <strong>refresh token</strong> (expires in 7 days). Frontend stores both in localStorage. Every API request sends <code>Authorization: Bearer &lt;access_token&gt;</code>. When access token expires, frontend auto-sends refresh token to <code>/api/auth/token/refresh/</code> to get a new access token — user never sees a logout. SimpleJWT handles all token crypto (HS256 signing) automatically.</p>
+    </div>
+    <div class="note-box">
+      <h4>⚠️ Custom User Model Design Decision</h4>
+      <p>Django's default auth uses <code>username</code> as the login field. Nexora replaces it with email (<code>USERNAME_FIELD = 'email'</code>) using a custom <code>AbstractBaseUser</code>. This must be done BEFORE the first migration — it cannot be changed mid-project without data migration headaches. We planned this from day one.</p>
+    </div>
+  </div>
+
+  <div class="footer">Nexora — AI Engineering Platform &nbsp;·&nbsp; Document 2/6: Backend Architecture &nbsp;·&nbsp; Presentation 2026</div>
+</div>
+</body>
+</html>

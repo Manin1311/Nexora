@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexora — Viva Q&A</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root{--bg:#0a0a0f;--card:#12121a;--card2:#1a1a26;--border:#2a2a3a;--accent:#6c63ff;--accent2:#a78bfa;--green:#34d399;--orange:#fb923c;--pink:#f472b6;--blue:#38bdf8;--text:#e2e8f0;--muted:#94a3b8;--dim:#64748b;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;}
+  code{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:rgba(108,99,255,.15);padding:2px 6px;border-radius:4px;color:#a78bfa;}
+  @media print{
+    body{background:#fff!important;color:#111!important;font-size:11px;}
+    .hero{background:linear-gradient(135deg,#4338ca,#7c3aed)!important;}
+    .hero h1{-webkit-text-fill-color:#fff!important;}
+    .hero p{color:#e0e0ff!important;}
+    .qa-card{background:#f8f8ff!important;border:1px solid #ddd!important;break-inside:avoid;page-break-inside:avoid;}
+    .q-text{color:#111!important;}
+    .a-text{color:#1e3a5f!important;}
+    .q-num{background:#4338ca!important;color:#fff!important;}
+    .cat-badge{background:#ede9fe!important;color:#5b21b6!important;}
+    .section-title{color:#4338ca!important;}
+    .section-title::after{background:#ccc!important;}
+    code{background:#eee!important;color:#4338ca!important;}
+    .page-header .logo{color:#6c63ff!important;}
+    .footer{color:#666!important;border-top:1px solid #ddd!important;}
+    .stat-box{background:#f0f0ff!important;border:1px solid #ddd!important;}
+    .stat-num{color:#4338ca!important;}
+    p,li{color:#333!important;}
+  }
+  .page{max-width:1100px;margin:0 auto;padding:36px 32px;}
+  .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+  .page-header .logo{font-size:19px;font-weight:900;color:#6c63ff;}
+  .page-header .doc-info{font-size:11.5px;color:var(--dim);text-align:right;}
+  .hero{background:linear-gradient(135deg,#1a0840 0%,#0d1a3a 60%,#1a0a2e 100%);border:1px solid rgba(108,99,255,.4);border-radius:20px;padding:38px 44px;margin-bottom:28px;}
+  .hero h1{font-size:40px;font-weight:900;background:linear-gradient(135deg,#fff,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+  .hero p{font-size:14.5px;color:#94a3b8;}
+  .stat-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:24px;}
+  .stat-box{background:var(--card2);border:1px solid var(--border);border-radius:11px;padding:13px;text-align:center;}
+  .stat-num{font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:#6c63ff;}
+  .stat-lbl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;}
+  .section{margin-bottom:28px;}
+  .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent2);margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  /* Q&A CARDS */
+  .qa-grid{display:flex;flex-direction:column;gap:12px;}
+  .qa-card{background:var(--card2);border:1px solid var(--border);border-radius:13px;padding:18px 20px;border-left:3px solid var(--accent);}
+  .qa-card.general{border-left-color:#6c63ff;}
+  .qa-card.backend{border-left-color:#38bdf8;}
+  .qa-card.frontend{border-left-color:#f472b6;}
+  .qa-card.ai{border-left-color:#fb923c;}
+  .qa-card.database{border-left-color:#34d399;}
+  .qa-card.arch{border-left-color:#a78bfa;}
+  .q-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;}
+  .q-num{min-width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#6c63ff,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;font-family:'JetBrains Mono',monospace;}
+  .q-num.backend{background:linear-gradient(135deg,#0ea5e9,#38bdf8);}
+  .q-num.frontend{background:linear-gradient(135deg,#db2777,#f472b6);}
+  .q-num.ai{background:linear-gradient(135deg,#ea580c,#fb923c);}
+  .q-num.database{background:linear-gradient(135deg,#059669,#34d399);}
+  .q-num.arch{background:linear-gradient(135deg,#7c3aed,#a78bfa);}
+  .q-text{font-size:13.5px;font-weight:700;color:var(--text);line-height:1.4;}
+  .cat-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:auto;flex-shrink:0;align-self:flex-start;}
+  .cat-general{background:rgba(108,99,255,.15);color:#a78bfa;}
+  .cat-backend{background:rgba(56,189,248,.15);color:#38bdf8;}
+  .cat-frontend{background:rgba(244,114,182,.15);color:#f472b6;}
+  .cat-ai{background:rgba(251,146,60,.15);color:#fb923c;}
+  .cat-database{background:rgba(52,211,153,.15);color:#34d399;}
+  .cat-arch{background:rgba(167,139,250,.15);color:#a78bfa;}
+  .a-text{font-size:13px;color:var(--muted);line-height:1.7;padding-left:40px;}
+  .a-text strong{color:var(--text);}
+  .a-text ul{padding-left:16px;margin-top:4px;}
+  .a-text li{font-size:12.5px;color:var(--muted);margin-bottom:3px;}
+
+  h2{font-size:18px;font-weight:800;margin-bottom:10px;}
+  p{font-size:13px;color:var(--muted);line-height:1.7;}
+  .footer{text-align:center;padding:24px 0 14px;color:var(--dim);font-size:11.5px;border-top:1px solid var(--border);margin-top:32px;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-header">
+    <div class="logo">⬡ NEXORA</div>
+    <div class="doc-info">Project Presentation · Document 6 of 6<br><span style="color:#a78bfa">Viva Questions &amp; Answers</span></div>
+  </div>
+
+  <div class="hero">
+    <h1>🎓 Viva Q&amp;A — 50 Questions</h1>
+    <p>Comprehensive viva preparation covering General Overview, Backend (Django), Frontend (React), AI Layer (Groq/Gemini), Database (PostgreSQL), and Architecture &amp; Design decisions.</p>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-box"><div class="stat-num">10</div><div class="stat-lbl">General</div></div>
+    <div class="stat-box"><div class="stat-num">10</div><div class="stat-lbl">Backend</div></div>
+    <div class="stat-box"><div class="stat-num">8</div><div class="stat-lbl">Frontend</div></div>
+    <div class="stat-box"><div class="stat-num">10</div><div class="stat-lbl">AI Layer</div></div>
+    <div class="stat-box"><div class="stat-num">7</div><div class="stat-lbl">Database</div></div>
+    <div class="stat-box"><div class="stat-num">5</div><div class="stat-lbl">Architecture</div></div>
+  </div>
+
+  <!-- GENERAL -->
+  <div class="section">
+    <div class="section-title">🌐 General — Project Overview</div>
+    <div class="qa-grid">
+
+      <div class="qa-card general">
+        <div class="q-row"><div class="q-num">1</div><div class="q-text">What is Nexora and what problem does it solve?</div><span class="cat-badge cat-general">General</span></div>
+        <div class="a-text">Nexora is an <strong>all-in-one AI-powered developer growth platform</strong>. The problem: developers waste time juggling 5–8 separate tools — LeetCode for coding, Pramp for interviews, GitHub for portfolio, separate tools for resumes, mentoring, etc. There's no AI personalization or cross-platform continuity. <strong>Nexora consolidates all of this</strong> into one ecosystem with a unified XP system, persistent AI memory, and cross-module context. One platform, one profile, continuous growth.</div>
+      </div>
+
+      <div class="qa-card general">
+        <div class="q-row"><div class="q-num">2</div><div class="q-text">What are the 10 core modules/features of Nexora?</div><span class="cat-badge cat-general">General</span></div>
+        <div class="a-text">
+          <ul>
+            <li><strong>Coding Challenges Hub</strong> — AI-evaluated challenges with Big-O analysis</li>
+            <li><strong>Interview Lab</strong> — 5-mode mock interviews with webcam + speech analysis</li>
+            <li><strong>Dev Mentor</strong> — Persistent AI chat mentor (Groq LLaMA 3.3 70B)</li>
+            <li><strong>AI Code Review</strong> — GitHub repo health scan with severity-tagged issues</li>
+            <li><strong>AI Roadmap Generator</strong> — Week-by-week career path for 7 roles</li>
+            <li><strong>Peer Code Review Network</strong> — Community code review marketplace</li>
+            <li><strong>Code Arena</strong> — Real-time 1v1 coding battles via WebSocket</li>
+            <li><strong>Resume Hub</strong> — AI ATS scorer + full resume builder</li>
+            <li><strong>Revision Hub</strong> — AI study guides with 4-round Prep Map</li>
+            <li><strong>Progress &amp; Showcase</strong> — XP/ranks, achievements, portfolio</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-card general">
+        <div class="q-row"><div class="q-num">3</div><div class="q-text">What is the XP and rank system in Nexora?</div><span class="cat-badge cat-general">General</span></div>
+        <div class="a-text">Every user action across ALL modules earns XP: completing challenges (base XP × AI multiplier), finishing interviews, adding projects, maintaining streaks, earning achievements. XP accumulates in <code>UserProfile.total_xp</code>. There are <strong>5 ranks</strong>: Explorer (0–500 XP) → Builder (501–2000) → Creator (2001–5000) → Architect (5001–15000) → Legend (15000+). The <code>update_rank()</code> method runs after every XP award and auto-upgrades rank + creates a notification.</div>
+      </div>
+
+      <div class="qa-card general">
+        <div class="q-row"><div class="q-num">4</div><div class="q-text">How is Nexora deployed? What hosting is used?</div><span class="cat-badge cat-general">General</span></div>
+        <div class="a-text"><strong>Render Cloud</strong> — both the Django backend and PostgreSQL database are hosted on Render with auto-deploy triggered on every push to the GitHub <code>main</code> branch. The React frontend is built with <code>vite build</code> and the <code>/dist</code> folder is served as static files by Django via <strong>WhiteNoise</strong> middleware. The Django backend uses <strong>Gunicorn</strong> as the WSGI server and <strong>Daphne</strong> as the ASGI server for WebSocket support.</div>
+      </div>
+
+      <div class="qa-card general">
+        <div class="q-row"><div class="q-num">5</div><div class="q-text">What makes Nexora different from LeetCode, Pramp, or other platforms?</div><span class="cat-badge cat-general">General</span></div>
+        <div class="a-text">
+          <ul>
+            <li><strong>All-in-one:</strong> 10 features in one place — no switching platforms</li>
+            <li><strong>AI Memory Engine:</strong> AI remembers your performance across ALL modules and personalizes every interaction</li>
+            <li><strong>Behavioral interview analysis:</strong> Webcam emotion/posture detection, speech filler word tracking, WPM — not just answer quality</li>
+            <li><strong>Real-time 1v1 battles:</strong> WebSocket live coding arena</li>
+            <li><strong>Resume-personalized interviews:</strong> AI reads your actual resume and asks questions about YOUR projects</li>
+            <li><strong>Multi-AI with auto-failover:</strong> Zero AI downtime even when one provider hits rate limits</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-card general">
+        <div class="q-row"><div class="q-num">6</div><div class="q-text">What are the 5 interview modes and how do they differ?</div><span class="cat-badge cat-general">General</span></div>
+        <div class="a-text">
+          <ul>
+            <li><strong>Technical:</strong> Coding concepts, data structures, algorithms, system design</li>
+            <li><strong>HR:</strong> Behavioral questions using STAR method, soft skills, culture fit</li>
+            <li><strong>Mixed:</strong> Combination of both — technical problem-solving + behavioral reflection</li>
+            <li><strong>Rapid Fire:</strong> Short, quick-answer questions testing CS fundamentals (30s per Q)</li>
+            <li><strong>Boardroom:</strong> Multi-panelist simulation — 3 AI characters (Tech Lead, Solutions Architect, HR Manager) each give distinct feedback on your answer. TTS reads each panelist's response aloud.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="qa-card general">
+        <div class="q-row"><div class="q-num">7</div><div class="q-text">What is the AI Memory Engine and why is it important?</div><span class="cat-badge cat-general">General</span></div>
+        <div class="a-text">The <code>UserAIMemory</code> model stores a persistent learning profile per user: <code>skills_mastery</code> (topic → score dict), <code>strengths</code>, <code>weaknesses</code>, <code>recurring_mistakes</code>, <code>interview_stats</code>, <code>career_goals</code>, and <code>activity_log</code>. This is updated after every challenge submission, interview completion, and mentor chat. The <code>ai_summary</code> text field is injected into EVERY AI prompt as a system-level context — so even in a brand new conversation, the AI already "knows" this user: their skill gaps, career goals, and past performance. This creates <strong>true cross-session personalization</strong>.</div>
+      </div>
+
+      <div class="qa-card general">
+        <div class="q-row"><div class="q-num">8</div><div class="q-text">Explain the 7 career tracks in the Roadmap Generator.</div><span class="cat-badge cat-general">General</span></div>
+        <div class="a-text">The Roadmap Generator supports: <strong>FAANG Software Engineer, Frontend Developer, Backend Developer, Full Stack Developer, DevOps Engineer, ML/AI Engineer, Product Manager (Tech)</strong>. For each track, AI generates a week-by-week learning plan with tasks directly linked to Nexora's own content — e.g., a "FAANG SWE" week 3 task might say "Complete the Binary Search challenge (challenge_id=42)" or "Do a Technical interview session on System Design". The roadmap uses the user's AI Memory weaknesses to prioritize focus areas.</div>
+      </div>
+
+      <div class="qa-card general">
+        <div class="q-row"><div class="q-num">9</div><div class="q-text">What is the Peer Code Review Network and how does it work?</div><span class="cat-badge cat-general">General</span></div>
+        <div class="a-text">A community-driven code review marketplace. Developers can submit a <strong>PeerReviewRequest</strong> with their code (as a snippet, challenge submission, or showcase project link), specify focus areas (security/performance/readability/architecture/testing), and the language. Other developers in the community browse the feed and leave <strong>PeerReviewComments</strong> with type tags (suggestion/issue/praise/question) and optional line references (e.g., "L42-L58"). Comments and requests can be upvoted. Requests have open/closed status.</div>
+      </div>
+
+      <div class="qa-card general">
+        <div class="q-row"><div class="q-num">10</div><div class="q-text">What is the Code Arena and how do players join a battle?</div><span class="cat-badge cat-general">General</span></div>
+        <div class="a-text">Code Arena is a <strong>real-time 1v1 coding battle</strong> feature. Player 1 creates a room (POST <code>/api/arena/rooms/create/</code>) which returns a room_code. Player 2 joins via POST <code>/api/arena/rooms/{code}/join/</code>. Both players then connect via WebSocket (<code>ws://…/ws/arena/{code}/?token={JWT}</code>). When both players are connected, the server broadcasts <code>battle_start</code>. Players solve the same challenge in Monaco Editor. Progress updates (tests_passed) are broadcast in real-time. First to pass all tests sends <code>battle_finish</code> and the server declares the winner, awarding XP.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BACKEND -->
+  <div class="section">
+    <div class="section-title">⚙️ Backend — Django &amp; DRF</div>
+    <div class="qa-grid">
+
+      <div class="qa-card backend">
+        <div class="q-row"><div class="q-num backend">11</div><div class="q-text">Why did you use Django instead of Flask or FastAPI?</div><span class="cat-badge cat-backend">Backend</span></div>
+        <div class="a-text">Django provides a <strong>batteries-included</strong> framework with built-in ORM, admin panel, authentication, migrations, and middleware — reducing boilerplate significantly. <strong>Django REST Framework</strong> adds serializers, view classes, and permission layers on top. For a platform with 12+ models and complex relationships, Django's ORM is far more productive than Flask's bare-bones approach. FastAPI is faster for microservices but Django's monolith is easier to manage for an all-in-one platform. Also, <strong>Django Channels</strong> integrates seamlessly for WebSocket support without switching frameworks.</div>
+      </div>
+
+      <div class="qa-card backend">
+        <div class="q-row"><div class="q-num backend">12</div><div class="q-text">How does JWT authentication work in Nexora?</div><span class="cat-badge cat-backend">Backend</span></div>
+        <div class="a-text">We use <strong>djangorestframework-simplejwt</strong>. Login → POST <code>/api/auth/token/</code> → returns <code>access</code> token (expires 5 min) + <code>refresh</code> token (expires 7 days). Frontend stores both in localStorage. Every API request sends <code>Authorization: Bearer &lt;access_token&gt;</code> header. When access token expires, the Axios interceptor automatically calls <code>/api/auth/token/refresh/</code> with the refresh token to get a new access token — user never sees a logout. JWT is <strong>stateless</strong>: no session stored in DB. Token payload contains user ID; backend verifies signature with <code>SECRET_KEY</code>.</div>
+      </div>
+
+      <div class="qa-card backend">
+        <div class="q-row"><div class="q-num backend">13</div><div class="q-text">What is a custom User model and why did you use it?</div><span class="cat-badge cat-backend">Backend</span></div>
+        <div class="a-text">Django's default <code>User</code> model uses <code>username</code> as the login field. We replaced it with a custom model extending <code>AbstractBaseUser + PermissionsMixin</code>, setting <code>USERNAME_FIELD = 'email'</code>. This means users log in with email+password instead of username. The <code>UserManager</code> class defines <code>create_user()</code> and <code>create_superuser()</code>. <strong>Critical:</strong> This must be done BEFORE the first migration — changing auth models mid-project causes complex data migration issues. In settings: <code>AUTH_USER_MODEL = 'users.User'</code>. All ForeignKeys to the user model use <code>settings.AUTH_USER_MODEL</code> (not a direct import) to avoid circular imports.</div>
+      </div>
+
+      <div class="qa-card backend">
+        <div class="q-row"><div class="q-num backend">14</div><div class="q-text">Explain Django REST Framework serializers. Why are they important?</div><span class="cat-badge cat-backend">Backend</span></div>
+        <div class="a-text">Serializers convert between <strong>Python objects (Django models)</strong> and <strong>JSON</strong>. They: (1) <strong>Deserialize</strong> — validate incoming JSON request data, raise validation errors, convert to Python dicts; (2) <strong>Serialize</strong> — convert model instances or querysets to JSON for the response. DRF's <code>ModelSerializer</code> auto-generates fields from the model definition — no need to manually map each field. Custom <code>SerializerMethodField</code> lets you add computed fields (e.g., <code>is_completed</code> based on the requesting user's submission). Without serializers, you'd manually write validation and JSON conversion for every endpoint.</div>
+      </div>
+
+      <div class="qa-card backend">
+        <div class="q-row"><div class="q-num backend">15</div><div class="q-text">How does Django Channels enable WebSockets? What is Daphne?</div><span class="cat-badge cat-backend">Backend</span></div>
+        <div class="a-text">Standard Django runs on <strong>WSGI</strong> (Web Server Gateway Interface) — a synchronous protocol that handles one request at a time, with no support for persistent connections. <strong>Django Channels</strong> upgrades Django to <strong>ASGI</strong> (Asynchronous Server Gateway Interface), enabling: WebSocket connections, long-polling, background tasks. <strong>Daphne</strong> is the ASGI server that handles both HTTP and WebSocket connections. <code>asgi.py</code> defines routing: HTTP requests → Django's WSGI handler, WebSocket requests (path starting with <code>/ws/</code>) → Channels consumers. The <code>ArenaConsumer</code> class extends <code>AsyncWebsocketConsumer</code> with <code>async/await</code> methods.</div>
+      </div>
+
+      <div class="qa-card backend">
+        <div class="q-row"><div class="q-num backend">16</div><div class="q-text">What are DRF permissions? How are they used in Nexora?</div><span class="cat-badge cat-backend">Backend</span></div>
+        <div class="a-text">DRF permissions control who can access an API view. Two main classes used: <code>permissions.IsAuthenticated</code> — requires valid JWT token; only logged-in users can access. <code>permissions.AllowAny</code> — public access (challenge list, topics). Set per view: <code>permission_classes = [permissions.IsAuthenticated]</code>. For example, challenge LIST is public (<code>AllowAny</code>) so guests can browse, but SUBMIT requires authentication. This is why unauthorized users see challenges on the landing page but get a 401 when trying to submit.</div>
+      </div>
+
+      <div class="qa-card backend">
+        <div class="q-row"><div class="q-num backend">17</div><div class="q-text">Explain the XP award system — how does award_xp() work?</div><span class="cat-badge cat-backend">Backend</span></div>
+        <div class="a-text">The <code>award_xp(user, amount, reason)</code> function in <code>progress/utils.py</code> is called from every module after a user action. It: (1) Fetches <code>UserProfile</code> and adds XP amount; (2) Calls <code>profile.update_rank()</code> — compares XP against thresholds, changes <code>dev_rank</code> if upgraded; (3) If rank changed → creates a <code>Notification</code> ("You reached Builder rank!"); (4) Calls <code>log_activity()</code> to create <code>UserActivity</code> record AND update <code>UserAIMemory.activity_log</code>; (5) Saves profile. XP amounts are weighted: Hard challenge = 200 XP × AI multiplier (0.5–1.5 based on answer quality). Interview = based on average score.</div>
+      </div>
+
+      <div class="qa-card backend">
+        <div class="q-row"><div class="q-num backend">18</div><div class="q-text">What is CORS and how is it configured in Nexora?</div><span class="cat-badge cat-backend">Backend</span></div>
+        <div class="a-text"><strong>CORS (Cross-Origin Resource Sharing)</strong> is a browser security mechanism that blocks JavaScript from making HTTP requests to a different domain/port than the current page. Since React frontend (e.g., <code>localhost:5173</code>) makes requests to Django API (<code>localhost:8000</code>), the browser blocks these by default. We use <strong>django-cors-headers</strong> package. In settings: <code>CORS_ALLOWED_ORIGINS = ['http://localhost:5173', 'https://nexora.onrender.com']</code>. The middleware adds <code>Access-Control-Allow-Origin</code> headers to every response. Without CORS configuration, the frontend would get blocked by the browser even though the server is running fine.</div>
+      </div>
+
+      <div class="qa-card backend">
+        <div class="q-row"><div class="q-num backend">19</div><div class="q-text">How does the GitHub repo analysis work in the Code Review module?</div><span class="cat-badge cat-backend">Backend</span></div>
+        <div class="a-text">When user submits a GitHub URL: (1) Backend calls GitHub API <code>/repos/{owner}/{repo}/git/trees/{branch}?recursive=1</code> to get full file tree; (2) Filters to source code files (.py, .js, .jsx, .ts, .java, .go, etc.), skips node_modules, vendor, __pycache__; (3) Fetches content of each important file via <code>/repos/{owner}/{repo}/contents/{path}</code> (base64 decoded); (4) Assembles all code into one prompt for the AI; (5) AI returns structured JSON with <code>overall_score</code>, and per-file <code>issues</code> (severity: Critical/High/Medium/Low, type, description, suggestion, line_ref); (6) Aggregated counts saved to <code>CodeReview</code> model, full report in <code>report_json</code> JSONField.</div>
+      </div>
+
+      <div class="qa-card backend">
+        <div class="q-row"><div class="q-num backend">20</div><div class="q-text">What is WhiteNoise and why is it used?</div><span class="cat-badge cat-backend">Backend</span></div>
+        <div class="a-text"><strong>WhiteNoise</strong> is a Python middleware that allows Django to serve static files (CSS, JS, images) directly, without needing a separate web server like Nginx. In production on Render, we run only Gunicorn (Django). Without WhiteNoise, we'd need to configure a CDN or Nginx reverse proxy just for static files. WhiteNoise adds efficient <strong>ETag caching</strong> and <strong>gzip compression</strong> automatically. Configuration: <code>STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'</code>. Since React is built (<code>vite build</code>) into <code>/frontend/dist</code>, those files are collected by <code>collectstatic</code> and served by WhiteNoise too.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FRONTEND -->
+  <div class="section">
+    <div class="section-title">🎨 Frontend — React &amp; Vite</div>
+    <div class="qa-grid">
+
+      <div class="qa-card frontend">
+        <div class="q-row"><div class="q-num frontend">21</div><div class="q-text">Why React? Why not Angular or Vue?</div><span class="cat-badge cat-frontend">Frontend</span></div>
+        <div class="a-text">React's <strong>component-based architecture</strong> makes it easy to build complex UIs from reusable pieces. React's <strong>large ecosystem</strong> (Framer Motion, Monaco Editor, React Router) provides production-ready libraries for everything we needed. React 18's <strong>Concurrent Mode</strong> enables smoother animations and transitions. React's <strong>unidirectional data flow</strong> (state → UI) makes debugging predictable. Vite + React is the fastest development experience available. Angular is heavyweight for our use case; Vue is excellent but React has better TypeScript support and library availability for animation-heavy UIs.</div>
+      </div>
+
+      <div class="qa-card frontend">
+        <div class="q-row"><div class="q-num frontend">22</div><div class="q-text">What is React Context? How is it used for authentication?</div><span class="cat-badge cat-frontend">Frontend</span></div>
+        <div class="a-text">React Context provides a way to pass data through the component tree without prop-drilling. In <code>AuthContext.jsx</code>: <code>createContext()</code> creates the context, <code>AuthProvider</code> wraps the entire app and holds <code>user</code>, <code>isAuthenticated</code>, <code>login()</code>, <code>logout()</code> state. Any component anywhere in the tree calls <code>const { user, isAuthenticated } = useAuth()</code> to access auth state. On app load, the provider checks localStorage for a token, calls <code>/api/users/profile/</code> to verify it's still valid, and populates <code>user</code> state. This means a page refresh keeps the user logged in without re-login.</div>
+      </div>
+
+      <div class="qa-card frontend">
+        <div class="q-row"><div class="q-num frontend">23</div><div class="q-text">How does speech-to-text work in the Interview Session? Explain the duplicate bug fix.</div><span class="cat-badge cat-frontend">Frontend</span></div>
+        <div class="a-text">We use the browser's native <strong>Web Speech API</strong>: <code>const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)()</code>. Set <code>continuous=true</code> (keeps listening) and <code>interimResults=true</code> (shows partial transcripts while speaking). <strong>The Bug:</strong> With both flags set, <code>onresult</code> fires multiple times for each word. Old code did <code>setAnswer(prev => prev + text)</code> — appending BOTH interim and final transcripts each time, causing "hello hello hello". <strong>The Fix:</strong> Added <code>committedTextRef</code> — a ref tracking only final/confirmed text. Final results are appended to the ref once. Interim results show <code>committedText + interimPreview</code> without modifying the ref. <code>committedTextRef.current = ''</code> is reset when moving to the next question.</div>
+      </div>
+
+      <div class="qa-card frontend">
+        <div class="q-row"><div class="q-num frontend">24</div><div class="q-text">What is Framer Motion and how is it used in Nexora?</div><span class="cat-badge cat-frontend">Frontend</span></div>
+        <div class="a-text"><strong>Framer Motion</strong> is a production-grade React animation library. Used throughout Nexora for: <strong>Button micro-animations</strong>: <code>&lt;motion.button whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}&gt;</code> — every interactive button bounces subtly; <strong>Page transitions</strong>: <code>AnimatePresence</code> wraps routes, pages fade/slide in with <code>initial={{ opacity:0, y:20 }}</code> and <code>animate={{ opacity:1, y:0 }}</code>; <strong>Modal animations</strong>: Modals scale from 0.9→1 on open; <strong>Stagger animations</strong>: List items animate in with 50ms delay between each using <code>staggerChildren</code>. This creates the premium, polished feel of the UI.</div>
+      </div>
+
+      <div class="qa-card frontend">
+        <div class="q-row"><div class="q-num frontend">25</div><div class="q-text">How does the webcam snapshot work for AI body language analysis?</div><span class="cat-badge cat-frontend">Frontend</span></div>
+        <div class="a-text">On interview answer submit: (1) The live webcam stream is already attached to a <code>&lt;video&gt;</code> element via <code>videoRef.current.srcObject = stream</code>; (2) Create an off-screen <code>&lt;canvas&gt;</code> (320×240px); (3) Mirror the image: <code>ctx.translate(320,0); ctx.scale(-1,1);</code> (mirrors to match what user sees); (4) Draw video frame: <code>ctx.drawImage(videoRef.current, 0, 0, 320, 240)</code>; (5) Convert to base64: <code>canvas.toDataURL('image/jpeg', 0.6)</code> (60% quality to reduce size); (6) Send as <code>image_frame</code> field in the API payload. Backend passes this to Gemini Vision for posture/eye-contact analysis.</div>
+      </div>
+
+      <div class="qa-card frontend">
+        <div class="q-row"><div class="q-num frontend">26</div><div class="q-text">What is the ProtectedRoute component and how does it work?</div><span class="cat-badge cat-frontend">Frontend</span></div>
+        <div class="a-text"><code>ProtectedRoute</code> is a wrapper component in <code>App.jsx</code>. It reads <code>isAuthenticated</code> from <code>AuthContext</code>. If auth is still loading → shows a spinner. If user is NOT authenticated → saves their intended URL to <code>sessionStorage.setItem('nexora_redirect_after_login', location.pathname)</code> → redirects to <code>/login</code>. If user IS authenticated → renders the children (the actual page). After login, the login page reads the saved URL from sessionStorage and redirects the user back to where they were going. This gives a smooth "login and continue" UX.</div>
+      </div>
+
+      <div class="qa-card frontend">
+        <div class="q-row"><div class="q-num frontend">27</div><div class="q-text">Why Vite over Create React App (CRA)?</div><span class="cat-badge cat-frontend">Frontend</span></div>
+        <div class="a-text">Vite is dramatically faster because it uses <strong>native ES modules</strong> in development (no bundling needed — browser loads files directly), while CRA bundles everything with Webpack on every change. Comparison: <strong>Cold start</strong>: Vite &lt;1 second vs CRA 15–30 seconds. <strong>HMR update</strong>: Vite &lt;100ms vs CRA 3–5 seconds. <strong>Build time</strong>: Vite 5–10s vs CRA 30–60s. Vite also has <strong>zero-config TypeScript support</strong>, better tree-shaking, and smaller build output. CRA is deprecated by the React team in favor of Vite/Next.js.</div>
+      </div>
+
+      <div class="qa-card frontend">
+        <div class="q-row"><div class="q-num frontend">28</div><div class="q-text">What is the Web Audio API and how is it used for the audio visualizer?</div><span class="cat-badge cat-frontend">Frontend</span></div>
+        <div class="a-text">The <strong>Web Audio API</strong> is a browser API for processing and visualizing audio. In the interview session: (1) <code>const AudioCtx = new (window.AudioContext)()</code>; (2) <code>const analyser = AudioCtx.createAnalyser()</code> — an audio node that performs real-time frequency analysis; (3) <code>const source = AudioCtx.createMediaStreamSource(micStream)</code> — connects mic stream as the audio source; (4) <code>source.connect(analyser)</code> — routes audio through the analyser; (5) In a <code>requestAnimationFrame</code> loop: <code>analyser.getByteFrequencyData(dataArray)</code> fills an array with frequency amplitudes; (6) These values are drawn as vertical bars on a <code>&lt;canvas&gt;</code> — creating the waveform visualizer.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- AI -->
+  <div class="section">
+    <div class="section-title">🤖 AI Layer — Groq, Gemini &amp; Prompting</div>
+    <div class="qa-grid">
+
+      <div class="qa-card ai">
+        <div class="q-row"><div class="q-num ai">29</div><div class="q-text">Why Groq LLaMA 3.3 70B over OpenAI GPT-4?</div><span class="cat-badge cat-ai">AI</span></div>
+        <div class="a-text"><strong>Speed:</strong> Groq's custom LPU (Language Processing Unit) hardware delivers 500+ tokens/sec — approximately 10x faster than OpenAI GPT-4. For real-time interview feedback, this means users get responses in 1–2 seconds vs 10–15 seconds. <strong>Cost:</strong> Groq is significantly cheaper per token. <strong>Model quality:</strong> LLaMA 3.3 70B is Meta's open-source model with strong code understanding and reasoning. <strong>No vendor lock-in:</strong> As an open-source model, it can be self-hosted if needed. The main disadvantage is Groq's rate limits on free tier — solved by our multi-key rotation system.</div>
+      </div>
+
+      <div class="qa-card ai">
+        <div class="q-row"><div class="q-num ai">30</div><div class="q-text">Explain the multi-key rotation and automatic failover system.</div><span class="cat-badge cat-ai">AI</span></div>
+        <div class="a-text">In <code>_call_groq()</code>: (1) Reads list of Groq API keys from <code>settings.GROQ_API_KEYS</code>; (2) Picks a <strong>random starting index</strong> (load balancing across keys); (3) Tries each key in rotation, and for each key tries each model in <code>GROQ_MODEL_FALLBACKS</code>; (4) On 429 (rate limit): waits <code>(attempt+1)*2 + random(0.5–1.5)</code> seconds, retries up to 2 times per model; (5) If ALL Groq keys exhausted → logs "Falling back to Google Gemini" → calls <code>_call_gemini_fallback()</code>; (6) Gemini also has multi-key + multi-model rotation (gemini-2.5-flash → 2.0-flash → 1.5-flash → 1.5-pro); (7) If Gemini also fails → local heuristic fallback for critical functions. <strong>Result: Zero AI downtime.</strong></div>
+      </div>
+
+      <div class="qa-card ai">
+        <div class="q-row"><div class="q-num ai">31</div><div class="q-text">What is multimodal AI? How does Nexora use it for interviews?</div><span class="cat-badge cat-ai">AI</span></div>
+        <div class="a-text"><strong>Multimodal AI</strong> = models that accept multiple input types simultaneously (text + images, text + audio, etc.). In Nexora: when an interview answer is submitted with a webcam snapshot, the <code>evaluate_interview_answer()</code> function calls <code>_call_gemini_fallback(prompt, image_frame=base64_jpeg)</code>. Gemini Vision receives BOTH: the text prompt (question + answer + evaluation rubric) AND the webcam image. It analyzes: posture (upright vs slouching), eye contact (looking at camera vs looking away/down), facial engagement. Returns <code>eye_contact_score</code> and <code>posture_score</code> (0-100 each). Groq/LLaMA does NOT support image input — that's why Gemini is specifically used for this feature.</div>
+      </div>
+
+      <div class="qa-card ai">
+        <div class="q-row"><div class="q-num ai">32</div><div class="q-text">What is prompt engineering? Give an example from Nexora.</div><span class="cat-badge cat-ai">AI</span></div>
+        <div class="a-text">Prompt engineering is the craft of designing AI prompts to get reliable, structured, high-quality responses. Key techniques in Nexora: <strong>Role-setting system prompts</strong>: "You are an expert senior software developer" primes the AI to respond as an expert, not a general assistant. <strong>Output format specification</strong>: "Return ONLY valid JSON with this exact structure: {...}" — eliminates explanatory text we'd have to strip. <strong>Context injection</strong>: Prepending user's resume data so AI generates personalized questions. <strong>Low temperature for evaluations (0.3)</strong>: More deterministic scoring. <strong>JSON mode</strong>: <code>response_format: {"type": "json_object"}</code> forces valid JSON output. Without careful prompting, AI might return inconsistent formats that break JSON parsing.</div>
+      </div>
+
+      <div class="qa-card ai">
+        <div class="q-row"><div class="q-num ai">33</div><div class="q-text">How does the AI generate resume-personalized interview questions?</div><span class="cat-badge cat-ai">AI</span></div>
+        <div class="a-text">In <code>StartInterviewView</code>: after creating the session, backend tries to load the user's <code>Resume</code> object. If found, <code>generate_interview_questions()</code> builds a context block: extracts flat skills list from all skill categories, summarizes up to 3 projects (name + tech stack + description truncated to 120 chars), summarizes up to 3 experience entries (role + company + dates). This context is prepended to the prompt: "CANDIDATE PROFILE: Skills: [React, Django...], Projects: [Nexora - Django+React+AI], Experience: [Backend Dev Intern at...]". The AI then generates questions referencing this specific background — e.g., "In your Nexora project, how did you handle WebSocket authentication?"</div>
+      </div>
+
+      <div class="qa-card ai">
+        <div class="q-row"><div class="q-num ai">34</div><div class="q-text">What is temperature in AI models? What values does Nexora use and why?</div><span class="cat-badge cat-ai">AI</span></div>
+        <div class="a-text"><strong>Temperature</strong> controls the randomness/creativity of AI output. Range 0–1 (or higher): <strong>0</strong> = completely deterministic (same input → always same output); <strong>1</strong> = maximum randomness/creativity. Nexora uses: <strong>0.3</strong> for evaluations (challenge scoring, interview answer scoring) — want consistent, objective scoring. Same answer should get similar scores each time. <strong>0.7</strong> for generative tasks (roadmap creation, mentor chat responses, revision guides) — want varied, engaging, creative output. <strong>0.9</strong> for boardroom debate — need distinct "personalities" for each AI panelist to feel different.</div>
+      </div>
+
+      <div class="qa-card ai">
+        <div class="q-row"><div class="q-num ai">35</div><div class="q-text">What is the ATS score and how is it calculated?</div><span class="cat-badge cat-ai">AI</span></div>
+        <div class="a-text"><strong>ATS (Applicant Tracking System)</strong> is software used by companies to screen resumes before human review. An ATS score indicates how well a resume would pass automated screening. In Nexora, the user provides their resume JSON + a target role (e.g., "Backend Developer at Google"). AI analyzes: <strong>keyword density</strong> (does resume contain technologies relevant to that role?), <strong>section completeness</strong> (all 6 sections filled?), <strong>formatting signals</strong> (bullet points, dates, quantifiable achievements), <strong>role alignment</strong> (does experience/skills match the target role?). Returns score 0–100, keyword_gaps (missing important tech terms), checklist (has_email, has_github, uses_action_verbs), and actionable tips. Saved to <code>Resume.ats_score</code> in DB.</div>
+      </div>
+
+      <div class="qa-card ai">
+        <div class="q-row"><div class="q-num ai">36</div><div class="q-text">What is the Boardroom mode and how does multi-panelist AI work?</div><span class="cat-badge cat-ai">AI</span></div>
+        <div class="a-text">Boardroom mode simulates a real panel interview. After the user submits an answer, <code>generate_boardroom_debate()</code> is called with: question, answer, full conversation history, and next question text. The AI prompt instructs it to generate responses from 3 distinct panelists: <strong>Tech Lead</strong> (challenges on technical depth, code quality), <strong>Solutions Architect</strong> (questions on scalability, system design), <strong>HR Manager</strong> (evaluates communication, cultural fit). Each panelist's response is stored in <code>behavioral_feedback</code> as a JSON string. On the frontend, <code>window.speechSynthesis</code> reads each response aloud with different voice rate/pitch settings per panelist character.</div>
+      </div>
+
+      <div class="qa-card ai">
+        <div class="q-row"><div class="q-num ai">37</div><div class="q-text">What is the local heuristic fallback for challenge evaluation?</div><span class="cat-badge cat-ai">AI</span></div>
+        <div class="a-text">If BOTH Groq AND Gemini fail completely, <code>evaluate_challenge_submission()</code> falls back to a local algorithm: counts <code>words</code> and <code>lines</code> in the submission. Base score 60. +10 if &gt;10 words, +10 more if &gt;30 words, +10 more if &gt;80 words, +5 if &gt;3 lines (max 95). Checks for code keywords (function, class, def, const, return, import) to identify if answer contains actual code. Estimates time complexity: if two nested for-loops → O(N²), if binary/log keywords → O(log N), else O(N). Generates a generic but non-empty feedback. This ensures the platform NEVER returns an error to the user — they always get a score and feedback, even during AI outages.</div>
+      </div>
+
+      <div class="qa-card ai">
+        <div class="q-row"><div class="q-num ai">38</div><div class="q-text">How are filler words detected in interviews?</div><span class="cat-badge cat-ai">AI</span></div>
+        <div class="a-text">Filler word detection happens on the <strong>frontend</strong>, not the backend. In <code>InterviewSessionPage.jsx</code>, each time a final speech recognition result arrives, the transcript text is scanned for a predefined list: <code>["um", "uh", "like", "you know", "basically", "actually", "literally", "kind of", "sort of"]</code>. The count increments per occurrence and is displayed live as a badge counter. On answer submit, this count (<code>filler_words_count</code>) is sent to the backend as part of the payload, stored in <code>InterviewQuestion.filler_words_count</code>, and displayed in the feedback panel alongside the AI evaluation. A lower filler count improves communication score.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DATABASE -->
+  <div class="section">
+    <div class="section-title">🗄️ Database — PostgreSQL &amp; ORM</div>
+    <div class="qa-grid">
+
+      <div class="qa-card database">
+        <div class="q-row"><div class="q-num database">39</div><div class="q-text">Why PostgreSQL over MySQL or SQLite?</div><span class="cat-badge cat-database">Database</span></div>
+        <div class="a-text"><strong>PostgreSQL's native JSONField support</strong> is the primary reason — we use JSON extensively for resume sections, AI memory, roadmap data. PostgreSQL stores and queries JSON natively with <code>@></code> and <code>->></code> operators. <strong>ACID compliance</strong> — critical for XP transactions (awarding XP must be atomic; partial updates would corrupt user data). <strong>Concurrent connections</strong> — PostgreSQL handles many simultaneous connections efficiently (important for Code Arena battles). <strong>Django ORM support</strong> — best first-class Django support. SQLite is fine for development but not production (no concurrent writes). MySQL lacks some PostgreSQL features like full JSONField support and CTEs used in complex queries.</div>
+      </div>
+
+      <div class="qa-card database">
+        <div class="q-row"><div class="q-num database">40</div><div class="q-text">What are Django migrations? How do they work?</div><span class="cat-badge cat-database">Database</span></div>
+        <div class="a-text">Migrations are Django's version control for the database schema. When you change a model (add a field, change a field type, create a new model), you run: <code>python manage.py makemigrations</code> — Django detects changes and creates a migration file in <code>app/migrations/</code>. Then <code>python manage.py migrate</code> — executes the SQL changes on the database. Migrations are stored as Python files, version-controlled in Git, so the entire team applies the same schema changes. Each migration has <code>dependencies</code> linking to previous migrations — they run in order. You can roll back: <code>python manage.py migrate app 0005</code> (go back to migration 0005).</div>
+      </div>
+
+      <div class="qa-card database">
+        <div class="q-row"><div class="q-num database">41</div><div class="q-text">What is select_related() and why is it used?</div><span class="cat-badge cat-database">Database</span></div>
+        <div class="a-text"><code>select_related()</code> is an ORM optimization that performs a SQL <strong>JOIN</strong> to fetch related objects in a single query instead of N+1 queries. Example: When listing challenges with their topics, without optimization: fetching 50 challenges + for each challenge a separate query to get its topic = 51 queries. With <code>Challenge.objects.select_related('topic')</code>: ONE query with a JOIN. In Nexora, used in <code>ChallengeListView</code>: <code>qs = Challenge.objects.filter(is_active=True).select_related('topic')</code>. Without this, listing 50 challenges would hit the DB 51 times. <code>prefetch_related()</code> is used for ManyToMany fields (challenges' tags) which can't be JOINed efficiently.</div>
+      </div>
+
+      <div class="qa-card database">
+        <div class="q-row"><div class="q-num database">42</div><div class="q-text">Why use JSONField for UserAIMemory data instead of separate tables?</div><span class="cat-badge cat-database">Database</span></div>
+        <div class="a-text">AI memory fields like <code>skills_mastery</code>, <code>weaknesses</code>, <code>activity_log</code> have <strong>dynamic, evolving structure</strong> — skills added by AI evaluations over time, variable number of weaknesses, growing activity log. Creating separate normalized tables would require: SkillsMasteryTable (user, topic, score), WeaknessTable (user, weakness_text), ActivityLogTable (user, action, timestamp) — complex JOINs to reconstruct the memory object. JSONField stores all of it in one field, fetched in one query, and the AI just reads the entire JSON object as context. Trade-off: can't run SQL filters ON these fields (e.g., WHERE skill_score > 70) — but we never need to; we always read the whole memory object.</div>
+      </div>
+
+      <div class="qa-card database">
+        <div class="q-row"><div class="q-num database">43</div><div class="q-text">What is the unique_together constraint on ChallengeSubmission?</div><span class="cat-badge cat-database">Database</span></div>
+        <div class="a-text"><code>class Meta: unique_together = ('user', 'challenge')</code> creates a <strong>composite unique constraint at the database level</strong> — meaning the combination of (user_id, challenge_id) must be unique. A user can only have ONE submission per challenge (to prevent re-scoring the same challenge for more XP). Django enforces this at the ORM level too, but the DB constraint is the ultimate safety net even against direct SQL inserts. In the view, we use <code>get_or_create(user=request.user, challenge=challenge)</code> which safely returns the existing submission if it exists, or creates a new one — never creating a duplicate. The <code>status='evaluated'</code> check before submission prevents re-evaluation.</div>
+      </div>
+
+      <div class="qa-card database">
+        <div class="q-row"><div class="q-num database">44</div><div class="q-text">What is the difference between on_delete=CASCADE and SET_NULL?</div><span class="cat-badge cat-database">Database</span></div>
+        <div class="a-text"><code>on_delete</code> defines what happens to related records when the referenced object is deleted. <strong>CASCADE</strong>: delete child records when parent is deleted. Used where child has no meaning without parent — e.g., <code>ChallengeSubmission.user = FK(User, CASCADE)</code>: if user is deleted, all their submissions are deleted too. <strong>SET_NULL</strong>: set the FK field to NULL when referenced object is deleted. Used when child can exist independently — e.g., <code>Challenge.topic = FK(ChallengeTopic, SET_NULL, null=True)</code>: if a topic is deleted, challenges in that topic remain but with <code>topic=None</code>. Also used for <code>Certificate.challenge</code> — certificate exists even if the source challenge is later deleted.</div>
+      </div>
+
+      <div class="qa-card database">
+        <div class="q-row"><div class="q-num database">45</div><div class="q-text">Why does AssessmentSession use UUIDField as primary key?</div><span class="cat-badge cat-database">Database</span></div>
+        <div class="a-text">Auto-increment integer PKs (1, 2, 3, 4…) are <strong>predictable</strong> — a malicious user could guess other users' session IDs by incrementing. For OA (Online Assessment) simulation sessions which have anti-cheat mechanisms and sensitive telemetry data, this is a security risk. <strong>UUID4</strong> (e.g., <code>6ba7b810-9dad-11d1-80b4-00c04fd430c8</code>) has 2^122 ≈ 5.3 × 10^36 possible values — practically impossible to guess. Even if someone knows a valid session exists, they can't guess another user's session ID. This is standard practice for security-sensitive resources. Regular challenge submissions and interview sessions use standard auto-increment IDs since they're all behind JWT authentication anyway.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="section">
+    <div class="section-title">🏗️ Architecture &amp; Design Decisions</div>
+    <div class="qa-grid">
+
+      <div class="qa-card arch">
+        <div class="q-row"><div class="q-num arch">46</div><div class="q-text">Why monolithic architecture instead of microservices?</div><span class="cat-badge cat-arch">Architecture</span></div>
+        <div class="a-text">For a project at this scale and team size, a <strong>monolith is the right choice</strong>. Advantages: (1) <strong>Simpler deployment</strong> — one app to deploy on Render vs 10+ microservices; (2) <strong>Shared database</strong> — direct ORM joins across modules (e.g., challenge submission updating AI memory in the same transaction); (3) <strong>Lower latency</strong> — no network hops between services; (4) <strong>Easier debugging</strong> — one codebase, one stack trace; (5) <strong>Less infrastructure</strong> — no service discovery, load balancers, or API gateway needed. Microservices make sense when teams are large and modules need independent scaling. At our scale, the complexity overhead outweighs the benefits. Django's app system provides logical separation without physical distribution.</div>
+      </div>
+
+      <div class="qa-card arch">
+        <div class="q-row"><div class="q-num arch">47</div><div class="q-text">How does the SPA (Single Page Application) routing work with Django?</div><span class="cat-badge cat-arch">Architecture</span></div>
+        <div class="a-text">React is a SPA — routing is handled client-side by React Router. But when a user directly visits <code>nexora.com/challenges</code>, the request goes to Django, which doesn't know about <code>/challenges</code> as a Django URL. Solution in <code>config/urls.py</code>: a <strong>catch-all regex route</strong>: <code>re_path(r'^(?!api/|admin/|media/|static/).*$', serve_spa)</code> — any URL that doesn't start with <code>api/</code>, <code>admin/</code>, <code>media/</code>, or <code>static/</code> is served the React SPA's <code>index.html</code>. React Router then reads the URL in the browser and renders the correct page client-side. API routes (<code>/api/...</code>) are still handled by Django normally.</div>
+      </div>
+
+      <div class="qa-card arch">
+        <div class="q-row"><div class="q-num arch">48</div><div class="q-text">What is ASGI vs WSGI? Why does Nexora need ASGI?</div><span class="cat-badge cat-arch">Architecture</span></div>
+        <div class="a-text"><strong>WSGI (Web Server Gateway Interface)</strong>: Traditional synchronous Python web standard. Each HTTP request is handled, response sent, connection closed. Cannot maintain persistent connections — no WebSockets. <strong>ASGI (Asynchronous Server Gateway Interface)</strong>: Modern async standard. Handles: HTTP requests (like WSGI), WebSocket connections (persistent, bidirectional), background tasks. Nexora NEEDS ASGI for the <strong>Code Arena</strong> — WebSocket connections must stay open for the entire battle duration (minutes). Daphne is the ASGI server that handles both: HTTP requests → Django WSGI handler, WebSocket (<code>/ws/</code> paths) → Django Channels consumers. Without ASGI, real-time battles are impossible.</div>
+      </div>
+
+      <div class="qa-card arch">
+        <div class="q-row"><div class="q-num arch">49</div><div class="q-text">Why is the AI client (gemini_client.py) a centralized module instead of being split per app?</div><span class="cat-badge cat-arch">Architecture</span></div>
+        <div class="a-text">Putting ALL AI functions in <code>core/gemini_client.py</code> provides: (1) <strong>Single point of change</strong> — switching AI provider (e.g., Groq → Anthropic) requires changing ONE file, not 12 app files; (2) <strong>Shared infrastructure</strong> — multi-key rotation, failover logic, and Gemini fallback are written ONCE and shared by all functions; (3) <strong>Consistent behavior</strong> — all AI calls use the same retry policy, temperature defaults, JSON parsing utilities; (4) <strong>Easier testing</strong> — mock one module to test all AI-dependent views; (5) <strong>Prevents duplication</strong> — without centralization, each app would reimplement key rotation and fallback independently. The trade-off is a large file (1770 lines) but the logical cohesion justifies it.</div>
+      </div>
+
+      <div class="qa-card arch">
+        <div class="q-row"><div class="q-num arch">50</div><div class="q-text">What are the biggest technical challenges you faced building Nexora?</div><span class="cat-badge cat-arch">Architecture</span></div>
+        <div class="a-text">
+          <ul>
+            <li><strong>Speech recognition duplicates:</strong> Web Speech API's continuous + interim results caused "hello hello hello" bug. Solved with <code>committedTextRef</code> pattern separating final vs preview text.</li>
+            <li><strong>AI rate limits:</strong> Single API key quickly exhausted during testing. Solved with multi-key rotation + Gemini fallback + local heuristics — zero downtime AI.</li>
+            <li><strong>WebSocket authentication:</strong> WS handshakes can't set custom headers like HTTP. Solved by passing JWT as URL query parameter: <code>ws://…?token={JWT}</code>.</li>
+            <li><strong>Modal background scroll:</strong> When a modal was open, background scrolled. Fixed with <code>document.body.style.overflow = 'hidden'</code> on modal open, restored on close.</li>
+            <li><strong>Real-time battle state:</strong> Keeping two players' battle state in sync without a DB write on every progress update. Solved with in-memory <code>ROOMS</code> dict + channel layer broadcasts, only writing to DB on battle completion.</li>
+            <li><strong>SPA routing with Django:</strong> Direct URL access to React routes returned 404. Solved with catch-all <code>re_path</code> serving <code>index.html</code> for all non-API routes.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">Nexora — AI Engineering Platform &nbsp;·&nbsp; Document 6/6: Viva Q&amp;A &nbsp;·&nbsp; Presentation 2026 &nbsp;·&nbsp; All the best! 🎓</div>
+</div>
+</body>
+</html>

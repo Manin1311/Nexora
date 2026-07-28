@@ -245,8 +245,8 @@ function Hero() {
           style={{ display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'center', gap:16, marginBottom:64 }}>
           <Link to="/register">
             <motion.div whileHover={{ scale:1.04, y:-2, boxShadow:'0 10px 30px rgba(0,0,0,0.25)' }} whileTap={{ scale:0.97 }}
-              style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'16px 32px', borderRadius:9999, background:'#111111', color:'#fff', fontWeight:700, fontSize:15, cursor:'pointer' }}>
-              <Github size={18} /> Start Free with GitHub <ArrowRight size={16} />
+              style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'16px 36px', borderRadius:9999, background:'#111111', color:'#fff', fontWeight:700, fontSize:15, cursor:'pointer' }}>
+              Start Free <ArrowRight size={16} />
             </motion.div>
           </Link>
           <a href="#how-it-works" onClick={e => { e.preventDefault(); document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' }) }}>
@@ -274,12 +274,12 @@ function Hero() {
             onMouseLeave={handleMouseLeave}
             style={{
               width: '100%',
-              background: 'var(--glass-bg)',
-              border: '1px solid var(--glass-border)',
+              background: 'var(--card-bg, rgba(18,18,28,0.85))',
+              border: '1px solid var(--card-border, rgba(255,255,255,0.1))',
               borderRadius: '24px',
               padding: 6,
               backdropFilter: 'blur(30px)',
-              boxShadow: '0 30px 60px -15px rgba(0,0,0,0.25)',
+              boxShadow: '0 30px 60px -15px rgba(0,0,0,0.4), 0 0 40px rgba(108,99,255,0.1)',
               position: 'relative',
               transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`,
               transition: 'transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)',
@@ -289,20 +289,20 @@ function Hero() {
           >
           
           {/* Header Bar */}
-          <div style={{ height: '36px', display: 'flex', alignItems: 'center', padding: '0 16px', borderBottom: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.02)' }}>
+          <div style={{ height: '36px', display: 'flex', alignItems: 'center', padding: '0 16px', borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)' }}>
             <div style={{ display: 'flex', gap: 6 }}>
               <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f56' }} />
               <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
               <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#27c93f' }} />
             </div>
-            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: '24px', opacity: 0.8 }}>Nexora App Dashboard</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: '24px', opacity: 0.9, fontFamily: 'monospace' }}>nexora-app.internal // AI Developer Growth Workspace</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '70px 1fr', minHeight: '480px' }}>
             {/* Sidebar Mock */}
-            <div style={{ borderRight: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, paddingTop: 24, background: 'rgba(0,0,0,0.05)' }}>
-              {[Rocket, Github, Layers, BookOpen, Brain, TrendingUp, HelpCircle].map((Icon, idx) => (
-                <div key={idx} style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: idx === 0 ? 'rgba(99,102,241,0.15)' : 'transparent', color: idx === 0 ? '#6366f1' : 'var(--text-muted)' }}>
+            <div style={{ borderRight: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, paddingTop: 24, background: 'rgba(0,0,0,0.15)' }}>
+              {[Rocket, Code2, Brain, Bot, Layers, ShieldCheck, MessageSquare].map((Icon, idx) => (
+                <div key={idx} style={{ width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', background: idx === 0 ? 'rgba(108,99,255,0.2)' : 'transparent', border: idx === 0 ? '1px solid rgba(108,99,255,0.4)' : 'none', color: idx === 0 ? '#a78bfa' : 'var(--text-muted)' }}>
                   <Icon size={18} />
                 </div>
               ))}
@@ -313,111 +313,112 @@ function Hero() {
               {/* Row 1: Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-heading)' }}>Welcome back, Alex 👋</h3>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Review your skill progress, mock interview reports, and GitHub health score.</p>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-heading)' }}>Welcome back, Developer 👋</h3>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Your AI Memory Engine is actively tracking 10 core modules across your growth journey.</p>
                 </div>
-                <div style={{ display: 'flex', gap: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(99,102,241,0.08)', padding: '6px 14px', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.15)' }}>
-                    <Zap size={14} style={{ color: '#8b5cf6' }} fill="#8b5cf6" />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#8b5cf6' }}>1,850 XP</span>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(108,99,255,0.12)', padding: '6px 14px', borderRadius: '12px', border: '1px solid rgba(108,99,255,0.3)' }}>
+                    <Zap size={14} style={{ color: '#a78bfa' }} fill="#a78bfa" />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#a78bfa' }}>1,850 XP</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(251,191,36,0.08)', padding: '6px 14px', borderRadius: '12px', border: '1px solid rgba(251,191,36,0.15)' }}>
-                    <Flame size={14} style={{ color: '#f59e0b' }} />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#f59e0b' }}>7 Days</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(251,146,60,0.12)', padding: '6px 14px', borderRadius: '12px', border: '1px solid rgba(251,146,60,0.3)' }}>
+                    <Flame size={14} style={{ color: '#fb923c' }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#fb923c' }}>7 Days Streak</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(52,211,153,0.12)', padding: '6px 14px', borderRadius: '12px', border: '1px solid rgba(52,211,153,0.3)' }}>
+                    <Trophy size={14} style={{ color: '#34d399' }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#34d399' }}>Architect Rank</span>
                   </div>
                 </div>
               </div>
 
               {/* Row 2: Grid widgets */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-                {/* Widget 1: Skill Radar Chart */}
-                <div style={{ background: 'rgba(0,0,0,0.08)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', alignSelf: 'flex-start', marginBottom: '12px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Skill Radar</p>
-                  <div style={{ width: '100%', maxWidth: '160px', height: '140px' }}>
-                    <svg viewBox="0 0 200 200" width="100%" height="100%">
-                      <polygon points="100,20 176,75 147,165 53,165 24,75" fill="none" stroke="rgba(99,102,241,0.18)" strokeWidth="1.5" />
-                      <polygon points="100,50 151,87 131,145 69,145 49,87" fill="none" stroke="rgba(99,102,241,0.18)" strokeWidth="1.5" />
-                      <polygon points="100,80 120,95 112,120 88,120 80,95" fill="none" stroke="rgba(99,102,241,0.18)" strokeWidth="1.5" />
-                      <polygon points="100,35 158,80 135,130 65,150 40,75" fill="rgba(99,102,241,0.22)" stroke="#6366f1" strokeWidth="2" />
-                      <circle cx="100" cy="35" r="3" fill="#6366f1" />
-                      <circle cx="158" cy="80" r="3" fill="#6366f1" />
-                      <circle cx="135" cy="130" r="3" fill="#6366f1" />
-                      <circle cx="65" cy="150" r="3" fill="#6366f1" />
-                      <circle cx="40" cy="75" r="3" fill="#6366f1" />
-                      <text x="100" y="14" textAnchor="middle" fontSize="9" fill="var(--text-color)" fontWeight="700">System</text>
-                      <text x="180" y="78" textAnchor="start" fontSize="9" fill="var(--text-color)" fontWeight="700">DevOps</text>
-                      <text x="145" y="177" textAnchor="middle" fontSize="9" fill="var(--text-color)" fontWeight="700">Frontend</text>
-                      <text x="55" y="177" textAnchor="middle" fontSize="9" fill="var(--text-color)" fontWeight="700">Backend</text>
-                      <text x="15" y="78" textAnchor="end" fontSize="9" fill="var(--text-color)" fontWeight="700">DSA</text>
-                    </svg>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '16px' }}>
+
+                {/* Widget 1: AI Mock Interview Lab */}
+                <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', letterSpacing: '0.05em', textTransform: 'uppercase' }}>🎤 Interview Lab</p>
+                      <span style={{ fontSize: '10px', background: 'rgba(52,211,153,0.15)', color: '#34d399', padding: '2px 7px', borderRadius: '10px', border: '1px solid rgba(52,211,153,0.3)' }}>● AI Active</span>
+                    </div>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 6 }}>Technical System Design</p>
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12 }}>Webcam &amp; Speech Biometrics</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 11 }}>
+                      <div style={{ background: 'rgba(255,255,255,0.04)', padding: '6px 8px', borderRadius: 8 }}>
+                        <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: 10 }}>Eye Contact</span>
+                        <span style={{ color: '#34d399', fontWeight: 700 }}>98% Excellent</span>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.04)', padding: '6px 8px', borderRadius: 8 }}>
+                        <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: 10 }}>Posture</span>
+                        <span style={{ color: '#38bdf8', fontWeight: 700 }}>95% Upright</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '10px', marginTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)' }}>
+                    <span>Pace: <strong>135 WPM</strong></span>
+                    <span>Fillers: <strong style={{ color: '#34d399' }}>0</strong></span>
                   </div>
                 </div>
 
-                {/* Widget 2: GitHub scanner score */}
-                <div style={{ background: 'rgba(0,0,0,0.08)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                {/* Widget 2: Coding Challenges & Big-O */}
+                <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '14px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>GitHub Health</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#a78bfa', letterSpacing: '0.05em', textTransform: 'uppercase' }}>⚔️ Challenge Hub</p>
+                      <span style={{ fontSize: '10px', background: 'rgba(108,99,255,0.2)', color: '#a78bfa', padding: '2px 7px', borderRadius: '10px', fontWeight: 700 }}>Score 95/100</span>
+                    </div>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 4 }}>JWT Authentication API</p>
+                    <p style={{ fontSize: 11, color: '#34d399', fontWeight: 600, marginBottom: 10 }}>+200 XP Awarded</p>
+                    <div style={{ background: 'rgba(108,99,255,0.08)', border: '1px solid rgba(108,99,255,0.2)', borderRadius: 8, padding: '8px', fontSize: 11 }}>
+                      <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: 10, marginBottom: 2 }}>Complexity Analysis (Big-O)</span>
+                      <code style={{ color: '#a78bfa', fontFamily: 'monospace', fontWeight: 700 }}>Time: O(N log N) | Space: O(1)</code>
+                    </div>
+                  </div>
+                  <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '10px', marginTop: 10, fontSize: 11, color: '#34d399', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <CheckCircle size={12} /> Verified by AI Evaluator
+                  </div>
+                </div>
+
+                {/* Widget 3: AI Code Review (GitHub Scanner) */}
+                <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: '#fb923c', marginBottom: '10px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>🔍 Code Health Scan</p>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: '10px' }}>
-                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'conic-gradient(#6366f1 87%, rgba(99,102,241,0.1) 0%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: theme === 'dark' ? '#0f0f23' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>87</div>
+                      <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'conic-gradient(#6c63ff 92%, rgba(108,99,255,0.1) 0%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#0f0f1c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, color: '#fff' }}>92</div>
                       </div>
                       <div>
                         <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-heading)' }}>Excellent Health</p>
-                        <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Scan duration: 1.2s</p>
+                        <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Scan time: 1.2s</p>
                       </div>
                     </div>
                   </div>
                   <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '10px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
-                      <span>JS/React Code</span>
-                      <span>68%</span>
+                      <span>React / Django Code</span>
+                      <span style={{ color: '#38bdf8', fontWeight: 700 }}>88% Quality</span>
                     </div>
-                    <div style={{ height: 4, background: 'rgba(99,102,241,0.15)', borderRadius: 2 }}>
-                      <div style={{ width: '68%', height: '100%', background: '#6366f1', borderRadius: 2 }} />
+                    <div style={{ height: 4, background: 'rgba(108,99,255,0.15)', borderRadius: 2 }}>
+                      <div style={{ width: '88%', height: '100%', background: 'linear-gradient(90deg, #6c63ff, #38bdf8)', borderRadius: 2 }} />
                     </div>
                   </div>
                 </div>
 
-                {/* Widget 3: AI Roadmap Path */}
-                <div style={{ background: 'rgba(0,0,0,0.08)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column' }}>
-                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '12px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Roadmap Progress</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, justifyContent: 'center' }}>
-                    {[
-                      { title: 'System Architecture Load Balancing', checked: true, week: 'Week 1' },
-                      { title: 'Docker Container Configuration', checked: true, week: 'Week 2' },
-                      { title: 'CI/CD Automated Deployments', checked: false, week: 'Week 3', active: true },
-                    ].map((step, idx) => (
-                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: step.checked || step.active ? 1 : 0.4 }}>
-                        <div style={{ width: 16, height: 16, borderRadius: '50%', background: step.checked ? '#10b981' : step.active ? '#6366f1' : 'transparent', border: step.checked || step.active ? 'none' : '1px solid var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff' }}>
-                          {step.checked ? '✓' : ''}
-                        </div>
-                        <div style={{ minWidth: 0 }}>
-                          <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-heading)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{step.title}</p>
-                          <p style={{ fontSize: 9, color: step.active ? '#818cf8' : 'var(--text-muted)' }}>{step.week} {step.active ? '• In Progress' : ''}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Widget 4: Certifications & Badge */}
-                <div style={{ background: 'rgba(0,0,0,0.08)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                {/* Widget 4: AI Dev Mentor Chat */}
+                <div style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
-                    <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '12px', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Recent Certification</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)', padding: '10px', borderRadius: '10px' }}>
-                      <Trophy size={18} style={{ color: '#10b981' }} />
-                      <div style={{ minWidth: 0 }}>
-                        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-heading)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>System Design</p>
-                        <p style={{ fontSize: 9, color: 'var(--text-muted)' }}>ID: NXR-E3A5B876</p>
-                      </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#f472b6', letterSpacing: '0.05em', textTransform: 'uppercase' }}>🤖 AI Dev Mentor</p>
+                      <span style={{ fontSize: '10px', background: 'rgba(244,114,182,0.15)', color: '#f472b6', padding: '2px 7px', borderRadius: '10px' }}>LLaMA 3.3 70B</span>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: 10, padding: 10, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                      <strong style={{ color: '#a78bfa', display: 'block', marginBottom: 2 }}>Dev Mentor AI:</strong>
+                      "Using <code style={{ color: '#38bdf8' }}>select_related()</code> reduced your Django query overhead from 51 DB hits down to 1."
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--text-muted)', borderTop: '1px solid var(--glass-border)', paddingTop: '10px' }}>
-                    <Avatar name="Alex" rank="builder" size="xs" />
-                    <div>
-                      <p style={{ fontWeight: 700, fontSize: 11, color: 'var(--text-heading)' }}>Alex Chen</p>
-                      <p style={{ fontSize: 9 }}>Rank: Builder</p>
-                    </div>
+                  <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '10px', marginTop: 10, fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <MessageSquare size={12} style={{ color: '#f472b6' }} /> Multi-turn Persistent Memory
                   </div>
                 </div>
 

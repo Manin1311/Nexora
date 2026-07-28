@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexora — AI Layer Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root{--bg:#0a0a0f;--card:#12121a;--card2:#1a1a26;--border:#2a2a3a;--accent:#6c63ff;--accent2:#a78bfa;--green:#34d399;--orange:#fb923c;--pink:#f472b6;--blue:#38bdf8;--text:#e2e8f0;--muted:#94a3b8;--dim:#64748b;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;}
+  code{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(108,99,255,.15);padding:2px 7px;border-radius:5px;color:#a78bfa;}
+  @media print{
+    body{background:#fff!important;color:#111!important;}
+    .hero{background:linear-gradient(135deg,#1a0a2e,#2a0a1a)!important;}
+    .hero h1{-webkit-text-fill-color:#fff!important;}
+    .card,.card2,.ai-card,.func-card{background:#f8f8ff!important;border:1px solid #ddd!important;}
+    .section-title{color:#4338ca!important;}
+    p,li{color:#333!important;}
+    h2,h3,h4{color:#111!important;}
+    code{background:#eee!important;color:#4338ca!important;}
+    .prompt-box{background:#1a1a2e!important;color:#e2e8f0!important;border:1px solid #ddd!important;}
+    .footer{color:#666!important;}
+  }
+  .page{max-width:1100px;margin:0 auto;padding:36px 32px;}
+  .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+  .page-header .logo{font-size:19px;font-weight:900;color:#6c63ff;}
+  .page-header .doc-info{font-size:11.5px;color:var(--dim);text-align:right;}
+  .hero{background:linear-gradient(135deg,#1a0a2e 0%,#2a0a1a 50%,#0a1a2e 100%);border:1px solid rgba(168,139,250,.3);border-radius:20px;padding:40px 44px;margin-bottom:32px;}
+  .hero h1{font-size:42px;font-weight:900;background:linear-gradient(135deg,#f472b6,#a78bfa,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+  .hero p{font-size:15px;color:#94a3b8;}
+  .section{margin-bottom:32px;}
+  .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent2);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+  .ai-card{background:var(--card2);border:1px solid var(--border);border-radius:14px;padding:20px;}
+  .ai-icon{font-size:28px;margin-bottom:10px;}
+  .ai-name{font-size:15px;font-weight:800;margin-bottom:5px;}
+  .ai-sub{font-size:12px;color:var(--muted);}
+
+  .func-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;}
+  .func-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .func-name{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#f472b6;background:rgba(244,114,182,.1);padding:3px 10px;border-radius:6px;}
+  .func-used{font-size:11px;color:var(--dim);}
+  .func-points{list-style:none;padding:0;}
+  .func-points li{font-size:12.5px;color:var(--muted);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:8px;align-items:flex-start;}
+  .func-points li:last-child{border-bottom:none;}
+  .func-points li::before{content:'→';color:#f472b6;font-weight:700;flex-shrink:0;}
+
+  .prompt-box{background:#0d0d1a;border:1px solid #2a2a3a;border-radius:12px;padding:16px;margin:10px 0;font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.7;color:#e2e8f0;overflow-x:auto;}
+  .prompt-label{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+  .ph{color:#64748b;}
+  .pv{color:#34d399;}
+  .pk{color:#f472b6;}
+  .ps{color:#38bdf8;}
+
+  .flow-h{display:flex;gap:0;align-items:stretch;}
+  .flow-h-step{flex:1;padding:18px 14px;text-align:center;background:var(--card2);border:1px solid var(--border);border-right:none;}
+  .flow-h-step:last-child{border-right:1px solid var(--border);border-radius:0 12px 12px 0;}
+  .flow-h-step:first-child{border-radius:12px 0 0 12px;}
+  .flow-h-step .fh-icon{font-size:20px;margin-bottom:6px;}
+  .flow-h-step .fh-label{font-size:12px;font-weight:700;}
+  .flow-h-step .fh-sub{font-size:10.5px;color:var(--dim);margin-top:3px;}
+  .fh-arrow{display:flex;align-items:center;color:var(--dim);font-size:16px;padding:0 2px;background:var(--card2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+
+  .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .badge{padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:600;}
+  .badge-purple{background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.4);color:#a78bfa;}
+  .badge-green{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.4);color:#34d399;}
+  .badge-blue{background:rgba(56,189,248,.2);border:1px solid rgba(56,189,248,.4);color:#38bdf8;}
+  .badge-orange{background:rgba(251,146,60,.2);border:1px solid rgba(251,146,60,.4);color:#fb923c;}
+  .badge-pink{background:rgba(244,114,182,.2);border:1px solid rgba(244,114,182,.4);color:#f472b6;}
+
+  .note-box{background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.25);border-left:4px solid #fb923c;border-radius:10px;padding:14px 18px;margin-bottom:16px;}
+  .note-box h4{font-size:13px;color:#fb923c;margin-bottom:5px;}
+  .note-box p{font-size:12px;}
+  .info-box{background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.25);border-left:4px solid #38bdf8;border-radius:10px;padding:14px 18px;margin-bottom:16px;}
+  .info-box h4{font-size:13px;color:#38bdf8;margin-bottom:5px;}
+  .info-box p{font-size:12px;}
+  .green-box{background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.25);border-left:4px solid #34d399;border-radius:10px;padding:14px 18px;margin-bottom:16px;}
+  .green-box h4{font-size:13px;color:#34d399;margin-bottom:5px;}
+  .green-box p{font-size:12px;}
+
+  .module-usage-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;}
+  .mu-module{min-width:140px;font-size:12px;font-weight:700;color:var(--text);}
+  .mu-func{font-family:'JetBrains Mono',monospace;font-size:11px;color:#f472b6;}
+  .mu-desc{font-size:12px;color:var(--muted);}
+
+  h2{font-size:19px;font-weight:800;margin-bottom:10px;}
+  h3{font-size:15px;font-weight:700;margin-bottom:8px;}
+  h4{font-size:13.5px;font-weight:700;margin-bottom:5px;}
+  p{font-size:13px;color:var(--muted);line-height:1.7;}
+  ul{padding-left:18px;}
+  li{font-size:13px;color:var(--muted);margin-bottom:5px;line-height:1.6;}
+  li strong{color:var(--text);}
+  .footer{text-align:center;padding:24px 0 14px;color:var(--dim);font-size:11.5px;border-top:1px solid var(--border);margin-top:32px;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-header">
+    <div class="logo">⬡ NEXORA</div>
+    <div class="doc-info">Project Presentation · Document 4 of 6<br><span style="color:#f472b6">AI Layer — Groq + Gemini</span></div>
+  </div>
+
+  <div class="hero">
+    <h1>🤖 AI Layer Deep Dive</h1>
+    <p>Nexora's AI backbone: Groq LLaMA 3.3 70B as primary engine + Google Gemini 2.5 Flash as multimodal fallback. Multi-key load balancing, automatic failover, and 1770 lines of carefully engineered AI functions powering every feature.</p>
+  </div>
+
+  <!-- TWO AI ENGINES -->
+  <div class="section">
+    <div class="section-title">Dual AI Engine Architecture</div>
+    <div class="two-col">
+      <div class="ai-card">
+        <div class="ai-icon">⚡</div>
+        <div class="ai-name">Groq — LLaMA 3.3 70B (Primary)</div>
+        <div class="ai-sub" style="margin-bottom:12px;">Groq Cloud Inference API · groq>=0.9.0</div>
+        <ul>
+          <li><strong>Speed:</strong> Groq's custom LPU (Language Processing Unit) hardware delivers 500+ tokens/sec — ~10x faster than OpenAI GPT-4</li>
+          <li><strong>Model:</strong> LLaMA 3.3 70B by Meta — open source, 70 billion parameters, excellent at code and reasoning</li>
+          <li><strong>Usage:</strong> All text-only AI tasks: challenge evaluation, interview Q generation, roadmap creation, ATS analysis, mentor chat, peer review analysis</li>
+          <li><strong>Multi-key:</strong> Multiple Groq API keys configured. Random starting key per request. Rate limit (429) → wait + retry → next key</li>
+          <li><strong>Max tokens:</strong> 2048 per response (configurable per function)</li>
+          <li><strong>JSON mode:</strong> <code>response_format: {"type": "json_object"}</code> forces structured JSON output without markdown fences</li>
+        </ul>
+        <div class="badge-row"><span class="badge badge-orange">Primary Engine</span><span class="badge badge-green">Text + Code</span><span class="badge badge-blue">Multi-key</span></div>
+      </div>
+      <div class="ai-card">
+        <div class="ai-icon">🧠</div>
+        <div class="ai-name">Google Gemini 2.5 Flash (Fallback + Vision)</div>
+        <div class="ai-sub" style="margin-bottom:12px;">Google Generative AI SDK · google-generativeai>=0.8</div>
+        <ul>
+          <li><strong>Trigger:</strong> Auto-activated when ALL Groq keys are rate-limited or fail</li>
+          <li><strong>Multimodal:</strong> ONLY Gemini supports image + text in a single API call. Used for webcam frame analysis during interviews</li>
+          <li><strong>Models tried in order:</strong> gemini-2.5-flash → gemini-2.0-flash → gemini-1.5-flash → gemini-1.5-pro</li>
+          <li><strong>Multi-key:</strong> Multiple Gemini API keys. Random starting key. Tries all key × model combinations</li>
+          <li><strong>Image analysis:</strong> Base64 JPEG webcam frames decoded, sent with prompt for posture, eye contact, facial expression analysis</li>
+          <li><strong>System instruction:</strong> Role-based system prompts set AI persona per function (senior dev, interview coach, career advisor)</li>
+        </ul>
+        <div class="badge-row"><span class="badge badge-pink">Fallback Engine</span><span class="badge badge-purple">Multimodal Vision</span><span class="badge badge-green">Auto-switch</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAILOVER FLOW -->
+  <div class="section">
+    <div class="section-title">AI Request Routing — Automatic Failover Flow</div>
+    <div class="flow-h">
+      <div class="flow-h-step"><div class="fh-icon">📨</div><div class="fh-label">API Request</div><div class="fh-sub">Any module calls<br>_call_groq()</div></div>
+      <div class="fh-arrow">→</div>
+      <div class="flow-h-step"><div class="fh-icon">🔀</div><div class="fh-label">Key Rotation</div><div class="fh-sub">Random start key<br>Try each Groq key</div></div>
+      <div class="fh-arrow">→</div>
+      <div class="flow-h-step"><div class="fh-icon">⚡</div><div class="fh-label">Groq LLaMA</div><div class="fh-sub">Try each model<br>2 attempts/model</div></div>
+      <div class="fh-arrow">→</div>
+      <div class="flow-h-step" style="background:rgba(251,146,60,.08);border-color:rgba(251,146,60,.3)"><div class="fh-icon">⚠️</div><div class="fh-label">All Groq Fail</div><div class="fh-sub">429 / error on<br>all keys + models</div></div>
+      <div class="fh-arrow">→</div>
+      <div class="flow-h-step" style="background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.3)"><div class="fh-icon">🧠</div><div class="fh-label">Gemini Fallback</div><div class="fh-sub">Try all Gemini<br>keys + models</div></div>
+      <div class="fh-arrow">→</div>
+      <div class="flow-h-step" style="background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.3)"><div class="fh-icon">✅</div><div class="fh-label">Response</div><div class="fh-sub">Text returned<br>to caller</div></div>
+    </div>
+    <div style="margin-top:14px;">
+      <div class="info-box" style="margin-bottom:0">
+        <h4>🛡️ Local Heuristic Fallback (Last Resort)</h4>
+        <p>If BOTH Groq AND Gemini completely fail, critical functions like <code>evaluate_challenge_submission()</code> have a built-in <strong>local heuristic fallback</strong>. It analyzes the submission locally: word count, line count, code keywords (function, class, return) to generate a reasonable score and feedback without any AI. Zero downtime guaranteed.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI FUNCTIONS -->
+  <div class="section">
+    <div class="section-title">AI Functions — Every Function Explained</div>
+
+    <div class="func-card">
+      <div class="func-header"><span class="func-name">evaluate_challenge_submission()</span><span class="func-used">Used by: challenges/views.py → SubmitChallengeView</span></div>
+      <ul class="func-points">
+        <li><strong>Input:</strong> challenge_title, challenge_description, user_answer (the code/text they submitted)</li>
+        <li><strong>System role:</strong> "You are an expert senior software developer and technical interviewer. Evaluate coding challenge submissions objectively and return ONLY valid JSON."</li>
+        <li><strong>Returns JSON:</strong> <code>score</code> (0-100), <code>overall_feedback</code> (2-3 sentences), <code>strengths</code> (list), <code>improvements</code> (list), <code>xp_multiplier</code> (0.5-1.5), <code>time_complexity</code> (Big-O), <code>space_complexity</code>, <code>complexity_table</code> (markdown table), <code>complexity_feedback</code></li>
+        <li><strong>Temperature:</strong> 0.3 (low = more consistent, deterministic scoring)</li>
+        <li><strong>JSON parsing:</strong> Strips markdown fences with regex, extracts <code>{...}</code> block, parses with <code>json.loads()</code></li>
+        <li><strong>Heuristic fallback:</strong> If AI fails, estimates score from word count + code keywords. Estimates complexity from loop count + binary search keywords.</li>
+      </ul>
+    </div>
+
+    <div class="func-card">
+      <div class="func-header"><span class="func-name">generate_interview_questions()</span><span class="func-used">Used by: interviews/views.py → StartInterviewView</span></div>
+      <ul class="func-points">
+        <li><strong>Input:</strong> mode (technical/hr/mixed/rapid_fire/boardroom), difficulty, topic, count (max 10), resume_context (optional Resume model)</li>
+        <li><strong>Resume personalization:</strong> If user has a resume, builds context block with their skills list, project summaries (name + tech stack + description), and experience (role + company + dates). AI generates questions referencing THEIR actual work — e.g., "I see you used Django in your Nexora project. Explain how you handled WebSocket authentication."</li>
+        <li><strong>Returns:</strong> List of <code>{ question, hint, expected_points }</code> objects</li>
+        <li><strong>Fallback:</strong> 40+ hardcoded questions per mode in <code>FALLBACK_QUESTIONS</code> dict. Randomly shuffled and drawn if AI is unavailable. Never leaves user without questions.</li>
+        <li><strong>Boardroom mode:</strong> Special multi-panelist question generation with distinct voices: Tech Lead (architecture), Architect (system design), HR Manager (culture/soft skills)</li>
+      </ul>
+    </div>
+
+    <div class="func-card">
+      <div class="func-header"><span class="func-name">evaluate_interview_answer()</span><span class="func-used">Used by: interviews/views.py → SubmitAnswerView</span></div>
+      <ul class="func-points">
+        <li><strong>Input:</strong> question_text, user_answer, mode, difficulty, image_frame (base64 webcam JPEG — optional)</li>
+        <li><strong>Multimodal branch:</strong> If <code>image_frame</code> provided → calls <code>_call_gemini_fallback(prompt, image_frame=image_frame)</code>. Gemini Vision analyzes both the text answer AND the webcam snapshot in one call.</li>
+        <li><strong>Vision analysis:</strong> Prompt explicitly asks Gemini to assess: posture (upright/slouching), eye contact (looking at camera/away), facial engagement (focused/distracted) from the image</li>
+        <li><strong>Returns JSON:</strong> <code>score</code> (0-10), <code>ai_feedback</code>, <code>eye_contact_score</code> (0-100), <code>posture_score</code> (0-100), <code>strengths</code>, <code>improvements</code>, <code>model_answer</code> (ideal response)</li>
+        <li><strong>Behavioral metrics</strong> (filler_words_count, speaking_pace/WPM) are passed from frontend to backend and stored, shown in feedback panel</li>
+      </ul>
+    </div>
+
+    <div class="func-card">
+      <div class="func-header"><span class="func-name">generate_boardroom_debate()</span><span class="func-used">Used by: interviews/views.py → SubmitAnswerView (boardroom mode only)</span></div>
+      <ul class="func-points">
+        <li>Special mode simulating a real boardroom interview with 3 AI panelists, each with distinct personality and focus area</li>
+        <li><strong>Tech Lead:</strong> Focuses on technical accuracy, code quality, system design decisions</li>
+        <li><strong>Solutions Architect:</strong> Focuses on scalability, maintainability, trade-offs</li>
+        <li><strong>HR Manager:</strong> Focuses on communication clarity, cultural fit, soft skills</li>
+        <li>Each panelist gives a short debate/challenge response, then a collaborative score is generated</li>
+        <li>Frontend reads back each panelist's response via <code>window.speechSynthesis</code> with different voice characteristics (rate, pitch)</li>
+      </ul>
+    </div>
+
+    <div class="func-card">
+      <div class="func-header"><span class="func-name">generate_roadmap()</span><span class="func-used">Used by: roadmap/views.py → GenerateRoadmapView</span></div>
+      <ul class="func-points">
+        <li><strong>Input:</strong> user profile data (XP, rank, recent activity, weaknesses from AI Memory), target_role (7 options)</li>
+        <li><strong>Output:</strong> JSON with <code>summary</code> (roadmap overview) + array of week objects: <code>{ week_number, focus_area, weakness_reason, xp_goal, tasks: [{type, title, description}] }</code></li>
+        <li>Tasks are linked to actual Nexora content: <code>challenge_id</code> links to a real Challenge in DB, <code>interview_mode</code> links to an interview type</li>
+        <li>AI uses user's AI Memory weaknesses to prioritize focus areas: if user is weak in "System Design", roadmap includes more system design interviews</li>
+      </ul>
+    </div>
+
+    <div class="func-card">
+      <div class="func-header"><span class="func-name">analyze_github_repo()</span><span class="func-used">Used by: codereview/views.py → CodeReviewCreateView</span></div>
+      <ul class="func-points">
+        <li><strong>Step 1:</strong> Calls GitHub API <code>/repos/{owner}/{repo}/git/trees/{branch}?recursive=1</code> to get full file tree</li>
+        <li><strong>Step 2:</strong> Filters to code files (*.py, *.js, *.jsx, *.ts, *.tsx, *.java, *.go etc.), skips node_modules/vendor</li>
+        <li><strong>Step 3:</strong> Fetches file contents via <code>/repos/{owner}/{repo}/contents/{path}</code> (up to N most important files)</li>
+        <li><strong>Step 4:</strong> Sends all code to AI with prompt asking for JSON report: <code>{ overall_score, files: [{filename, issues: [{severity, type, description, suggestion, line_ref}]}] }</code></li>
+        <li><strong>Severity levels:</strong> Critical (security/data loss), High (bugs/major perf), Medium (code quality), Low (style/naming)</li>
+        <li>Results cached in <code>CodeReview</code> model with aggregated counts per severity level and full <code>report_json</code></li>
+      </ul>
+    </div>
+
+    <div class="func-card">
+      <div class="func-header"><span class="func-name">generate_ats_analysis()</span><span class="func-used">Used by: users/views.py → ATSAnalyzeView</span></div>
+      <ul class="func-points">
+        <li><strong>Input:</strong> Resume JSON (all 6 sections) + target_role string (e.g., "Backend Developer at Google")</li>
+        <li><strong>Output JSON:</strong> <code>ats_score</code> (0-100), <code>strengths</code> (list), <code>weaknesses</code> (list), <code>keyword_gaps</code> (missing keywords for that role), <code>checklist</code> (dict of ATS best practices: has_email, has_github, bullet_points_used etc.), <code>tips</code> (actionable improvements)</li>
+        <li>AI reads the entire resume content to identify keyword density, section completeness, role alignment, and ATS compatibility patterns</li>
+        <li>Score saved to <code>Resume.ats_score</code>. Full report saved to <code>Resume.audit_report</code> JSON field for display in Resume Hub</li>
+      </ul>
+    </div>
+
+    <div class="func-card">
+      <div class="func-header"><span class="func-name">generate_revision_guide()</span><span class="func-used">Used by: users/views.py → RevisionGuideView (or challenges module)</span></div>
+      <ul class="func-points">
+        <li><strong>Input:</strong> topic string (any CS topic — "Binary Trees", "React Hooks", "System Design", "Dynamic Programming" etc.)</li>
+        <li><strong>Output:</strong> Structured markdown study guide with: introduction, core concepts, examples, common pitfalls, interview tips, practice problems</li>
+        <li>4-round Prep Map on frontend structures this content into: Round 1 (Learn = core concepts), Round 2 (Apply = examples), Round 3 (Reinforce = pitfalls), Round 4 (Master = interview tips)</li>
+      </ul>
+    </div>
+
+    <div class="func-card">
+      <div class="func-header"><span class="func-name">chat_with_mentor()</span><span class="func-used">Used by: mentor/views.py → MentorChatView</span></div>
+      <ul class="func-points">
+        <li><strong>Persistent conversation history:</strong> Loads all <code>MentorMessage</code> objects for the conversation, passes them as full chat history to Groq. AI has context of everything said in that conversation.</li>
+        <li><strong>AI Memory injection:</strong> Prepends <code>UserAIMemory.ai_summary</code> to system prompt so mentor knows user's skill level, goals, and past performance even in a new conversation.</li>
+        <li>Saves both user message and AI response to <code>MentorMessage</code> table with <code>role</code> field (user/assistant)</li>
+        <li><strong>Opportunity Matcher mode:</strong> Different system prompt focuses on job/internship opportunities matching user's tech stack and experience level</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- WHERE AI IS USED -->
+  <div class="section">
+    <div class="section-title">AI Usage Map — Which Module Uses Which Function</div>
+    <div class="module-usage-row"><div class="mu-module">🎯 Challenges</div><div class="mu-func">evaluate_challenge_submission()<br>generate_ai_challenge()</div><div class="mu-desc">Scores submissions, generates Big-O analysis, creates AI-powered custom challenges on demand</div></div>
+    <div class="module-usage-row"><div class="mu-module">🎤 Interview Lab</div><div class="mu-func">generate_interview_questions()<br>evaluate_interview_answer()<br>generate_boardroom_debate()</div><div class="mu-desc">Creates personalized Qs from resume, scores answers with behavioral + visual analysis, boardroom panelist AI</div></div>
+    <div class="module-usage-row"><div class="mu-module">🤖 Dev Mentor</div><div class="mu-func">chat_with_mentor()<br>generate_opportunities()</div><div class="mu-desc">Multi-turn persistent AI mentor chat, career opportunity matching based on user's tech stack</div></div>
+    <div class="module-usage-row"><div class="mu-module">🗺️ Roadmap</div><div class="mu-func">generate_roadmap()<br>generate_week_tasks()</div><div class="mu-desc">Creates personalized week-by-week career roadmaps using user's AI memory weaknesses</div></div>
+    <div class="module-usage-row"><div class="mu-module">🔍 Code Review</div><div class="mu-func">analyze_github_repo()</div><div class="mu-desc">Fetches GitHub repo, analyzes all source files, generates severity-classified issue report</div></div>
+    <div class="module-usage-row"><div class="mu-module">📋 Resume Hub</div><div class="mu-func">generate_ats_analysis()<br>improve_resume_section()</div><div class="mu-desc">ATS compatibility scoring, keyword gap analysis, section-level improvement suggestions</div></div>
+    <div class="module-usage-row"><div class="mu-module">📚 Revision Hub</div><div class="mu-func">generate_revision_guide()</div><div class="mu-desc">AI-generated comprehensive study guides for any CS topic with the 4-round prep map structure</div></div>
+    <div class="module-usage-row"><div class="mu-module">👥 Peer Reviews</div><div class="mu-func">analyze_code_snippet()</div><div class="mu-desc">AI provides initial analysis suggestions before peer review goes live to the community</div></div>
+  </div>
+
+  <!-- PROMPT ENGINEERING -->
+  <div class="section">
+    <div class="section-title">Prompt Engineering — Sample Prompts</div>
+    <div class="two-col">
+      <div>
+        <div class="prompt-label">Challenge Evaluation System Prompt</div>
+        <div class="prompt-box"><span class="ph">"system":</span> <span class="pv">"You are an expert senior software developer and technical interviewer. Evaluate coding challenge submissions objectively and return ONLY valid JSON. Do not add any text outside the JSON object."</span></div>
+        <div class="prompt-label">Interview Q Generation (Resume Context)</div>
+        <div class="prompt-box"><span class="ph">## Candidate Profile</span>
+<span class="pv">Skills: React, Django, PostgreSQL, Docker</span>
+<span class="pv">Projects:</span>
+<span class="pv">  - Nexora: Django+React+Groq AI</span>
+<span class="pv">Experience:</span>
+<span class="pv">  - Backend Dev Intern at TechCorp</span>
+<br/>
+<span class="ph">Generate</span> <span class="ps">5</span> <span class="ph">technical interview questions</span>
+<span class="ph">referencing the candidate's actual</span>
+<span class="ph">experience and projects above.</span></div>
+      </div>
+      <div>
+        <div class="prompt-label">GitHub Repo Analysis Prompt Structure</div>
+        <div class="prompt-box"><span class="ph">You are a senior code reviewer.</span>
+<span class="ph">Analyze these source files and return JSON:</span>
+<span class="pv">{overall_score: 0-100,</span>
+<span class="pv"> files: [{filename,</span>
+<span class="pv">   issues:[{severity,type,</span>
+<span class="pv">            description,suggestion,</span>
+<span class="pv">            line_ref}]}]}</span>
+<br/>
+<span class="ph">--- FILE: app.py ---</span>
+<span class="pv">[file contents here]</span>
+<span class="ph">--- FILE: views.py ---</span>
+<span class="pv">[file contents here]</span></div>
+        <div class="prompt-label">ATS Score System Prompt</div>
+        <div class="prompt-box"><span class="ph">Target Role:</span> <span class="pv">"Backend Developer at Google"</span>
+<span class="ph">Resume JSON:</span> <span class="pv">{personal_info:{...},</span>
+<span class="pv"> skills:[...], experience:[...]}</span>
+<br/>
+<span class="ph">Return ATS score + keyword_gaps</span>
+<span class="ph">+ checklist + actionable tips</span>
+<span class="ph">as JSON only.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <h4>⚠️ Why We Use temperature=0.3 for Evaluations (NOT 0.7)</h4>
+    <p>Lower temperature = more deterministic, consistent output. For scoring/evaluation (challenges, interviews), we want consistent results — same answer should get similar scores each time. For creative tasks (roadmap generation, mentor chat), we use temperature=0.7-0.9 for more varied, engaging responses.</p>
+  </div>
+
+  <div class="green-box">
+    <h4>✅ AI Memory Engine — Cross-Session Learning</h4>
+    <p>The <code>UserAIMemory</code> model is updated after every interview completion, challenge submission, and mentor conversation. It accumulates: skills mastery levels, identified weaknesses, recurring mistake patterns, and interview performance stats. This memory is injected into EVERY subsequent AI call — creating a truly personalized AI that gets smarter about each user over time across all modules.</p>
+  </div>
+
+  <div class="footer">Nexora — AI Engineering Platform &nbsp;·&nbsp; Document 4/6: AI Layer &nbsp;·&nbsp; Presentation 2026</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexora — Frontend Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root { --bg:#0a0a0f;--card:#12121a;--card2:#1a1a26;--border:#2a2a3a;--accent:#6c63ff;--accent2:#a78bfa;--green:#34d399;--orange:#fb923c;--pink:#f472b6;--blue:#38bdf8;--text:#e2e8f0;--muted:#94a3b8;--dim:#64748b; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;}
+  code{font-family:'JetBrains Mono',monospace;font-size:12px;background:rgba(108,99,255,.15);padding:2px 7px;border-radius:5px;color:#a78bfa;}
+  @media print{
+    body{background:#fff!important;color:#111!important;}
+    .hero{background:linear-gradient(135deg,#0f172a,#1e3a5f)!important;color:#fff!important;}
+    .hero h1{-webkit-text-fill-color:#fff!important;}
+    .card,.card2,.file-card,.page-card{background:#f8f8ff!important;border:1px solid #ddd!important;}
+    .section-title{color:#4338ca!important;}
+    p,li,.muted{color:#333!important;}
+    h2,h3,h4{color:#111!important;}
+    code{background:#eee!important;color:#4338ca!important;}
+    .tag{background:#ede9fe!important;color:#5b21b6!important;border:none!important;}
+    .page-header .logo{color:#6c63ff!important;}
+    .url-row{background:#f0f0ff!important;border:1px solid #ddd!important;}
+    .footer{color:#666!important;}
+  }
+  .page{max-width:1100px;margin:0 auto;padding:36px 32px;}
+  .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+  .page-header .logo{font-size:19px;font-weight:900;color:#6c63ff;}
+  .page-header .doc-info{font-size:11.5px;color:var(--dim);text-align:right;}
+  .hero{background:linear-gradient(135deg,#0a1628 0%,#0f2040 100%);border:1px solid #1e3a5f;border-radius:20px;padding:40px 44px;margin-bottom:32px;}
+  .hero h1{font-size:42px;font-weight:900;background:linear-gradient(135deg,#fff,#38bdf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+  .hero p{font-size:15px;color:#94a3b8;}
+  .section{margin-bottom:32px;}
+  .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--accent2);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+  .page-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;}
+  .page-card .pc-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .pc-route{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#38bdf8;background:rgba(56,189,248,.1);padding:3px 9px;border-radius:5px;}
+  .pc-name{font-size:13px;font-weight:700;color:var(--text);}
+  .pc-size{font-size:11px;color:var(--dim);margin-left:auto;}
+  .pc-desc{font-size:12.5px;color:var(--muted);line-height:1.55;}
+  .pc-tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap;}
+
+  .file-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;}
+  .file-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .file-name{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#38bdf8;background:rgba(56,189,248,.1);padding:3px 10px;border-radius:6px;}
+  .file-points{list-style:none;padding:0;}
+  .file-points li{font-size:12.5px;color:var(--muted);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;gap:8px;align-items:flex-start;}
+  .file-points li:last-child{border-bottom:none;}
+  .file-points li::before{content:'→';color:#6c63ff;font-weight:700;flex-shrink:0;}
+
+  .tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600;}
+  .tag-purple{background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);color:#a78bfa;}
+  .tag-green{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#34d399;}
+  .tag-blue{background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);color:#38bdf8;}
+  .tag-orange{background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.3);color:#fb923c;}
+  .tag-pink{background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.3);color:#f472b6;}
+
+  .info-box{background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.25);border-left:4px solid #38bdf8;border-radius:10px;padding:14px 18px;margin-bottom:16px;}
+  .info-box h4{font-size:13px;color:#38bdf8;margin-bottom:5px;}
+  .info-box p{font-size:12px;}
+  .note-box{background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.25);border-left:4px solid #fb923c;border-radius:10px;padding:14px 18px;margin-bottom:16px;}
+  .note-box h4{font-size:13px;color:#fb923c;margin-bottom:5px;}
+  .note-box p{font-size:12px;}
+
+  .comp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .comp-card{background:var(--card2);border:1px solid var(--border);border-radius:11px;padding:14px;}
+  .comp-card h4{font-size:13px;font-weight:700;margin-bottom:5px;color:var(--text);}
+  .comp-card p{font-size:12px;color:var(--muted);}
+  .comp-card code{font-size:11px;}
+
+  .flow-v{display:flex;flex-direction:column;gap:0;}
+  .flow-step{display:flex;gap:14px;align-items:flex-start;padding:12px 16px;background:var(--card2);border:1px solid var(--border);}
+  .flow-step:first-child{border-radius:12px 12px 0 0;}
+  .flow-step:last-child{border-radius:0 0 12px 12px;border-top:none;}
+  .flow-step:not(:first-child):not(:last-child){border-top:none;}
+  .flow-num{min-width:26px;height:26px;background:linear-gradient(135deg,#38bdf8,#6c63ff);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;}
+  .flow-content h4{font-size:13px;font-weight:700;margin-bottom:2px;}
+  .flow-content p{font-size:12px;color:var(--muted);margin:0;}
+
+  h2{font-size:19px;font-weight:800;margin-bottom:10px;}
+  h3{font-size:15px;font-weight:700;margin-bottom:8px;}
+  h4{font-size:13.5px;font-weight:700;margin-bottom:5px;}
+  p{font-size:13px;color:var(--muted);line-height:1.7;}
+  ul{padding-left:18px;}
+  li{font-size:13px;color:var(--muted);margin-bottom:5px;line-height:1.6;}
+  li strong{color:var(--text);}
+  .footer{text-align:center;padding:24px 0 14px;color:var(--dim);font-size:11.5px;border-top:1px solid var(--border);margin-top:32px;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-header">
+    <div class="logo">⬡ NEXORA</div>
+    <div class="doc-info">Project Presentation · Document 3 of 6<br><span style="color:#38bdf8">Frontend — React Architecture</span></div>
+  </div>
+
+  <div class="hero">
+    <h1>🎨 Frontend Deep Dive</h1>
+    <p>React 18 + Vite + Framer Motion — a modern, performance-optimized SPA with glassmorphism design, 24 pages, animated transitions, real-time WebSocket integration, and a rich design system built entirely in Vanilla CSS.</p>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="section">
+    <div class="section-title">Frontend Technology Stack</div>
+    <div class="two-col">
+      <div class="card">
+        <h3>📦 Core Dependencies &amp; Why</h3>
+        <ul style="margin-top:8px;">
+          <li><strong>React 18</strong> — Component-based UI. Hooks (<code>useState</code>, <code>useEffect</code>, <code>useRef</code>, <code>useContext</code>) replace class components. Concurrent rendering for smooth animations.</li>
+          <li><strong>Vite</strong> — Build tool. 10x faster than CRA (Create React App). HMR (Hot Module Replacement) updates in &lt;100ms. Production build with code-splitting and tree-shaking.</li>
+          <li><strong>React Router v6</strong> — Client-side routing. <code>BrowserRouter + Routes + Route</code>. Nested routes for interview session. <code>ProtectedRoute</code> wrapper for auth-gated pages.</li>
+          <li><strong>Framer Motion</strong> — Production-grade animation library. Used for page transitions (<code>AnimatePresence</code>), button hover/tap effects (<code>whileHover</code>, <code>whileTap</code>), staggered list animations, modal entrance/exit.</li>
+          <li><strong>Axios</strong> — HTTP client. Configured with base URL + interceptor that auto-attaches JWT from localStorage and handles 401 → token refresh flow.</li>
+          <li><strong>Monaco Editor</strong> — VS Code's editor embedded in browser. Used in Code Arena for the coding battle editor with syntax highlighting, IntelliSense for 40+ languages.</li>
+          <li><strong>Vanilla CSS</strong> — No Tailwind, no CSS-in-JS. All styles in <code>index.css</code> using CSS Custom Properties (variables) for the design system. Glassmorphism, dark mode, smooth gradients.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>📁 Project Structure</h3>
+        <ul style="margin-top:8px;">
+          <li><strong>src/App.jsx</strong> — Root component. Sets up BrowserRouter, AuthProvider context, route definitions, ProtectedRoute/GuestGuard wrappers, Sidebar vs LandingNavbar logic.</li>
+          <li><strong>src/pages/</strong> — 24 page components. Each page = one feature module. All pages use inline styles for component-level specificity.</li>
+          <li><strong>src/components/</strong> — Reusable components: <code>layout/Sidebar</code>, <code>layout/LandingNavbar</code>, <code>ui/CommandPalette</code>, <code>ui/GuidedTour</code>.</li>
+          <li><strong>src/context/</strong> — <code>AuthContext.jsx</code> — React Context providing <code>user</code>, <code>isAuthenticated</code>, <code>login()</code>, <code>logout()</code> globally.</li>
+          <li><strong>src/services/</strong> — API service modules: <code>authService.js</code>, <code>challengeService.js</code>, <code>interviewService.js</code> etc. Abstracts all Axios calls.</li>
+          <li><strong>src/utils/</strong> — Utility functions: date formatting, XP calculations, localStorage helpers.</li>
+          <li><strong>src/index.css</strong> — 12KB design system with CSS variables, animations, glassmorphism classes, scrollbar styles.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALL 24 PAGES -->
+  <div class="section">
+    <div class="section-title">All 24 Pages — Routes &amp; Descriptions</div>
+    <div class="two-col">
+      <div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/</span><span class="pc-name">LandingPage.jsx</span><span class="pc-size">69KB</span></div>
+          <div class="pc-desc">Marketing landing page. Hero section, features showcase, stats counter, how-it-works flow, testimonials, CTA buttons. Public page — no auth required.</div>
+          <div class="pc-tags"><span class="tag tag-purple">Public</span><span class="tag tag-blue">Animated</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/challenges</span><span class="pc-name">ChallengesPage.jsx</span><span class="pc-size">37KB</span></div>
+          <div class="pc-desc">Challenge browser with filter sidebar (difficulty, type, topic, search). Challenge cards with XP rewards, difficulty badges, completion status. AI Challenge Generator modal.</div>
+          <div class="pc-tags"><span class="tag tag-purple">Protected</span><span class="tag tag-green">Filters</span><span class="tag tag-orange">AI Gen</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/challenges/:id</span><span class="pc-name">ChallengeDetailPage.jsx</span><span class="pc-size">41KB</span></div>
+          <div class="pc-desc">Full challenge view. Description, requirements, Monaco code editor for answer input. Submit button triggers AI evaluation. Shows score, feedback, Big-O complexity chart, XP earned.</div>
+          <div class="pc-tags"><span class="tag tag-purple">Protected</span><span class="tag tag-blue">Monaco Editor</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/interview</span><span class="pc-name">InterviewLabPage.jsx</span><span class="pc-size">24KB</span></div>
+          <div class="pc-desc">Interview setup screen. Select mode (Technical/HR/Mixed/Rapid Fire/Boardroom), difficulty (Junior/Mid/Senior), topic, question count. Initialize Simulation button starts session.</div>
+          <div class="pc-tags"><span class="tag tag-purple">Protected</span><span class="tag tag-pink">5 Modes</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/interview/:id</span><span class="pc-name">InterviewSessionPage.jsx</span><span class="pc-size">76KB</span></div>
+          <div class="pc-desc">Live interview session. Webcam feed, audio visualizer waveform, speech-to-text answer input, question timer, filler word counter, WPM tracker. AI feedback panel after each answer.</div>
+          <div class="pc-tags"><span class="tag tag-blue">Webcam</span><span class="tag tag-green">Web Speech API</span><span class="tag tag-orange">Real-time</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/mentor</span><span class="pc-name">DevMentorPage.jsx</span><span class="pc-size">60KB</span></div>
+          <div class="pc-desc">AI chat interface with conversation list sidebar, markdown-rendered responses with syntax highlighting. Toggle between AI Chat Studio and Opportunity Matcher modes.</div>
+          <div class="pc-tags"><span class="tag tag-purple">Protected</span><span class="tag tag-blue">Markdown</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/roadmap</span><span class="pc-name">RoadmapPage.jsx</span><span class="pc-size">56KB</span></div>
+          <div class="pc-desc">Roadmap generator. Select career track → AI generates week-by-week plan. Interactive week cards with expandable task lists linked to challenges and interviews.</div>
+          <div class="pc-tags"><span class="tag tag-purple">Protected</span><span class="tag tag-pink">7 Tracks</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/roadmap/learn/:weekId</span><span class="pc-name">RoadmapLearnPage.jsx</span><span class="pc-size">26KB</span></div>
+          <div class="pc-desc">Individual week deep-dive. Shows all tasks for that week (challenges to complete, interview sessions to do, topics to study) with progress tracking.</div>
+          <div class="pc-tags"><span class="tag tag-green">Week Tasks</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/arena</span><span class="pc-name">CodeArenaPage.jsx</span><span class="pc-size">101KB</span></div>
+          <div class="pc-desc">1v1 coding battle arena. Create/join rooms, Monaco editor, live battle progress bars for both players, WebSocket real-time sync, winner announcement with XP rewards. Largest page in the project.</div>
+          <div class="pc-tags"><span class="tag tag-orange">WebSocket</span><span class="tag tag-blue">Monaco</span><span class="tag tag-pink">Real-time</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/codereview</span><span class="pc-name">CodeReviewPage.jsx</span><span class="pc-size">48KB</span></div>
+          <div class="pc-desc">AI code review dashboard. GitHub repo URL input, trigger scan. Results show overall health score, issues grouped by severity (Critical/High/Medium/Low), file-level findings with suggestions.</div>
+          <div class="pc-tags"><span class="tag tag-orange">GitHub API</span><span class="tag tag-purple">AI Analysis</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/peer-review</span><span class="pc-name">PeerCodeReviewPage.jsx</span><span class="pc-size">48KB</span></div>
+          <div class="pc-desc">Community peer review feed. Browse review requests, filter by focus area/language. Request Peer Review modal with code snippet input. Comment system with type tags (suggestion/issue/praise/question).</div>
+          <div class="pc-tags"><span class="tag tag-green">Community</span><span class="tag tag-blue">Comments</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/resume</span><span class="pc-name">ResumePage.jsx</span><span class="pc-size">123KB</span></div>
+          <div class="pc-desc">Full-featured resume builder. 6-section form editor with drag-and-drop reordering. Live preview panel. ATS analyzer with score ring. PDF export. Largest page by file size — most complex UI.</div>
+          <div class="pc-tags"><span class="tag tag-orange">ATS Score</span><span class="tag tag-pink">PDF Export</span><span class="tag tag-purple">6 Sections</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/revision</span><span class="pc-name">RevisionPage.jsx</span><span class="pc-size">58KB</span></div>
+          <div class="pc-desc">AI revision guide generator. Topic input → AI generates study guide. 4-round Prep Map timeline (Learn → Apply → Reinforce → Master) with node progress tracking. Flashcard view mode.</div>
+          <div class="pc-tags"><span class="tag tag-blue">4-Round Prep Map</span><span class="tag tag-orange">AI Content</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/fundamentals</span><span class="pc-name">FundamentalsPage.jsx</span><span class="pc-size">41KB</span></div>
+          <div class="pc-desc">CS fundamentals reference library. Curated topic cards for Data Structures, Algorithms, System Design, OS, Networking. Quick-reference visual cards with explanations.</div>
+          <div class="pc-tags"><span class="tag tag-green">Reference</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/showcase</span><span class="pc-name">ShowcasePage.jsx</span><span class="pc-size">46KB</span></div>
+          <div class="pc-desc">Public project portfolio gallery. Upload projects with image, description, GitHub/live URLs, tags. Like system, featured projects section. Anyone can view others' portfolios.</div>
+          <div class="pc-tags"><span class="tag tag-pink">Public</span><span class="tag tag-green">Likes</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/progress</span><span class="pc-name">ProgressPage.jsx</span><span class="pc-size">33KB</span></div>
+          <div class="pc-desc">Developer dashboard. XP progress ring, rank display, streak calendar, recent activity timeline, earned achievements gallery, certificates collection, scheduled tasks planner.</div>
+          <div class="pc-tags"><span class="tag tag-purple">Protected</span><span class="tag tag-orange">Gamification</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/profile</span><span class="pc-name">ProfilePage.jsx</span><span class="pc-size">40KB</span></div>
+          <div class="pc-desc">User profile with avatar, bio, social links, GitHub integration. GitHub Connect flow scans repos and shows code health score. Edit Profile modal for updating all profile fields.</div>
+          <div class="pc-tags"><span class="tag tag-purple">Protected</span><span class="tag tag-blue">GitHub</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/login</span><span class="pc-name">LoginPage.jsx</span><span class="pc-size">12KB</span></div>
+          <div class="pc-desc">Email + password login. JWT token storage. Redirect to previously visited page after login (via sessionStorage). Form validation with real-time error display.</div>
+          <div class="pc-tags"><span class="tag tag-green">JWT Auth</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/register</span><span class="pc-name">RegisterPage.jsx</span><span class="pc-size">17KB</span></div>
+          <div class="pc-desc">Registration with full_name, email, password. Auto-creates UserProfile, Resume, AI Memory on backend after registration. Animated success transition.</div>
+          <div class="pc-tags"><span class="tag tag-green">Auto Profile Setup</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/about, /contact</span><span class="pc-name">AboutPage / ContactPage</span><span class="pc-size">26KB / 15KB</span></div>
+          <div class="pc-desc">Public marketing pages. Team info, platform story. Contact form with email dispatch. Full landing navbar (no sidebar).</div>
+          <div class="pc-tags"><span class="tag tag-purple">Public</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">/privacy, /terms</span><span class="pc-name">PrivacyPage / TermsPage</span><span class="pc-size">7KB / 6KB</span></div>
+          <div class="pc-desc">Legal pages. Privacy Policy and Terms of Service. Static content with elegant dark design.</div>
+          <div class="pc-tags"><span class="tag tag-green">Public</span></div>
+        </div>
+        <div class="page-card">
+          <div class="pc-top"><span class="pc-route">*</span><span class="pc-name">NotFoundPage.jsx</span><span class="pc-size">17KB</span></div>
+          <div class="pc-desc">Custom 404 page with animated visual and smart redirect detection (valid Nexora routes get redirected to the right page).</div>
+          <div class="pc-tags"><span class="tag tag-orange">404 Handler</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY COMPONENTS -->
+  <div class="section">
+    <div class="section-title">Key Components — Deep Explanation</div>
+
+    <div class="file-card">
+      <div class="file-header"><span class="file-name">src/App.jsx</span><span style="font-size:12px;color:var(--muted);">Root Component — Routing Hub</span></div>
+      <ul class="file-points">
+        <li><strong>AuthProvider wraps everything</strong> — <code>useAuth()</code> hook available in any child component. Provides <code>user</code>, <code>isAuthenticated</code>, <code>login(token)</code>, <code>logout()</code>.</li>
+        <li><strong>ProtectedRoute</strong> — HOC that checks <code>isAuthenticated</code>. If not authenticated → saves current URL to <code>sessionStorage</code> → redirects to <code>/login</code>. After login, restores the saved URL.</li>
+        <li><strong>GuestGuard</strong> — Redirects authenticated users away from public-only pages (landing) to app pages. Prevents logged-in users from seeing the marketing page.</li>
+        <li><strong>Layout switching</strong> — Public pages (/, /about, /privacy, /terms, /contact) get <code>LandingNavbar + Footer</code>. App pages (all others) get the <code>Sidebar</code>. This is determined by <code>isPublicPage</code> boolean.</li>
+        <li><strong>AnimatePresence</strong> — Framer Motion wrapper around Routes. Enables exit animations when navigating between pages. Each page fades/slides in and out smoothly.</li>
+        <li><strong>CommandPalette</strong> — Global Cmd+K shortcut palette. Allows quick navigation to any page by typing, visible from anywhere in the app.</li>
+      </ul>
+    </div>
+
+    <div class="file-card">
+      <div class="file-header"><span class="file-name">InterviewSessionPage.jsx</span><span style="font-size:12px;color:var(--muted);">Most Complex Page — 76KB, 1456 lines</span></div>
+      <ul class="file-points">
+        <li><strong>Webcam + Audio setup</strong> — <code>navigator.mediaDevices.getUserMedia({video, audio})</code>. Video stream attached to <code>&lt;video ref&gt;</code>. Fallback to audio-only if webcam fails (Zoom/OBS conflicts).</li>
+        <li><strong>Audio Visualizer</strong> — <code>Web Audio API</code>: creates <code>AudioContext → AnalyserNode → connects mic stream</code>. Reads frequency data each frame via <code>requestAnimationFrame</code> and draws a waveform on <code>&lt;canvas&gt;</code>.</li>
+        <li><strong>Speech Recognition</strong> — <code>window.SpeechRecognition</code> (Web Speech API). Set <code>continuous=true</code>, <code>interimResults=true</code>. Fixed duplicate bug: <code>committedTextRef</code> tracks finalized text separately from interim preview, preventing "hello hello hello" bug.</li>
+        <li><strong>Filler Word Detection</strong> — On each final recognition result, counts occurrences of ["um", "uh", "like", "you know", "basically", "actually", "literally"] in the transcript. Displays live count.</li>
+        <li><strong>WPM Calculation</strong> — Records <code>startTimeRef.current = Date.now()</code> on first word spoken. On submit: <code>wpm = (wordCount / elapsedMinutes)</code>. Shown in feedback panel.</li>
+        <li><strong>Webcam Snapshot</strong> — On answer submit, draws current video frame to a <code>&lt;canvas&gt;</code> (320×240px, mirrored to match display), converts to <code>base64 JPEG (0.6 quality)</code>, sends to backend as <code>image_frame</code> field for AI body language analysis.</li>
+        <li><strong>Boardroom Mode TTS</strong> — Uses <code>window.speechSynthesis</code> to speak AI panelist responses aloud. Different voice rate/pitch for Tech Lead, Architect, and HR Manager characters.</li>
+      </ul>
+    </div>
+
+    <div class="file-card">
+      <div class="file-header"><span class="file-name">context/AuthContext.jsx</span><span style="font-size:12px;color:var(--muted);">Global Authentication State</span></div>
+      <ul class="file-points">
+        <li>Uses React <code>createContext + useContext</code> pattern. Wraps entire app in <code>&lt;AuthProvider&gt;</code>. Any component can call <code>const { user, isAuthenticated, login, logout } = useAuth()</code>.</li>
+        <li><strong>Persistent auth</strong> — On page load, reads JWT from localStorage. If token exists, calls <code>/api/users/profile/</code> to verify token and populate <code>user</code> state. If 401 → auto-clears tokens → user stays logged out.</li>
+        <li><strong>Axios interceptor</strong> — All Axios requests automatically have <code>Authorization: Bearer token</code> injected. 401 responses trigger refresh token flow transparently.</li>
+      </ul>
+    </div>
+
+    <div class="file-card">
+      <div class="file-header"><span class="file-name">CodeArenaPage.jsx</span><span style="font-size:12px;color:var(--muted);">Real-time WebSocket Battle — 101KB, Largest File</span></div>
+      <ul class="file-points">
+        <li><strong>WebSocket connection</strong> — <code>new WebSocket('ws://…/ws/arena/{roomCode}/?token={JWT}')</code>. JWT passed as query param since WS handshake cannot set custom headers like HTTP.</li>
+        <li><strong>Message handling</strong> — <code>ws.onmessage</code> parses JSON events: <code>room_state</code> (initial room setup), <code>player_joined</code> (opponent connected), <code>battle_start</code> (countdown begins), <code>progress_update</code> (opponent's test progress), <code>battle_finish</code> (winner declared).</li>
+        <li><strong>Monaco Editor integration</strong> — <code>@monaco-editor/react</code>. Language selector changes syntax highlighting. Real-time test execution against the challenge's test cases. Progress = tests_passed/total_tests * 100.</li>
+        <li><strong>Heartbeat ping</strong> — Sends <code>{ type: "ping" }</code> every 30 seconds to keep WebSocket alive through proxy timeouts.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- DESIGN SYSTEM -->
+  <div class="section">
+    <div class="section-title">Design System — index.css</div>
+    <div class="two-col">
+      <div class="card">
+        <h3>🎨 CSS Custom Properties (Variables)</h3>
+        <ul style="margin-top:8px;">
+          <li><code>--glass-bg</code> — rgba(255,255,255,0.05) for glassmorphism cards</li>
+          <li><code>--glass-border</code> — rgba(255,255,255,0.08) for card borders</li>
+          <li><code>--accent</code> — #6c63ff (primary brand purple)</li>
+          <li><code>--text-primary</code> — #e2e8f0 (main text color)</li>
+          <li><code>--bg-primary</code> — #0a0a0f (deep dark background)</li>
+          <li>All colors defined once, used everywhere — easy theme changes</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>✨ Visual Design Techniques</h3>
+        <ul style="margin-top:8px;">
+          <li><strong>Glassmorphism</strong> — <code>backdrop-filter: blur(20px)</code> + semi-transparent backgrounds for card depth</li>
+          <li><strong>Gradient Text</strong> — <code>background-clip: text; -webkit-text-fill-color: transparent</code> for colored headings</li>
+          <li><strong>Framer Motion</strong> — <code>whileHover={{ scale: 1.02 }}</code> on every interactive button for micro-animations</li>
+          <li><strong>Radial Gradients</strong> — Glowing orbs as decorative bg elements on hero sections</li>
+          <li><strong>Custom Scrollbar</strong> — Thin purple scrollbar via <code>::webkit-scrollbar</code> pseudo-elements</li>
+          <li><strong>Stagger animations</strong> — List items animate in with 0.05s delay between each via Framer <code>staggerChildren</code></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- AXIOS SERVICE LAYER -->
+  <div class="section">
+    <div class="section-title">Service Layer — API Abstraction</div>
+    <div class="info-box">
+      <h4>🔧 Why a Service Layer?</h4>
+      <p>Instead of calling Axios directly in every component, all API calls are abstracted into <code>src/services/</code> modules. This means: (1) changing the API URL happens in one place, (2) error handling is centralized, (3) components stay clean and readable, (4) easy to mock for testing. Each service module (<code>challengeService.js</code>, <code>interviewService.js</code> etc.) exports functions like <code>getChallenges(params)</code>, <code>submitChallenge(id, data)</code> that components call directly.</p>
+    </div>
+    <div class="flow-v">
+      <div class="flow-step"><div class="flow-num">1</div><div class="flow-content"><h4>Component calls service function</h4><p>e.g. <code>const data = await interviewService.submitAnswer(sessionId, questionId, payload)</code></p></div></div>
+      <div class="flow-step"><div class="flow-num">2</div><div class="flow-content"><h4>Service calls Axios with correct endpoint</h4><p>Axios interceptor auto-adds <code>Authorization: Bearer &lt;token&gt;</code> from localStorage</p></div></div>
+      <div class="flow-step"><div class="flow-num">3</div><div class="flow-content"><h4>Response returned to component</h4><p>Component updates state with returned data. Framer Motion re-renders with new content smoothly.</p></div></div>
+      <div class="flow-step"><div class="flow-num">4</div><div class="flow-content"><h4>If 401 (token expired)</h4><p>Axios response interceptor automatically hits <code>/api/auth/token/refresh/</code>, gets new token, retries the original request transparently.</p></div></div>
+    </div>
+  </div>
+
+  <div class="footer">Nexora — AI Engineering Platform &nbsp;·&nbsp; Document 3/6: Frontend Architecture &nbsp;·&nbsp; Presentation 2026</div>
+</div>
+</body>
+</html>

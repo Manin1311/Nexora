@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Nexora — Project Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f; --card: #12121a; --card2: #1a1a26; --border: #2a2a3a;
+    --accent: #6c63ff; --accent2: #a78bfa; --accent3: #38bdf8;
+    --green: #34d399; --orange: #fb923c; --pink: #f472b6;
+    --text: #e2e8f0; --muted: #94a3b8; --dim: #64748b;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; line-height:1.6; }
+  @media print {
+    body { background:#fff !important; color:#111 !important; font-size:12px; }
+    .hero { background:linear-gradient(135deg,#6c63ff 0%,#a78bfa 100%) !important; }
+    .hero h1 { -webkit-text-fill-color:#fff !important; }
+    .hero-tagline,.stat-label { color:#e0e0ff !important; }
+    .stat-num { color:#fff !important; }
+    .card,.module-card,.usp-item,.deploy-row { background:#f8f8ff !important; border:1px solid #ddd !important; }
+    .tag { background:#ede9fe !important; color:#5b21b6 !important; }
+    .tech-pill { background:#f3f4f6 !important; color:#333 !important; border:1px solid #ddd !important; }
+    .highlight-box { background:#f0f9ff !important; border-left:4px solid #38bdf8 !important; border-color:#c0e0f0 !important; }
+    .section-title { color:#4338ca !important; }
+    p,li { color:#333 !important; }
+    h2,h3,h4 { color:#111 !important; }
+    .flow-step { background:#f8f8ff !important; }
+    .page-header .logo { color:#6c63ff !important; }
+    .footer { color:#666 !important; border-color:#ddd !important; }
+  }
+  .page { max-width:1100px; margin:0 auto; padding:36px 32px; }
+  .hero {
+    background:linear-gradient(135deg,#1e1040 0%,#0f0a2a 40%,#0a1628 100%);
+    border:1px solid #3d2fa0; border-radius:24px; padding:56px 48px;
+    margin-bottom:36px; position:relative; overflow:hidden;
+  }
+  .hero::before { content:''; position:absolute; top:-60px; right:-60px; width:300px; height:300px; background:radial-gradient(circle,rgba(108,99,255,.35) 0%,transparent 70%); border-radius:50%; }
+  .hero-badge { display:inline-flex; align-items:center; gap:8px; background:rgba(108,99,255,.2); border:1px solid rgba(108,99,255,.5); border-radius:50px; padding:6px 16px; font-size:13px; font-weight:600; color:#a78bfa; margin-bottom:20px; }
+  .hero-badge span { width:8px; height:8px; background:#6c63ff; border-radius:50%; display:block; }
+  .hero h1 { font-size:60px; font-weight:900; line-height:1.05; background:linear-gradient(135deg,#fff 0%,#a78bfa 50%,#38bdf8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:10px; }
+  .hero-tagline { font-size:20px; color:#94a3b8; margin-bottom:24px; }
+  .hero-tagline strong { color:#e2e8f0; }
+  .hero-stats { display:flex; gap:32px; flex-wrap:wrap; }
+  .stat { display:flex; flex-direction:column; }
+  .stat-num { font-size:30px; font-weight:800; color:#6c63ff; font-family:'JetBrains Mono',monospace; }
+  .stat-label { font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:1px; }
+  .section { margin-bottom:36px; }
+  .section-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:var(--accent2); margin-bottom:18px; display:flex; align-items:center; gap:10px; }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+  .card-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .module-card { background:var(--card2); border:1px solid var(--border); border-radius:14px; padding:20px; }
+  .module-icon { width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:12px; }
+  .module-name { font-size:14px; font-weight:700; margin-bottom:5px; }
+  .module-desc { font-size:12.5px; color:var(--muted); line-height:1.55; }
+  .module-tags { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+  .tag { background:rgba(108,99,255,.12); border:1px solid rgba(108,99,255,.25); color:#a78bfa; font-size:10.5px; font-weight:600; padding:2px 9px; border-radius:20px; }
+  .tag.green { background:rgba(52,211,153,.12); border-color:rgba(52,211,153,.3); color:#34d399; }
+  .tag.blue { background:rgba(56,189,248,.12); border-color:rgba(56,189,248,.3); color:#38bdf8; }
+  .tag.orange { background:rgba(251,146,60,.12); border-color:rgba(251,146,60,.3); color:#fb923c; }
+  .tag.pink { background:rgba(244,114,182,.12); border-color:rgba(244,114,182,.3); color:#f472b6; }
+  .highlight-box { background:rgba(56,189,248,.06); border:1px solid rgba(56,189,248,.2); border-left:4px solid #38bdf8; border-radius:12px; padding:18px 22px; margin-bottom:18px; }
+  .highlight-box h3 { font-size:14px; font-weight:700; color:#38bdf8; margin-bottom:7px; }
+  .highlight-box p { font-size:13px; color:var(--muted); line-height:1.7; }
+  .tech-grid { display:flex; flex-wrap:wrap; gap:9px; }
+  .tech-pill { background:var(--card2); border:1px solid var(--border); border-radius:7px; padding:7px 14px; font-size:12.5px; font-weight:600; color:var(--text); display:flex; align-items:center; gap:7px; }
+  .tech-dot { width:7px; height:7px; border-radius:50%; }
+  .flow { display:flex; align-items:center; background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .flow-step { flex:1; padding:18px 12px; text-align:center; border-right:1px solid var(--border); }
+  .flow-step:last-child { border-right:none; }
+  .flow-step .icon { font-size:22px; margin-bottom:6px; }
+  .flow-step .label { font-size:11.5px; font-weight:700; color:var(--text); }
+  .flow-step .sub { font-size:10px; color:var(--dim); margin-top:3px; }
+  .usp-list { display:flex; flex-direction:column; gap:14px; }
+  .usp-item { display:flex; gap:14px; align-items:flex-start; padding:16px 18px; background:var(--card2); border:1px solid var(--border); border-radius:12px; }
+  .usp-num { min-width:30px; height:30px; background:linear-gradient(135deg,#6c63ff,#a78bfa); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff; }
+  .usp-content h4 { font-size:14px; font-weight:700; margin-bottom:4px; }
+  .usp-content p { font-size:12.5px; color:var(--muted); line-height:1.55; }
+  .page-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:36px; padding-bottom:18px; border-bottom:1px solid var(--border); }
+  .page-header .logo { font-size:19px; font-weight:900; color:#6c63ff; }
+  .page-header .doc-info { font-size:11.5px; color:var(--dim); text-align:right; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  h2 { font-size:20px; font-weight:800; margin-bottom:12px; }
+  h3 { font-size:15px; font-weight:700; margin-bottom:9px; }
+  p { font-size:13.5px; color:var(--muted); line-height:1.7; }
+  ul { padding-left:18px; }
+  li { font-size:13.5px; color:var(--muted); margin-bottom:5px; line-height:1.6; }
+  li strong { color:var(--text); }
+  .deploy-row { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--card2); border:1px solid var(--border); border-radius:10px; }
+  .deploy-icon { font-size:18px; }
+  .deploy-text h4 { font-size:13px; font-weight:700; }
+  .deploy-text p { font-size:11.5px; color:var(--dim); margin:0; }
+  .footer { text-align:center; padding:28px 0 16px; color:var(--dim); font-size:11.5px; border-top:1px solid var(--border); margin-top:36px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-header">
+    <div class="logo">⬡ NEXORA</div>
+    <div class="doc-info">Project Presentation · Document 1 of 6<br><span style="color:#6c63ff">Project Overview &amp; Features</span></div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-badge"><span></span> AI-Powered Engineering Platform</div>
+    <h1>NEXORA</h1>
+    <p class="hero-tagline">The <strong>all-in-one developer growth platform</strong> — combining AI mentorship, mock interviews, coding challenges, peer reviews, and career tools in a single unified ecosystem.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">10+</span><span class="stat-label">Core Modules</span></div>
+      <div class="stat"><span class="stat-num">2</span><span class="stat-label">AI Engines</span></div>
+      <div class="stat"><span class="stat-num">12</span><span class="stat-label">Backend Apps</span></div>
+      <div class="stat"><span class="stat-num">24</span><span class="stat-label">Frontend Pages</span></div>
+      <div class="stat"><span class="stat-num">5</span><span class="stat-label">Rank Levels</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">What is Nexora?</div>
+    <div class="highlight-box">
+      <h3>🎯 The Problem We Solve</h3>
+      <p>Developers use 5–8 different platforms to practice coding (LeetCode), prepare for interviews (Pramp), manage portfolios (GitHub), get code feedback, and learn from mentors. This fragmentation wastes time, lacks continuity, and provides <strong>zero AI-driven personalization</strong>. Nexora consolidates all of this into one intelligent platform.</p>
+    </div>
+    <div class="highlight-box" style="border-left-color:#6c63ff;background:rgba(108,99,255,.06);border-color:rgba(108,99,255,.2);">
+      <h3 style="color:#a78bfa;">💡 Our Solution</h3>
+      <p>Nexora is a <strong>full-stack, AI-powered developer growth platform</strong> built with Django REST Framework + React + PostgreSQL. It provides personalized coding challenges, AI-powered mock interviews with real-time behavior analysis, adaptive learning roadmaps, AI mentor chatbot, GitHub code health analysis, peer code reviews, resume builder with ATS scoring, and live 1v1 coding battles — all under one roof with a unified XP/rank progression system.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">10 Core Feature Modules</div>
+    <div class="card-grid">
+      <div class="module-card">
+        <div class="module-icon" style="background:rgba(108,99,255,.15);">🎯</div>
+        <div class="module-name">Coding Challenges Hub</div>
+        <div class="module-desc">100+ challenges (Easy/Medium/Hard) with AI evaluation, Big-O complexity analysis, XP rewards, daily/weekly challenges, and Company OA simulation mode.</div>
+        <div class="module-tags"><span class="tag">AI Evaluated</span><span class="tag green">XP System</span><span class="tag blue">Big-O Analysis</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:rgba(56,189,248,.15);">🎤</div>
+        <div class="module-name">Interview Lab</div>
+        <div class="module-desc">AI mock interviews with 5 modes: Technical, HR, Mixed, Rapid Fire, Boardroom. Webcam emotion detection, speech-to-text answers, filler word tracking, WPM analysis.</div>
+        <div class="module-tags"><span class="tag blue">Webcam AI</span><span class="tag">5 Modes</span><span class="tag orange">Speech Recognition</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:rgba(52,211,153,.15);">🤖</div>
+        <div class="module-name">Dev Mentor (AI Chat)</div>
+        <div class="module-desc">Persistent multi-conversation AI mentor powered by Groq LLaMA 3.3 70B with Gemini fallback. Context-aware, markdown-rendered. Includes Opportunity Matcher for job/internship recommendations.</div>
+        <div class="module-tags"><span class="tag green">LLaMA 3.3 70B</span><span class="tag">Persistent Memory</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:rgba(251,146,60,.15);">🔍</div>
+        <div class="module-name">AI Code Review</div>
+        <div class="module-desc">Connect GitHub repo, get AI code health analysis scanning for security vulnerabilities, performance issues, readability, and architecture concerns with severity-tagged issue reports.</div>
+        <div class="module-tags"><span class="tag orange">GitHub API</span><span class="tag">Security Scan</span><span class="tag blue">Health Score</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:rgba(244,114,182,.15);">🗺️</div>
+        <div class="module-name">AI Roadmap Generator</div>
+        <div class="module-desc">Personalized week-by-week roadmaps for 7 career tracks (FAANG SWE, Frontend, Backend, Full Stack, DevOps, ML Engineer, PM). Each week has tasks linked to challenges &amp; interviews.</div>
+        <div class="module-tags"><span class="tag pink">7 Career Tracks</span><span class="tag">Week Tasks</span><span class="tag green">Adaptive</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:rgba(108,99,255,.15);">👥</div>
+        <div class="module-name">Peer Code Review Network</div>
+        <div class="module-desc">Community code review marketplace. Submit snippets, challenge solutions, or showcase projects for peer feedback. Line-specific comments (suggestion/issue/praise/question) with upvoting.</div>
+        <div class="module-tags"><span class="tag">Community</span><span class="tag orange">Line Comments</span><span class="tag green">Upvotes</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:rgba(56,189,248,.15);">⚡</div>
+        <div class="module-name">Code Arena (1v1 Battles)</div>
+        <div class="module-desc">Real-time 1v1 coding battles via WebSockets. Two devs race to solve the same challenge. Live progress tracking, battle countdown, winner announcement with XP rewards. Public/private rooms.</div>
+        <div class="module-tags"><span class="tag blue">WebSocket</span><span class="tag">Real-time</span><span class="tag pink">1v1 Battle</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:rgba(52,211,153,.15);">📋</div>
+        <div class="module-name">Resume Hub</div>
+        <div class="module-desc">Full resume builder with 6 sections (Personal Info, Experience, Projects, Skills, Education, Certifications). AI ATS score analyzer targeting specific job roles. Premium PDF export.</div>
+        <div class="module-tags"><span class="tag green">ATS Score</span><span class="tag">6 Sections</span><span class="tag orange">PDF Export</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:rgba(251,146,60,.15);">📚</div>
+        <div class="module-name">Revision Hub</div>
+        <div class="module-desc">AI-generated topic revision guides with 4-round Prep Map (Learn → Apply → Reinforce → Master). Flashcard-style study mode, topic progress tracking, AI content generation for any CS topic.</div>
+        <div class="module-tags"><span class="tag orange">4-Round System</span><span class="tag">Flashcards</span><span class="tag blue">AI Content</span></div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon" style="background:rgba(244,114,182,.15);">🏆</div>
+        <div class="module-name">Progress &amp; Showcase</div>
+        <div class="module-desc">XP-based rank progression (Explorer→Builder→Creator→Architect→Legend), streak tracking, achievement badges, activity timeline, certificate generation, and public project showcase portfolio.</div>
+        <div class="module-tags"><span class="tag pink">5 Ranks</span><span class="tag green">Certificates</span><span class="tag">Achievements</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Technology Stack at a Glance</div>
+    <div class="two-col">
+      <div class="card">
+        <h3>🖥️ Backend</h3>
+        <div class="tech-grid" style="margin-top:10px;">
+          <span class="tech-pill"><span class="tech-dot" style="background:#3ecf8e;"></span>Django 5.1</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#f97316;"></span>Django REST Framework</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#38bdf8;"></span>Django Channels (WebSocket)</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#a78bfa;"></span>Daphne ASGI Server</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#fb923c;"></span>SimpleJWT Authentication</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#34d399;"></span>Gunicorn WSGI</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#6366f1;"></span>WhiteNoise Static Files</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🎨 Frontend</h3>
+        <div class="tech-grid" style="margin-top:10px;">
+          <span class="tech-pill"><span class="tech-dot" style="background:#61dafb;"></span>React 18</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#f97316;"></span>Vite Build Tool</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#a78bfa;"></span>Framer Motion Animations</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#38bdf8;"></span>React Router v6</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#34d399;"></span>Axios HTTP Client</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#fb923c;"></span>Monaco Code Editor</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🤖 AI Layer</h3>
+        <div class="tech-grid" style="margin-top:10px;">
+          <span class="tech-pill"><span class="tech-dot" style="background:#f97316;"></span>Groq — LLaMA 3.3 70B (Primary)</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#4285f4;"></span>Google Gemini 2.5 Flash (Fallback)</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#a78bfa;"></span>Multi-Key Load Balancing</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#34d399;"></span>Multimodal Vision (Webcam)</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🗄️ Database &amp; Infra</h3>
+        <div class="tech-grid" style="margin-top:10px;">
+          <span class="tech-pill"><span class="tech-dot" style="background:#336791;"></span>PostgreSQL</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#38bdf8;"></span>Render Cloud Hosting</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#fb923c;"></span>GitHub API Integration</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#6366f1;"></span>Web Speech API</span>
+          <span class="tech-pill"><span class="tech-dot" style="background:#34d399;"></span>WebSocket (Django Channels)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">System Architecture Flow</div>
+    <div class="flow">
+      <div class="flow-step"><div class="icon">🌐</div><div class="label">React Frontend</div><div class="sub">Vite + React 18</div></div>
+      <div class="flow-step"><div class="icon">↔️</div><div class="label">Axios / WS</div><div class="sub">JWT Auth Headers</div></div>
+      <div class="flow-step"><div class="icon">⚙️</div><div class="label">Django API</div><div class="sub">DRF REST + ASGI</div></div>
+      <div class="flow-step"><div class="icon">↔️</div><div class="label">AI Engine</div><div class="sub">Groq → Gemini</div></div>
+      <div class="flow-step"><div class="icon">🗄️</div><div class="label">PostgreSQL</div><div class="sub">Persistent Data</div></div>
+      <div class="flow-step"><div class="icon">📡</div><div class="label">Render Cloud</div><div class="sub">Auto-deploy</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">What Makes Nexora Unique?</div>
+    <div class="usp-list">
+      <div class="usp-item">
+        <div class="usp-num">1</div>
+        <div class="usp-content"><h4>Unified XP &amp; Rank Ecosystem</h4><p>Every action across ALL modules contributes to a single XP pool with 5 developer ranks (Explorer → Legend). Gamification drives continuous engagement unlike siloed platforms.</p></div>
+      </div>
+      <div class="usp-item">
+        <div class="usp-num">2</div>
+        <div class="usp-content"><h4>AI Memory Engine — Cross-Module Persistent Context</h4><p>The <code style="background:rgba(108,99,255,.2);padding:1px 5px;border-radius:4px;">UserAIMemory</code> model tracks skills mastery, weaknesses, recurring mistakes, interview stats, and career goals across ALL 10 modules. Every AI response is personalized using this memory.</p></div>
+      </div>
+      <div class="usp-item">
+        <div class="usp-num">3</div>
+        <div class="usp-content"><h4>Multi-Model AI with Automatic Fallback</h4><p>Primary: Groq LLaMA 3.3 70B with multi-key load balancing. If all Groq keys are rate-limited → automatic fallback to Google Gemini 2.5 Flash (also with multiple API keys). Zero downtime AI.</p></div>
+      </div>
+      <div class="usp-item">
+        <div class="usp-num">4</div>
+        <div class="usp-content"><h4>Real-Time WebSocket Battleground</h4><p>Code Arena uses Django Channels + Daphne ASGI for real-time WebSocket connections enabling live 1v1 coding battles with progress sync, battle state management, and instant winner detection.</p></div>
+      </div>
+      <div class="usp-item">
+        <div class="usp-num">5</div>
+        <div class="usp-content"><h4>Interview with Biometric Analysis</h4><p>During mock interviews: captures webcam snapshots, analyzes posture &amp; eye contact via AI vision, tracks filler words (um, uh, like), measures WPM, and generates behavioral feedback — beyond just answer quality.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Deployment &amp; Live Access</div>
+    <div class="three-col">
+      <div class="deploy-row"><div class="deploy-icon">🚀</div><div class="deploy-text"><h4>Render Cloud</h4><p>Backend + DB hosted on Render with auto-deploy from GitHub main branch</p></div></div>
+      <div class="deploy-row"><div class="deploy-icon">📦</div><div class="deploy-text"><h4>Frontend Build</h4><p>React built with Vite, served as static files via WhiteNoise middleware</p></div></div>
+      <div class="deploy-row"><div class="deploy-icon">🔒</div><div class="deploy-text"><h4>Auth &amp; Security</h4><p>JWT access + refresh tokens, CORS headers, .env secrets management</p></div></div>
+    </div>
+  </div>
+
+  <div class="footer">Nexora — AI Engineering Platform &nbsp;·&nbsp; Document 1/6: Project Overview &nbsp;·&nbsp; Presentation 2026</div>
+</div>
+</body>
+</html>
