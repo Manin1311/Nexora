@@ -27,7 +27,7 @@ const COMPANY = [
   { to:'/terms',   label:'Terms'    },
 ]
 const SOCIAL = [
-  { icon: Github,  href:'https://github.com', label:'GitHub'   },
+  { icon: Github, href:'https://github.com/PoreKrisha29/Nexora', label:'GitHub' },
 ]
 
 export default function Footer() {
@@ -56,6 +56,7 @@ export default function Footer() {
             <div style={{ display:'flex', gap:10 }}>
               {SOCIAL.map(s => (
                 <a key={s.label} href={s.href}
+                  target="_blank" rel="noopener noreferrer"
                   style={{ width:36, height:36, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', background:'var(--glass-bg)', border:'1px solid var(--glass-border)', color:'var(--text-muted)', textDecoration:'none', transition:'all 0.3s' }}
                   onMouseEnter={e => { e.currentTarget.style.color='var(--text-heading)'; e.currentTarget.style.borderColor='rgba(0,0,0,0.3)'; e.currentTarget.style.transform='translateY(-2px)' }}
                   onMouseLeave={e => { e.currentTarget.style.color='var(--text-muted)'; e.currentTarget.style.borderColor='var(--glass-border)'; e.currentTarget.style.transform='translateY(0)' }}

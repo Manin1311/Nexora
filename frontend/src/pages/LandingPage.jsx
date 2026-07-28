@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -125,14 +126,21 @@ function DailyChallenge() {
   const [challenge, setChallenge] = useState(null)
   const { isAuthenticated } = useAuth()
 
+  const FALLBACK_CHALLENGE = {
+    id: 1, title: 'Build a JWT Authentication API', difficulty: 'medium',
+    xp_reward: 200, topic: { name: 'Backend', icon: '⚙️' }, estimated_time: '45 min',
+  }
+
   useEffect(() => {
+    // Only fetch from backend if user is signed in — avoids 401 errors for guests
+    if (!isAuthenticated) {
+      setChallenge(FALLBACK_CHALLENGE)
+      return
+    }
     challengeService.getDaily()
       .then(r => setChallenge(r.data))
-      .catch(() => setChallenge({
-        id:1, title:'Build a JWT Authentication API', difficulty:'medium',
-        xp_reward:200, topic:{ name:'Backend', icon:'⚙️' }, estimated_time:'45 min',
-      }))
-  }, [])
+      .catch(() => setChallenge(FALLBACK_CHALLENGE))
+  }, [isAuthenticated])
 
   const diffStyle = challenge?.difficulty === 'easy'
     ? { color:'#34d399', background:'rgba(52,211,153,0.12)', border:'1px solid rgba(52,211,153,0.3)' }
@@ -203,6 +211,7 @@ function DailyChallenge() {
 /* ── Hero & Floating Dashboard ── */
 function Hero() {
   const { theme } = useTheme()
+  const { isAuthenticated } = useAuth()
   const [rotateX, setRotateX] = useState(0)
   const [rotateY, setRotateY] = useState(0)
 
@@ -249,10 +258,10 @@ function Hero() {
         {/* CTAs */}
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.5, delay:0.3 }}
           style={{ display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'center', gap:16, marginBottom:64 }}>
-          <Link to="/register">
+          <Link to={isAuthenticated ? '/challenges' : '/register'}>
             <motion.div whileHover={{ scale:1.04, y:-2, boxShadow:'0 10px 30px rgba(0,0,0,0.25)' }} whileTap={{ scale:0.97 }}
               style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'16px 36px', borderRadius:9999, background:'#111111', color:'#fff', fontWeight:700, fontSize:15, cursor:'pointer' }}>
-              Start Free <ArrowRight size={16} />
+              {isAuthenticated ? 'Go to Dashboard' : 'Start Free'} <ArrowRight size={16} />
             </motion.div>
           </Link>
           <a href="#how-it-works" onClick={e => { e.preventDefault(); document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' }) }}>
@@ -811,217 +820,216 @@ function InteractiveRoadmap() {
   )
 }
 
-/* ── Testimonials (Dynamic with Review Submission Modal) ── */
+/* ── Testimonials (Real-time from Backend) ── */
 function Testimonials() {
-  const [reviews, setReviews] = useState(() => {
-    try {
-      const saved = localStorage.getItem('nexora_user_reviews')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      }
-    } catch {}
-    return TESTIMONIALS
-  })
+  const [reviews,    setReviews]    = useState(TESTIMONIALS)   // seed while loading
+  const [showModal,  setShowModal]  = useState(false)
+  const [name,       setName]       = useState('')
+  const [role,       setRole]       = useState('')
+  const [text,       setText]       = useState('')
+  const [rating,     setRating]     = useState(5)
+  const [submitted,  setSubmitted]  = useState(false)
+  const [loading,    setLoading]    = useState(false)
 
-  const [showModal, setShowModal] = useState(false)
-  const [name, setName] = useState('')
-  const [role, setRole] = useState('')
-  const [text, setText] = useState('')
-  const [rating, setRating] = useState(5)
-  const [submitted, setSubmitted] = useState(false)
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [showModal])
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (!name.trim() || !text.trim()) return
-    const newReview = {
-      name: name.trim(),
-      role: role.trim() || 'Software Developer',
-      text: text.trim(),
-      rank: 'builder',
-      xp: 1500,
-      rating: Number(rating) || 5
-    }
-    const updated = [newReview, ...reviews]
-    setReviews(updated)
-    try {
-      localStorage.setItem('nexora_user_reviews', JSON.stringify(updated))
-    } catch (e) {
-      console.warn('Failed to save review to localStorage:', e)
-    }
-    setSubmitted(true)
-    setTimeout(() => {
-      setShowModal(false)
-      setSubmitted(false)
-      setName('')
-      setRole('')
-      setText('')
-      setRating(5)
-    }, 1200)
+  const closeModal = () => {
+    setShowModal(false)
+    setSubmitted(false)
+    setName(''); setRole(''); setText(''); setRating(5)
   }
 
-  return (
-    <section className="section" style={{ position: 'relative', zIndex: 1, overflow: 'hidden' }}>
-      <div style={{ maxWidth: '100vw', overflow: 'hidden' }}>
-        <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once:true }}
-          style={{ textAlign:'center', marginBottom:48 }}>
-          <span style={{ color:'#34d399', fontWeight:600, fontSize:12, textTransform:'uppercase', letterSpacing:'0.15em', display:'block', marginBottom:12 }}>
-            Community Feedback
-          </span>
-          <h2 style={{ fontSize:'clamp(28px,4vw,42px)', fontWeight:800, color:'var(--text-heading)', letterSpacing:'-0.02em', fontFamily: 'var(--font-display)', marginBottom: 16 }}>
-            Developers Love Nexora
-          </h2>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => setShowModal(true)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '10px 24px',
-                borderRadius: '9999px',
-                background: '#000',
-                color: '#fff',
-                border: '1px solid rgba(255,255,255,0.2)',
-                fontSize: '13px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(0,0,0,0.3)'
-              }}
-            >
-              ✍️ Write a Review
-            </motion.button>
-          </div>
-        </motion.div>
+  // Fetch reviews from backend on mount
+  const fetchReviews = () => {
+    fetch('/api/reviews/')
+      .then(r => r.json())
+      .then(data => { if (data.reviews?.length > 0) setReviews(data.reviews) })
+      .catch(() => {})
+  }
+  useEffect(() => { fetchReviews() }, [])
 
-        <div className="marquee-container">
-          <div className="marquee-content-reverse">
-            {[...reviews, ...reviews, ...reviews].map((t, idx) => (
-              <div key={idx} style={{ flexShrink: 0, width: '360px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '20px', padding: '32px', boxShadow: 'var(--glass-shadow)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', whiteSpace: 'normal' }}>
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!name.trim() || !text.trim()) return
+    setLoading(true)
+    try {
+      const res = await fetch('/api/reviews/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), role: role.trim(), text: text.trim(), rating })
+      })
+      if (res.ok) {
+        setSubmitted(true)
+        fetchReviews()
+        setTimeout(() => closeModal(), 1400)
+      }
+    } catch { /* silently fail */ }
+    finally { setLoading(false) }
+  }
+
+  const modalContent = (
+    <AnimatePresence>
+      {showModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 99999,
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24
+        }} onClick={closeModal}>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%', maxWidth: 480,
+              background: 'var(--card-bg, #0f0f1c)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: 24, padding: 32,
+              boxShadow: '0 40px 80px -12px rgba(0,0,0,0.7)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-heading)', margin: 0 }}>✍️ Share Your Feedback</h3>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 24, cursor: 'pointer', lineHeight: 1, padding: 4 }}>×</button>
+            </div>
+
+            {submitted ? (
+              <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                <CheckCircle size={52} style={{ color: '#34d399', margin: '0 auto 16px', display: 'block' }} />
+                <h4 style={{ fontSize: 18, fontWeight: 800, color: '#34d399', margin: '0 0 8px' }}>Review Published!</h4>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>Your review is now live and visible to everyone on Nexora.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div>
-                  <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-                    {Array.from({ length: t.rating || 5 }).map((_, i) => (
-                      <Star key={i} size={14} fill="#fbbf24" style={{ color: '#fbbf24' }} />
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 6 }}>Your Name *</label>
+                  <input type="text" required placeholder="e.g. Alex Chen"
+                    value={name} onChange={e => setName(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 6 }}>Your Role / Company</label>
+                  <input type="text" placeholder="e.g. Software Engineer at TechCorp"
+                    value={role} onChange={e => setRole(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 6 }}>Rating</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {[1,2,3,4,5].map(star => (
+                      <button key={star} type="button" onClick={() => setRating(star)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}>
+                        <Star size={26} fill={star <= rating ? '#fbbf24' : 'none'} style={{ color: star <= rating ? '#fbbf24' : 'var(--text-muted)' }} />
+                      </button>
                     ))}
                   </div>
-                  <p style={{ fontSize: 14, color: 'var(--text-color)', lineHeight: 1.7, fontStyle: 'italic', marginBottom: 24 }}>"{t.text}"</p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
-                  <Avatar name={t.name} rank={t.rank || 'builder'} size="sm" />
-                  <div>
-                    <p style={{ fontWeight: 800, color: 'var(--text-heading)', fontSize: 13 }}>{t.name}</p>
-                    <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t.role}</p>
-                  </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 6 }}>Review *</label>
+                  <textarea required rows={4}
+                    placeholder="Share your experience with Nexora's challenges, interviews, or roadmaps..."
+                    value={text} onChange={e => setText(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                  />
                 </div>
-              </div>
-            ))}
-          </div>
+                <button type="submit" disabled={loading}
+                  style={{ width: '100%', padding: '13px', borderRadius: 12, background: loading ? '#444' : '#111111', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', fontSize: 14, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer', marginTop: 4 }}
+                >
+                  {loading ? 'Submitting...' : '🚀 Submit Review'}
+                </button>
+              </form>
+            )}
+          </motion.div>
         </div>
-      </div>
+      )}
+    </AnimatePresence>
+  )
 
-      {/* Review Submission Modal */}
-      <AnimatePresence>
-        {showModal && (
-          <div style={{
-            position: 'fixed', inset: 0, zIndex: 9999,
-            background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
-            display: 'flex', alignItems: 'center', justifyCenter: 'center', padding: 24
-          }} onClick={() => setShowModal(false)}>
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={e => e.stopPropagation()}
-              style={{
-                width: '100%', maxWidth: 480, margin: '0 auto',
-                background: 'var(--card-bg, #0f0f1c)',
-                border: '1px solid var(--card-border, rgba(255,255,255,0.15))',
-                borderRadius: 20, padding: 28, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-heading)' }}>✍️ Share Your Feedback</h3>
-                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 20, cursor: 'pointer' }}>×</button>
-              </div>
+  return (
+    <>
+      <section className="section" style={{ position: 'relative', zIndex: 1, overflow: 'hidden' }}>
+        <div style={{ maxWidth: '100vw', overflow: 'hidden' }}>
+          <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once:true }}
+            style={{ textAlign:'center', marginBottom:48 }}>
+            <span style={{ color:'#34d399', fontWeight:600, fontSize:12, textTransform:'uppercase', letterSpacing:'0.15em', display:'block', marginBottom:12 }}>
+              Community Feedback
+            </span>
+            <h2 style={{ fontSize:'clamp(28px,4vw,42px)', fontWeight:800, color:'var(--text-heading)', letterSpacing:'-0.02em', fontFamily: 'var(--font-display)', marginBottom: 16 }}>
+              Developers Love Nexora
+            </h2>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+              <motion.button
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}
+                onClick={() => setShowModal(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 24px', borderRadius: '9999px', background: '#111111', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: '13px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,0,0,0.3)' }}
+              >
+                ✍️ Write a Review
+              </motion.button>
+            </div>
+          </motion.div>
 
-              {submitted ? (
-                <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                  <CheckCircle size={48} style={{ color: '#34d399', margin: '0 auto 12px' }} />
-                  <h4 style={{ fontSize: 16, fontWeight: 800, color: '#34d399' }}>Review Published!</h4>
-                  <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>Thank you for your review. It is now live in the feedback carousel.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="marquee-container">
+            <div className="marquee-content-reverse">
+              {[...reviews, ...reviews, ...reviews].map((t, idx) => (
+                <div key={idx} style={{ flexShrink: 0, width: '360px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '20px', padding: '32px', boxShadow: 'var(--glass-shadow)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', whiteSpace: 'normal' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 6 }}>Your Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Alex Chen"
-                      value={name}
-                      onChange={e => setName(e.target.value)}
-                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 6 }}>Your Role / Company</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Software Engineer at TechCorp"
-                      value={role}
-                      onChange={e => setRole(e.target.value)}
-                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 6 }}>Rating</label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setRating(star)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
-                        >
-                          <Star size={24} fill={star <= rating ? "#fbbf24" : "none"} style={{ color: star <= rating ? "#fbbf24" : "var(--text-muted)" }} />
-                        </button>
+                    <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
+                      {Array.from({ length: t.rating || 5 }).map((_, i) => (
+                        <Star key={i} size={14} fill="#fbbf24" style={{ color: '#fbbf24' }} />
                       ))}
                     </div>
+                    <p style={{ fontSize: 14, color: 'var(--text-color)', lineHeight: 1.7, fontStyle: 'italic', marginBottom: 24 }}>"{t.text}"</p>
                   </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 6 }}>Review *</label>
-                    <textarea
-                      required
-                      rows={4}
-                      placeholder="Share your experience using Nexora's coding challenges, AI interviews, or roadmap modules..."
-                      value={text}
-                      onChange={e => setText(e.target.value)}
-                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', resize: 'vertical' }}
-                    />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
+                    <Avatar name={t.name} rank={t.rank || 'builder'} size="sm" />
+                    <div>
+                      <p style={{ fontWeight: 800, color: 'var(--text-heading)', fontSize: 13 }}>{t.name}</p>
+                      <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>{t.role}</p>
+                    </div>
                   </div>
-
-                  <button
-                    type="submit"
-                    style={{
-                      width: '100%', padding: '12px', borderRadius: 12,
-                      background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.2)',
-                      fontSize: 14, fontWeight: 800, cursor: 'pointer', marginTop: 8
-                    }}
-                  >
-                    🚀 Submit Review
-                  </button>
-                </form>
-              )}
-            </motion.div>
+                </div>
+              ))}
+            </div>
           </div>
-        )}
-      </AnimatePresence>
-    </section>
+        </div>
+      </section>
+
+      {/* Modal rendered via Portal directly into document.body — escapes ALL overflow/stacking contexts */}
+      {createPortal(modalContent, document.body)}
+    </>
+  )
+}
+
+/* ── Auth-aware helper buttons ── */
+function PricingCTA({ to, toGuest, label, style }) {
+  const { isAuthenticated } = useAuth()
+  return (
+    <Link to={isAuthenticated ? to : toGuest}>
+      <button style={style}>{isAuthenticated && label === 'Start Free' ? 'Go to Dashboard' : label}</button>
+    </Link>
+  )
+}
+
+function BottomCtaButton() {
+  const { isAuthenticated } = useAuth()
+  return (
+    <Link to={isAuthenticated ? '/challenges' : '/register'}>
+      <motion.div whileHover={{ scale:1.04, y:-2, boxShadow:'0 8px 32px rgba(0,0,0,0.3)' }} whileTap={{ scale:0.97 }}
+        style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'16px 36px', borderRadius:9999, background:'#111111', color:'#fff', fontWeight:700, fontSize:16, cursor:'pointer', boxShadow:'0 8px 32px rgba(0,0,0,0.2)' }}>
+        {isAuthenticated ? 'Go to Dashboard' : 'Start Free'} <ArrowRight size={18} />
+      </motion.div>
+    </Link>
   )
 }
 
@@ -1062,9 +1070,7 @@ function Pricing() {
                 ))}
               </ul>
             </div>
-            <Link to="/register">
-              <button style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'rgba(99,102,241,0.06)', color: 'var(--text-heading)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Start Free</button>
-            </Link>
+            <PricingCTA to='/challenges' toGuest='/register' label='Start Free' style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'rgba(99,102,241,0.06)', color: 'var(--text-heading)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }} />
           </div>
 
           {/* Card 2: Pro */}
@@ -1085,9 +1091,7 @@ function Pricing() {
                 ))}
               </ul>
             </div>
-            <Link to="/register">
-              <button style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: 'none', background: '#111111', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>Get Pro Acceleration</button>
-            </Link>
+            <PricingCTA to='/challenges' toGuest='/register' label='Get Pro Acceleration' style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: 'none', background: '#111111', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }} />
           </div>
 
           {/* Card 3: Enterprise */}
@@ -1106,9 +1110,7 @@ function Pricing() {
                 ))}
               </ul>
             </div>
-            <Link to="/register">
-              <button style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'rgba(99,102,241,0.06)', color: 'var(--text-heading)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Contact Sales</button>
-            </Link>
+            <PricingCTA to='/challenges' toGuest='/register' label='Contact Sales' style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'rgba(99,102,241,0.06)', color: 'var(--text-heading)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }} />
           </div>
 
         </div>
@@ -1237,12 +1239,7 @@ function CTA() {
                 Join thousands of developers who practice daily, diagnose code issues with AI, and construct careers they are proud of.
               </p>
               <div style={{ display:'flex', flexWrap:'wrap', alignItems:'center', justifyContent:'center', gap:16 }}>
-                <Link to="/register">
-                  <motion.div whileHover={{ scale:1.04, y:-2, boxShadow:'0 8px 32px rgba(0,0,0,0.3)' }} whileTap={{ scale:0.97 }}
-                    style={{ display:'inline-flex', alignItems:'center', gap:10, padding:'16px 36px', borderRadius:9999, background:'#111111', color:'#fff', fontWeight:700, fontSize:16, cursor:'pointer', boxShadow:'0 8px 32px rgba(0,0,0,0.2)' }}>
-                    Start Free <ArrowRight size={18} />
-                  </motion.div>
-                </Link>
+                <BottomCtaButton />
               </div>
             </div>
 

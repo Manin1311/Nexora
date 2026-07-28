@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
+import { useAuth } from '@/context/AuthContext'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -22,6 +23,7 @@ const staggerContainer = {
 
 export default function AboutPage() {
   const { theme } = useTheme()
+  const { isAuthenticated } = useAuth()
   const [steamOffset, setSteamOffset] = useState(0)
   const [devCount, setDevCount] = useState(12)
 
@@ -431,7 +433,7 @@ export default function AboutPage() {
               Join thousands of developers using Nexora to audits codebases, solve challenges, and construct premium careers.
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
-              <Link to="/register">
+              <Link to={isAuthenticated ? '/challenges' : '/register'}>
                 <motion.div 
                   whileHover={{ scale: 1.04, y: -2 }}
                   whileTap={{ scale: 0.97 }}
@@ -449,10 +451,10 @@ export default function AboutPage() {
                     boxShadow: '0 4px 16px rgba(0,0,0,0.3)'
                   }}
                 >
-                  Get Started Free <ArrowRight size={15} />
+                  {isAuthenticated ? 'Go to Dashboard' : 'Get Started Free'} <ArrowRight size={15} />
                 </motion.div>
               </Link>
-              <Link to="/login">
+              <Link to={isAuthenticated ? '/challenges' : '/login'}>
                 <button
                   style={{
                     padding: '12px 28px',

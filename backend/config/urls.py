@@ -8,6 +8,7 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse, FileResponse, HttpResponse
+from core.views import LandingReviewView
 
 
 def root_health_check(request):
@@ -68,6 +69,7 @@ urlpatterns = [
     path('api/peer-reviews/', include('peer_reviews.urls')),
     path('api/arena/',      include('arena.urls')),
     path('api/health/',     root_health_check),
+    path('api/reviews/',    LandingReviewView.as_view()),
     # Catch-all rule for React SPA routing (e.g. /arena, /challenges, /profile, /roadmap)
     re_path(r'^(?!api/|admin/|media/|static/).*$', serve_spa),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
