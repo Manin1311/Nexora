@@ -910,7 +910,7 @@ export default function InterviewSessionPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                 onClick={() => handleStartOnboarding(true)}
-                style={{ padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 20px rgba(99,102,241,0.3)' }}>
+                style={{ padding: '14px', borderRadius: 12, fontSize: 14, fontWeight: 700, color: '#fff', background: '#111111', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
                 <Video size={16} /> Enable Live Camera & Mic Coach
               </motion.button>
               <button

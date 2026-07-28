@@ -6,10 +6,11 @@ import {
   Clock, ChevronRight, Flame, TrendingUp, Play, CheckCircle,
   Lock, Swords, FlaskConical, Bot, Palette, Star, MessageSquare,
   BarChart2, CheckSquare, Send, BookOpen, Layers,
-  ShieldCheck, HelpCircle, ChevronDown, Sparkles
+  ShieldCheck, HelpCircle, ChevronDown, Sparkles, Users
 } from 'lucide-react'
 import { challengeService } from '@/services/challengeService'
 import { authService } from '@/services/authService'
+import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
 import Avatar from '@/components/ui/Avatar'
 import AnimatedCounter from '@/components/ui/AnimatedCounter'
@@ -81,10 +82,10 @@ const ROADMAP_DATA = {
 }
 
 const FAQS = [
-  { q: 'How does the GitHub scanner complete under 1.5 seconds?', a: 'Nexora utilizes Python\'s ThreadPoolExecutor concurrently with non-blocking async network workers in the Django backend, pulling language stats and commit history in parallel from the GitHub REST API.' },
-  { q: 'What models power the AI Mock Interview Lab?', a: 'The interview engine is powered by Groq LLaMA 3.3 70B for real-time sub-100ms conversational loops, with an automated fallback to Google Gemini (e.g. gemini-2.5-flash) for multi-modal analytics.' },
-  { q: 'Are the competency certificates verifiable?', a: 'Yes! Every certificate generated utilizes ReportLab/jsPDF to print a unique identifier (e.g. NXR-E3A5B876) stored in our database. Third parties can query this certificate ID on Nexora to verify credentials.' },
-  { q: 'Can I customize my learning roadmap?', a: 'Absolutely. You can request changes from your Dev Mentor at any time. The AI will evaluate your profile and modify your week-by-week roadmap syllabus automatically.' }
+  { q: 'What models power the AI Mock Interview Lab?', a: 'The interview engine is powered by Groq LLaMA 3.3 70B for real-time sub-100ms conversational loops, with an automated fallback to Google Gemini (gemini-2.5-flash) for multi-modal webcam analytics.' },
+  { q: 'Are the competency certificates verifiable?', a: 'Yes! Every certificate generated has a unique identifier (e.g. NXR-E3A5B876) stored in our database. Anyone can verify this certificate ID on Nexora.' },
+  { q: 'Can I customize my learning roadmap?', a: 'Absolutely. You can request changes from your Dev Mentor at any time. The AI will evaluate your profile and modify your week-by-week roadmap syllabus automatically.' },
+  { q: 'Is there a free plan?', a: 'Yes! You can sign up for free and access coding challenges, the AI mentor, and peer reviews without any cost. Premium features like PDF certificates and code arena battles are available to all registered users.' }
 ]
 
 const TESTIMONIALS = [
@@ -122,6 +123,7 @@ function AmbientBackground() {
 /* ── Interactive Daily Challenge (Dynamic) ── */
 function DailyChallenge() {
   const [challenge, setChallenge] = useState(null)
+  const { isAuthenticated } = useAuth()
 
   useEffect(() => {
     challengeService.getDaily()
@@ -184,10 +186,10 @@ function DailyChallenge() {
                 </div>
               </div>
 
-              <Link to={`/challenges/${challenge.id}`}>
+              <Link to={isAuthenticated ? `/challenges/${challenge.id}` : '/login'}>
                 <motion.div whileHover={{ scale:1.02, y: -1 }} whileTap={{ scale:0.98 }}
                   style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'14px 0', borderRadius:14, background:'#111111', color:'#fff', fontWeight:700, fontSize:14, cursor:'pointer', boxShadow:'0 4px 20px rgba(0,0,0,0.2)' }}>
-                  Accept Challenge & Start Editor <ArrowRight size={15} />
+                  {isAuthenticated ? 'Accept Challenge & Start Editor' : 'Sign In to Accept Challenge'} <ArrowRight size={15} />
                 </motion.div>
               </Link>
             </div>

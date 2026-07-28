@@ -441,18 +441,18 @@ export default function AboutPage() {
                     gap: 8,
                     padding: '12px 28px',
                     borderRadius: 9999,
-                    background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                    background: '#111111',
                     color: '#fff',
                     fontWeight: 700,
                     fontSize: 13,
                     cursor: 'pointer',
-                    boxShadow: '0 4px 16px rgba(99,102,241,0.3)'
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.3)'
                   }}
                 >
                   Get Started Free <ArrowRight size={15} />
                 </motion.div>
               </Link>
-              <Link to="/challenges">
+              <Link to="/login">
                 <button
                   style={{
                     padding: '12px 28px',

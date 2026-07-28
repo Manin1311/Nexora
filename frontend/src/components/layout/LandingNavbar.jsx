@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Zap, Sun, Moon, Menu, X } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
@@ -7,11 +7,11 @@ import { useTheme } from '@/context/ThemeContext'
 import Avatar from '@/components/ui/Avatar'
 
 const NAV_LINKS = [
-  { to: '/#features', hash: 'features', label: 'Features' },
-  { to: '/#how-it-works', hash: 'how-it-works', label: 'How it Works' },
-  { to: '/about', hash: 'about', label: 'About' },
-  { to: '/roadmap', hash: 'roadmap', label: 'Roadmap' },
-  { to: '/#pricing', hash: 'pricing', label: 'Pricing' },
+  { to: '/#features',      hash: 'features',      label: 'Features' },
+  { to: '/#how-it-works',  hash: 'how-it-works',  label: 'How it Works' },
+  { to: '/about',          hash: null,             label: 'About' },
+  { to: '/roadmap',        hash: null,             label: 'Roadmap' },
+  { to: '/#pricing',       hash: 'pricing',        label: 'Pricing' },
 ]
 
 export default function LandingNavbar() {
@@ -19,12 +19,43 @@ export default function LandingNavbar() {
   const { theme, toggleTheme } = useTheme()
   const [scrolled,    setScrolled]    = useState(false)
   const [mobileOpen,  setMobileOpen]  = useState(false)
+  const navigate   = useNavigate()
+  const location   = useLocation()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // If we navigated to / with a pending hash scroll, execute it
+  useEffect(() => {
+    if (location.pathname === '/' && location.state?.scrollTo) {
+      const id = location.state.scrollTo
+      // small delay to let page render
+      setTimeout(() => {
+        const el = document.getElementById(id)
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 80)
+      // clear the state so it doesn't re-trigger
+      window.history.replaceState({}, '')
+    }
+  }, [location])
+
+  const handleNavClick = (e, link) => {
+    setMobileOpen(false)
+    if (!link.hash) return   // regular route like /about — just navigate normally
+
+    e.preventDefault()
+    if (location.pathname === '/') {
+      // Already on landing page — scroll directly
+      const el = document.getElementById(link.hash)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      // On another page — navigate to / and pass the hash via state
+      navigate('/', { state: { scrollTo: link.hash } })
+    }
+  }
 
   return (
     <>
@@ -66,46 +97,35 @@ export default function LandingNavbar() {
 
         {/* ── Desktop Nav Links (center) ── */}
         <nav style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }} className="landing-nav-desktop">
-          {NAV_LINKS.map(link => {
-            const isHash = link.to.startsWith('/#')
-            return (
-              <Link key={link.hash}
-                to={link.to}
-                onClick={(e) => {
-                  if (isHash) {
-                    e.preventDefault();
-                    const el = document.getElementById(link.hash);
-                    if (el) {
-                      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }
-                }}
-                style={{
-                  padding: '8px 18px',
-                  borderRadius: 9999,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  textDecoration: 'none',
-                  transition: 'all 0.2s ease',
-                  color: 'var(--text-color)',
-                  background: 'var(--glass-bg)',
-                  border: '1px solid rgba(99, 102, 241, 0.25)',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.color = '#818cf8'
-                  e.currentTarget.style.background = 'rgba(99, 102, 241, 0.12)'
-                  e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.color = 'var(--text-color)'
-                  e.currentTarget.style.background = 'var(--glass-bg)'
-                  e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.25)'
-                }}
-              >
-                {link.label}
-              </Link>
-            )
-          })}
+          {NAV_LINKS.map(link => (
+            <Link key={link.label}
+              to={link.hash ? '/' : link.to}
+              onClick={(e) => handleNavClick(e, link)}
+              style={{
+                padding: '8px 18px',
+                borderRadius: 9999,
+                fontSize: 14,
+                fontWeight: 500,
+                textDecoration: 'none',
+                transition: 'all 0.2s ease',
+                color: 'var(--text-color)',
+                background: 'var(--glass-bg)',
+                border: '1px solid rgba(99, 102, 241, 0.25)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = '#818cf8'
+                e.currentTarget.style.background = 'rgba(99, 102, 241, 0.12)'
+                e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = 'var(--text-color)'
+                e.currentTarget.style.background = 'var(--glass-bg)'
+                e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.25)'
+              }}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         {/* ── Right Actions ── */}
@@ -179,19 +199,17 @@ export default function LandingNavbar() {
                 display: 'flex', flexDirection: 'column', gap: 8,
                 boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
               }}>
-              {NAV_LINKS.map(link => {
-                const isHash = link.to.startsWith('/#')
-                return (
-                  <NavLink key={link.hash} to={link.to} onClick={() => setMobileOpen(false)}
-                    style={({ isActive }) => ({
-                      padding: '12px 16px', borderRadius: 12, fontSize: 15, fontWeight: 500, textDecoration: 'none',
-                      color: isActive && !isHash ? 'var(--nav-text-active)' : 'var(--nav-text-inactive)',
-                      background: isActive && !isHash ? 'rgba(99,102,241,0.1)' : 'transparent',
-                    })}>
-                    {link.label}
-                  </NavLink>
-                )
-              })}
+              {NAV_LINKS.map(link => (
+                <button key={link.label}
+                  onClick={(e) => handleNavClick(e, link)}
+                  style={{
+                    padding: '12px 16px', borderRadius: 12, fontSize: 15, fontWeight: 500,
+                    textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer',
+                    color: 'var(--text-color)',
+                  }}>
+                  {link.label}
+                </button>
+              ))}
               <div style={{ borderTop: '1px solid var(--nav-border)', paddingTop: 16, marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {isAuthenticated ? (
                   <Link to="/challenges" onClick={() => setMobileOpen(false)}
