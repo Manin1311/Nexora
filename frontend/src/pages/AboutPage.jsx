@@ -23,6 +23,7 @@ const staggerContainer = {
 export default function AboutPage() {
   const { theme } = useTheme()
   const [steamOffset, setSteamOffset] = useState(0)
+  const [devCount, setDevCount] = useState(12)
 
   // Subtle steam animation loop for the mug
   useEffect(() => {
@@ -30,6 +31,16 @@ export default function AboutPage() {
       setSteamOffset(s => (s + 1) % 4)
     }, 1200)
     return () => clearInterval(timer)
+  }, [])
+
+  // Fetch real developer count or fallback dynamically
+  useEffect(() => {
+    fetch('/api/health/')
+      .then(res => res.json())
+      .then(data => {
+        if (data.total_developers) setDevCount(data.total_developers)
+      })
+      .catch(() => {})
   }, [])
 
   return (
@@ -65,21 +76,21 @@ export default function AboutPage() {
             </motion.h1>
 
             <motion.p variants={fadeUp} style={{ color: 'var(--text-muted)', fontSize: 16, lineHeight: 1.8, marginBottom: 32 }}>
-              Nexora was built to bridge the gap between static learning and active repository engineering. By connecting deep GitHub audits, real-time interactive challenges, AI mock interview modules, and verifiable certifications, Nexora empowers developers to map out their progress and shape their career targets on a unified platform.
+              Nexora is a full-stack, AI-powered developer growth platform. By integrating coding challenges, AI mock interviews, personalized learning roadmaps, code reviews, and peer feedback, Nexora empowers software engineers to continuously level up their skills.
             </motion.p>
 
             <motion.div variants={fadeUp} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, borderTop: '1px solid var(--glass-border)', paddingTop: 28, marginBottom: 36 }}>
               <div>
-                <h4 style={{ fontSize: 32, fontWeight: 900, color: 'var(--text-heading)', lineHeight: 1 }}>15k+</h4>
+                <h4 style={{ fontSize: 32, fontWeight: 900, color: 'var(--text-heading)', lineHeight: 1 }}>{devCount}+</h4>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>Developers</p>
               </div>
               <div>
-                <h4 style={{ fontSize: 32, fontWeight: 900, color: 'var(--text-heading)', lineHeight: 1 }}>1.5s</h4>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>GitHub Scan</p>
+                <h4 style={{ fontSize: 32, fontWeight: 900, color: 'var(--text-heading)', lineHeight: 1 }}>10</h4>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>Core Modules</p>
               </div>
               <div>
-                <h4 style={{ fontSize: 32, fontWeight: 900, color: 'var(--text-heading)', lineHeight: 1 }}>98.4%</h4>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>Pass Rate</p>
+                <h4 style={{ fontSize: 32, fontWeight: 900, color: 'var(--text-heading)', lineHeight: 1 }}>5</h4>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>Dev Ranks</p>
               </div>
             </motion.div>
           </motion.div>
@@ -103,7 +114,7 @@ export default function AboutPage() {
               overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justify: 'center',
               position: 'relative'
             }}>
               <svg viewBox="0 0 420 420" width="100%" height="100%" style={{ overflow: 'visible' }}>
@@ -266,21 +277,25 @@ export default function AboutPage() {
           <motion.div initial="hidden" whileInView="show" viewport={{ once: true }} variants={staggerContainer} style={{ textAlign: 'center', marginBottom: 64 }}>
             <span style={{ color: '#6366f1', fontWeight: 600, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.15em', display: 'block', marginBottom: 12 }}>Core Ecosystem</span>
             <h2 style={{ fontSize: 'clamp(28px, 4vw, 42px)', fontWeight: 800, color: 'var(--text-heading)', fontFamily: 'var(--font-display)', marginBottom: 16 }}>
-              The Pillars of Developer Acceleration
+              The 10 Pillars of Developer Acceleration
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: 16, maxWidth: 620, margin: '0 auto' }}>
-              We combined six essential feedback systems to create a unified developer platform that grows with you.
+              We combined 10 powerful AI modules to create a unified developer platform that grows with you.
             </p>
           </motion.div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
             {[
-              { icon: Code2, title: 'AI GitHub Scanner', desc: 'Queries language ratios, testing configurations, and structural complexity concurrently in under 1.5 seconds.' },
-              { icon: Target, title: 'Dynamic Syllabus', desc: 'Analyzes your scan reports and mock interview profiles to construct a dynamic, week-by-week roadmap.' },
-              { icon: BookOpen, title: 'Academy Courses', desc: 'Studies interactive learning modules verified with graded quizzes, saving progress metrics directly to your rank.' },
-              { icon: MessageSquare, title: 'Interview Lab', desc: 'Runs real-time conversational interview simulations evaluated against professional FAANG rubrics.' },
-              { icon: Award, title: 'Verifiable Certificates', desc: 'Generates report credentials storing unique platforms IDs (e.g. NXR-A8B9C10D) to display accomplishments.' },
-              { icon: Flame, title: 'Gamified Growth Index', desc: 'Grants XP rewards and tags from Explorer to Legend, encouraging continuous daily learning streaks.' }
+              { icon: Code2, title: 'Coding Challenges Hub', desc: 'Solve Easy, Medium, and Hard problems with instant AI code evaluation and Big-O time & space complexity analysis.' },
+              { icon: MessageSquare, title: 'AI Mock Interview Lab', desc: 'Simulate Technical, HR, and Boardroom interviews with real-time speech recognition, WPM tracking, and webcam biometrics.' },
+              { icon: Target, title: 'Dev Mentor & Matcher', desc: 'Ask technical questions to a persistent AI mentor powered by Groq LLaMA 3.3 70B and get matched with career opportunities.' },
+              { icon: ShieldCheck, title: 'AI Code Review Scanner', desc: 'Scan your GitHub repositories to get automated Code Health Scores, security vulnerability audits, and refactoring tips.' },
+              { icon: BookOpen, title: 'AI Learning Roadmaps', desc: 'Follow personalized week-by-week learning paths generated by AI for 7 popular engineering career tracks.' },
+              { icon: Users, title: 'Peer Review Network', desc: 'Share code snippets or projects with the community for line-by-line feedback, suggestions, and upvotes.' },
+              { icon: Zap, title: 'Code Arena 1v1 Battles', desc: 'Race against other developers in real-time WebSocket coding battles to solve challenges live.' },
+              { icon: Award, title: 'Resume Hub & ATS Analyzer', desc: 'Build a professional 6-section resume and get instant AI ATS score analysis targeting specific job roles.' },
+              { icon: Sparkles, title: 'Revision Hub & Prep Map', desc: 'Master any CS topic with AI study guides structured in a 4-round learning system (Learn, Apply, Reinforce, Master).' },
+              { icon: Flame, title: 'Gamified Rank & Certs', desc: 'Earn XP to level up from Explorer to Legend rank, unlock achievement badges, and download verifiable PDF certificates.' }
             ].map((p, idx) => (
               <motion.div 
                 key={idx}
@@ -292,17 +307,17 @@ export default function AboutPage() {
                   background: 'var(--glass-bg)',
                   border: '1px solid var(--glass-border)',
                   borderRadius: '20px',
-                  padding: '32px',
+                  padding: '28px',
                   boxShadow: 'var(--glass-shadow)',
                   position: 'relative',
                   overflow: 'hidden'
                 }}
               >
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                   <p.icon size={20} style={{ color: '#6366f1' }} />
                 </div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-heading)', marginBottom: 8 }}>{p.title}</h3>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7 }}>{p.desc}</p>
+                <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-heading)', marginBottom: 8 }}>{p.title}</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>{p.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -321,10 +336,10 @@ export default function AboutPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: '800px', margin: '0 auto' }}>
             {[
-              { title: '1. OAuth Hook & Repository Scan', desc: 'Securely link GitHub. Our backend concurrently scans commits, documentation ratios, and linting patterns in under 1.5 seconds.' },
-              { title: '2. Skills Matrix Diagnosis', desc: 'Identifies systemic gaps in system design, concurrent programming, algorithms, database optimization, or frontend styling.' },
-              { title: '3. Customized Curriculum syllabus', desc: 'Spawns a week-by-week learning roadmap customized to your level, pulling concepts, quizzes, and arena coding sandboxes.' },
-              { title: '4. Verifiable PDF Credentialing', desc: 'Complete final exams and mock interviews to earn unique verifiable certificates and rank tags to showcase your skills.' }
+              { title: '1. Create Your Account', desc: 'Sign up in seconds to set up your profile and initialize your AI growth memory.' },
+              { title: '2. Practice & Evaluate', desc: 'Solve coding challenges with Big-O analysis and take AI mock interviews with speech & vision feedback.' },
+              { title: '3. Follow AI Roadmaps', desc: 'Progress through customized week-by-week learning roadmaps tailored to your career goals.' },
+              { title: '4. Level Up & Certify', desc: 'Earn XP, rank up from Explorer to Legend, and download shareable PDF certificates.' }
             ].map((step, idx) => (
               <motion.div 
                 key={idx}

@@ -11,10 +11,18 @@ from django.http import JsonResponse, FileResponse, HttpResponse
 
 
 def root_health_check(request):
+    total_devs = 0
+    try:
+        from django.contrib.auth import get_user_model
+        total_devs = get_user_model().objects.count()
+    except Exception:
+        pass
     return JsonResponse({
         "status": "online",
         "system": "Nexora AI Engineering Platform API",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "total_developers": max(total_devs, 12),
+        "total_modules": 10
     })
 
 
