@@ -140,6 +140,7 @@ export default function InterviewSessionPage() {
   const recognitionRef = useRef(null)
   const startTimeRef = useRef(null)
   const answerRef = useRef('')
+  const committedTextRef = useRef('') // tracks finalized speech (to avoid interim duplicates)
   const screenStreamRef = useRef(null)
   const screenVideoRef = useRef(null)
 
@@ -499,21 +500,29 @@ export default function InterviewSessionPage() {
 
       rec.onstart = () => setIsListening(true)
       rec.onresult = (event) => {
-        let finalTranscript = ''
-        let interimTranscript = ''
+        let newFinalText = ''
+        let interimText = ''
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript
+            newFinalText += event.results[i][0].transcript
           } else {
-            interimTranscript += event.results[i][0].transcript
+            interimText += event.results[i][0].transcript
           }
         }
-        const text = (finalTranscript || interimTranscript)
-        if (text) {
-          setAnswer(prev => {
-            // If the user already had text, append to it; otherwise start fresh
-            return prev.endsWith(' ') || prev === '' ? prev + text : prev + ' ' + text
-          })
+        if (newFinalText) {
+          // Commit finalized text once
+          committedTextRef.current = (
+            committedTextRef.current
+              ? committedTextRef.current + ' ' + newFinalText.trim()
+              : newFinalText.trim()
+          )
+          setAnswer(committedTextRef.current)
+        } else if (interimText) {
+          // Show interim preview on top of already-committed text (no duplication)
+          const preview = committedTextRef.current
+            ? committedTextRef.current + ' ' + interimText
+            : interimText
+          setAnswer(preview)
         }
       }
       rec.onerror = (err) => {
@@ -603,6 +612,7 @@ export default function InterviewSessionPage() {
   const handleNext = () => {
     setFeedbackVisible(false)
     setAnswer('')
+    committedTextRef.current = '' // reset committed speech for new question
     setFillerWords(0)
     setWpm(0)
     startTimeRef.current = null
