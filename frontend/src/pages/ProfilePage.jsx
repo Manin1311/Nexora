@@ -67,6 +67,17 @@ export default function ProfilePage() {
   const [ghExpanded,   setGhExpanded]   = useState(false)
 
   useEffect(() => {
+    if (editOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [editOpen])
+
+  useEffect(() => {
     if (user) {
       setForm({
         full_name:    user.full_name || '',

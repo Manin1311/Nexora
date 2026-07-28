@@ -150,6 +150,17 @@ export default function PeerCodeReviewPage() {
 
   // Load user projects when modal opens
   useEffect(() => {
+    if (showCreateModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showCreateModal])
+
+  useEffect(() => {
     if (showCreateModal && user) {
       showcaseService.getMyProjects()
         .then(res => setUserProjects(res.data?.results || res.data || []))
@@ -338,8 +349,8 @@ export default function PeerCodeReviewPage() {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '11px 22px', borderRadius: 12, fontSize: 13, fontWeight: 800,
-              background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: '#fff',
-              border: 'none', cursor: 'pointer', boxShadow: '0 8px 24px rgba(139,92,246,0.35)',
+              background: '#000', color: '#fff',
+              border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer', boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
               outline: 'none'
             }}
           >
@@ -361,10 +372,11 @@ export default function PeerCodeReviewPage() {
                 key={tab.id}
                 onClick={() => setFilterSource(tab.id)}
                 style={{
-                  padding: '7px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', outline: 'none', border: 'none',
-                  background: filterSource === tab.id ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                  padding: '7px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', outline: 'none',
+                  border: '1px solid ' + (filterSource === tab.id ? 'rgba(255,255,255,0.15)' : 'transparent'),
+                  background: filterSource === tab.id ? '#000' : 'transparent',
                   color: filterSource === tab.id ? '#fff' : 'var(--text-muted)',
-                  boxShadow: filterSource === tab.id ? '0 4px 12px rgba(99,102,241,0.25)' : 'none',
+                  boxShadow: filterSource === tab.id ? '0 4px 12px rgba(0,0,0,0.3)' : 'none',
                   transition: 'all 0.2s ease', whiteSpace: 'nowrap'
                 }}
               >
@@ -410,7 +422,8 @@ export default function PeerCodeReviewPage() {
                   onClick={() => setShowCreateModal(true)}
                   style={{
                     padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 700,
-                    background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: '#fff', border: 'none', cursor: 'pointer'
+                    background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
                   }}
                 >
                   <Plus size={13} style={{ display: 'inline', marginRight: 4 }} /> Request Review
@@ -761,9 +774,10 @@ export default function PeerCodeReviewPage() {
                         onClick={() => setCreateForm(prev => ({ ...prev, source_type: s.id }))}
                         style={{
                           flex: 1, padding: '8px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', outline: 'none',
-                          background: createForm.source_type === s.id ? 'linear-gradient(135deg,#8b5cf6,#6366f1)' : 'var(--glass-bg)',
+                          background: createForm.source_type === s.id ? '#000' : 'var(--glass-bg)',
                           color: createForm.source_type === s.id ? '#fff' : 'var(--text-muted)',
-                          border: `1px solid ${createForm.source_type === s.id ? '#8b5cf6' : 'var(--glass-border)'}`
+                          border: `1px solid ${createForm.source_type === s.id ? 'rgba(255,255,255,0.2)' : 'var(--glass-border)'}`,
+                          boxShadow: createForm.source_type === s.id ? '0 4px 12px rgba(0,0,0,0.3)' : 'none'
                         }}
                       >
                         {s.label}
@@ -849,9 +863,9 @@ export default function PeerCodeReviewPage() {
                           onClick={() => toggleFocusArea(f.id)}
                           style={{
                             padding: '5px 12px', borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: 'pointer', outline: 'none',
-                            background: selected ? 'rgba(139,92,246,0.2)' : 'var(--glass-bg)',
-                            color: selected ? '#a78bfa' : 'var(--text-muted)',
-                            border: `1px solid ${selected ? '#8b5cf6' : 'var(--glass-border)'}`
+                            background: selected ? '#000' : 'var(--glass-bg)',
+                            color: selected ? '#fff' : 'var(--text-muted)',
+                            border: `1px solid ${selected ? 'rgba(255,255,255,0.2)' : 'var(--glass-border)'}`
                           }}
                         >
                           {f.label}
@@ -879,8 +893,9 @@ export default function PeerCodeReviewPage() {
                   disabled={submitting}
                   style={{
                     width: '100%', padding: '12px', borderRadius: 12, fontSize: 13, fontWeight: 800,
-                    background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: '#fff', border: 'none',
-                    cursor: 'pointer', opacity: submitting ? 0.7 : 1, marginTop: 8
+                    background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.15)',
+                    cursor: 'pointer', opacity: submitting ? 0.7 : 1, marginTop: 8,
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.3)'
                   }}
                 >
                   {submitting ? <Loader2 size={16} className="spinning" /> : '🚀 Publish Review Request'}

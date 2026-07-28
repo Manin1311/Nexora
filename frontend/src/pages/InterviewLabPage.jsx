@@ -69,6 +69,17 @@ export default function InterviewLabPage() {
     }
   }, [isAuthenticated])
 
+  useEffect(() => {
+    if (configOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [configOpen])
+
   const handleModeSelect = mode => {
     if (!isAuthenticated) { navigate('/login'); return }
     setSelectedMode(mode); setConfigOpen(true)
@@ -262,7 +273,7 @@ export default function InterviewLabPage() {
             style={{ position:'fixed', inset:0, zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', padding:20, background:'rgba(0,0,0,0.8)', backdropFilter:'blur(10px)' }}
             onClick={e => { if (e.target === e.currentTarget) setConfigOpen(false) }}>
             <motion.div initial={{ scale:0.9, opacity:0, y:20 }} animate={{ scale:1, opacity:1, y:0 }} exit={{ scale:0.9, opacity:0 }}
-              style={{ width:'100%', maxWidth:480, background:'var(--card-bg)', border:'1px solid var(--card-border)', borderRadius:24, overflow:'hidden', boxShadow:'0 30px 70px rgba(0,0,0,0.5)', transition:'all 0.4s ease' }}>
+              style={{ width:'100%', maxWidth:480, maxHeight:'90vh', overflowY:'auto', background:'var(--card-bg)', border:'1px solid var(--card-border)', borderRadius:24, boxShadow:'0 30px 70px rgba(0,0,0,0.5)', transition:'all 0.4s ease' }}>
 
               {/* Modal top accent */}
               <div style={{ height:3, background:`linear-gradient(90deg, ${selectedMode.accent}, #a855f7)` }} />
@@ -346,15 +357,15 @@ export default function InterviewLabPage() {
                     borderRadius:14,
                     fontSize:15,
                     fontWeight:900,
-                    border:'none',
+                    border:'1px solid rgba(255,255,255,0.15)',
                     cursor: starting ? 'not-allowed' : 'pointer',
                     display:'flex',
                     alignItems:'center',
                     justifyContent:'center',
                     gap:8,
-                    background: `linear-gradient(135deg, ${selectedMode.accent}, #a855f7)`,
+                    background: '#000',
                     color: '#fff',
-                    boxShadow: `0 8px 25px ${selectedMode.accent}30`,
+                    boxShadow: '0 8px 25px rgba(0,0,0,0.3)',
                     opacity:starting?0.7:1
                   }}>
                   {starting ? 'Booting Simulator...' : 'Initialize Simulation'} <ChevronRight size={17} />

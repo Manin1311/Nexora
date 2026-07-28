@@ -115,6 +115,17 @@ export default function ChallengesPage() {
   }
 
   useEffect(() => {
+    if (showGenModal || showQuestPopup) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showGenModal, showQuestPopup])
+
+  useEffect(() => {
     Promise.all([
       challengeService.getAll(),
       challengeService.getTopics(),
@@ -303,9 +314,9 @@ export default function ChallengesPage() {
                 style={{
                   display:'inline-flex', alignItems:'center', gap:7,
                   padding:'8px 16px', borderRadius:10, fontSize:13, fontWeight:700,
-                  cursor:'pointer', outline:'none', border:'none', marginLeft:'auto',
-                  background:'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                  color:'#fff', boxShadow:'0 4px 14px rgba(99,102,241,0.3)'
+                  cursor:'pointer', outline:'none', border:'1px solid rgba(255,255,255,0.15)', marginLeft:'auto',
+                  background:'#000',
+                  color:'#fff', boxShadow:'0 4px 14px rgba(0,0,0,0.3)'
                 }}>
                 <Sparkles size={13} /> Generate AI
               </motion.button>
@@ -431,8 +442,8 @@ export default function ChallengesPage() {
             zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
             <motion.div
               initial={{ scale:0.9, opacity:0 }} animate={{ scale:1, opacity:1 }} exit={{ scale:0.9, opacity:0 }}
-              style={{ width:'100%', maxWidth:460, background:'var(--card-bg)',
-                border:'1px solid var(--card-border)', borderRadius:22, overflow:'hidden',
+              style={{ width:'100%', maxWidth:460, maxHeight:'90vh', overflowY:'auto', background:'var(--card-bg)',
+                border:'1px solid var(--card-border)', borderRadius:22,
                 position:'relative', boxShadow:'0 24px 60px rgba(0,0,0,0.4)' }}>
 
               {/* Accent bar */}
@@ -496,9 +507,10 @@ export default function ChallengesPage() {
                         cursor:'pointer', outline:'none' }}>
                       Cancel
                     </button>
-                    <button type="submit" disabled={generating} className="btn-primary"
+                    <button type="submit" disabled={generating}
                       style={{ flex:2, padding:'11px', borderRadius:10, fontSize:13, fontWeight:800,
-                        border:'none', cursor:'pointer', outline:'none',
+                        border:'1px solid rgba(255,255,255,0.15)', cursor:'pointer', outline:'none',
+                        background:'#000', color:'#fff', boxShadow:'0 4px 14px rgba(0,0,0,0.3)',
                         display:'inline-flex', alignItems:'center', justifyContent:'center', gap:8,
                         opacity: generating ? 0.75 : 1 }}>
                       {generating ? (
