@@ -716,10 +716,10 @@ export default function DevMentorPage() {
                 key={id}
                 onClick={() => setViewMode(id)}
                 style={{
-                  padding: '7px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', outline: 'none', border: 'none',
-                  background: viewMode === id ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'transparent',
+                  padding: '7px 14px', borderRadius: 10, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', outline: 'none', border: '1px solid ' + (viewMode === id ? 'rgba(255,255,255,0.15)' : 'transparent'),
+                  background: viewMode === id ? '#000' : 'transparent',
                   color: viewMode === id ? '#fff' : 'var(--text-muted)',
-                  boxShadow: viewMode === id ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
+                  boxShadow: viewMode === id ? '0 4px 12px rgba(0,0,0,0.3)' : 'none',
                   transition: 'all 0.25s ease',
                   whiteSpace: 'nowrap'
                 }}

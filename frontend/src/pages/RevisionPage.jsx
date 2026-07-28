@@ -477,7 +477,7 @@ export default function RevisionPage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={fetchGuide}
                 disabled={loading}
-                style={{ padding: '10px 24px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', height: 42, display: 'flex', alignItems: 'center', gap: 8 }}
+                style={{ padding: '10px 24px', background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', height: 42, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 14px rgba(0,0,0,0.3)' }}
               >
                 {loading && <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />}
                 Generate Guide
@@ -508,14 +508,14 @@ export default function RevisionPage() {
 
               {/* Connected Roadmap Timeline */}
               <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0 20px' }}>
-                <div style={{ position: 'absolute', left: 40, right: 40, height: 4, background: 'var(--glass-border)', zIndex: 1, top: '42%' }} />
+                <div style={{ position: 'absolute', left: 45, right: 45, height: 4, background: 'var(--glass-border)', zIndex: 1, top: '42%' }} />
                 
                 <div style={{
                   position: 'absolute',
-                  left: 40,
-                  width: `${((activeRound - 1) / 3) * 88}%`,
+                  left: 45,
+                  width: `calc((100% - 90px) * ${(activeRound - 1) / 3})`,
                   height: 4,
-                  background: 'linear-gradient(90deg, #10b981, #818cf8, #f59e0b)',
+                  background: 'linear-gradient(90deg, #10b981, #6366f1, #f59e0b, #ec4899)',
                   zIndex: 2,
                   top: '42%',
                   transition: 'width 0.4s ease-in-out'

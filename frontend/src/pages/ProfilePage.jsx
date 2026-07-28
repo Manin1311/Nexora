@@ -144,8 +144,9 @@ export default function ProfilePage() {
                 <motion.button whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
                   onClick={() => setEditOpen(true)}
                   style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'8px 16px', borderRadius:10,
-                    background:'var(--glass-bg)', border:'1px solid var(--glass-border)', color:'var(--text-muted)',
-                    fontSize:13, fontWeight:600, cursor:'pointer', outline:'none', transition:'all 0.3s' }}>
+                    background:'#000', border:'1px solid rgba(255,255,255,0.15)', color:'#fff',
+                    fontSize:13, fontWeight:700, cursor:'pointer', outline:'none', transition:'all 0.3s',
+                    boxShadow:'0 4px 12px rgba(0,0,0,0.3)' }}>
                   <Edit2 size={13} /> Edit Profile
                 </motion.button>
               </div>
@@ -411,11 +412,11 @@ export default function ProfilePage() {
                         catch (e) { setGhError(e?.response?.data?.error || 'Could not connect. Check your username.') }
                         finally { setGhConnecting(false) }
                       }}
-                      style={{ padding:'10px 22px', borderRadius:10, border:'none', color:'#fff', fontSize:13, fontWeight:700,
+                      style={{ padding:'10px 22px', borderRadius:10, border:'1px solid rgba(255,255,255,0.15)', color:'#fff', fontSize:13, fontWeight:700,
                         cursor: ghConnecting ? 'not-allowed' : 'pointer',
                         display:'flex', alignItems:'center', gap:8, whiteSpace:'nowrap',
-                        background:'linear-gradient(135deg,#6366f1,#8b5cf6)',
-                        boxShadow:'0 4px 14px rgba(99,102,241,0.3)',
+                        background:'#000',
+                        boxShadow:'0 4px 14px rgba(0,0,0,0.3)',
                         opacity: ghConnecting ? 0.7 : 1 }}>
                       {ghConnecting ? <><Loader2 size={13} style={{ animation:'spin 1s linear infinite' }} /> Scanning…</> : <><Github size={13} /> Connect</>}
                     </motion.button>
@@ -586,10 +587,10 @@ export default function ProfilePage() {
                     <motion.button whileHover={{ scale:1.02 }} whileTap={{ scale:0.98 }}
                       onClick={handleSave} disabled={saving}
                       style={{ width:'100%', padding:'14px', borderRadius:13, fontSize:14, fontWeight:800,
-                        color:'#fff', background:'linear-gradient(135deg,#6366f1,#8b5cf6)', border:'none',
+                        color:'#fff', background:'#000', border:'1px solid rgba(255,255,255,0.15)',
                         cursor: saving ? 'not-allowed' : 'pointer',
                         display:'flex', alignItems:'center', justifyContent:'center', gap:8,
-                        boxShadow:'0 6px 20px rgba(99,102,241,0.35)', opacity: saving ? 0.7 : 1, marginTop:6 }}>
+                        boxShadow:'0 6px 20px rgba(0,0,0,0.4)', opacity: saving ? 0.7 : 1, marginTop:6 }}>
                       {saving ? <><Loader2 size={14} style={{ animation:'spin 1s linear infinite' }} /> Saving…</> : <><Save size={14} /> Save Profile</>}
                     </motion.button>
                   </div>
