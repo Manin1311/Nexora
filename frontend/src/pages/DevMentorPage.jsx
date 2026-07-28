@@ -394,28 +394,6 @@ function OpportunityMatcherDashboard({ mentorService, summary }) {
                   </div>
                 </div>
               </div>
-
-              {/* Auto Add to Roadmap CTA */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => handleAddToRoadmap(role)}
-                disabled={adding === role.role_title}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                  padding: '9px 16px', borderRadius: 10, fontSize: 12.5, fontWeight: 800, cursor: 'pointer',
-                  border: `1px solid ${scoreC}40`,
-                  background: adding === role.role_title ? 'var(--glass-bg)' : `linear-gradient(135deg, ${scoreC}18, ${scoreC}08)`,
-                  color: adding === role.role_title ? 'var(--text-muted)' : scoreC,
-                  transition: 'all 0.2s ease', outline: 'none'
-                }}
-              >
-                {adding === role.role_title ? (
-                  <><Loader2 size={13} className="spinning" /> Adding to Roadmap…</>
-                ) : (
-                  <><Target size={13} /> ⚡ Auto-Add Gap Skills to Roadmap</>
-                )}
-              </motion.button>
             </motion.div>
           )
         })}

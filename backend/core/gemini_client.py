@@ -1534,69 +1534,139 @@ Return ONLY a JSON object (no markdown, no preamble) with this exact structure:
     except Exception as e:
         print(f"[AI] compile_revision_guide failed: {e}")
 
-    # Company-tailored rich dictionary fallback
+    # Company & Role-tailored rich dictionary fallback
     company_data = {
         "Google": {
-            "company_focus": "Google prioritizes scalable distributed systems (MapReduce/Spanner), Big-O algorithmic efficiency, protocol buffers (gRPC), Spanner database consistency, and Googley collaborative culture.",
+            "company_focus": f"Google prioritizes scalable distributed systems (MapReduce/Spanner), Big-O algorithmic efficiency, protocol buffers (gRPC), Spanner database consistency, and Googley collaborative culture for {role} roles.",
             "resume_bridge": f"Highlight how your proficiency in {', '.join(resume_skills[:4]) if resume_skills else 'core software development'} directly aligns with Google's technical stack for {role} positions.",
             "short_summary": [
-                f"Google {role} Core Blueprint: Master Big-O space/time complexity, graph traversals, and scalable RPC interface design.",
+                f"Google {role} Core Blueprint: Master Big-O space/time complexity, graph traversals (BFS/DFS, Dijkstra), and scalable RPC interface design.",
                 "MapReduce & Spanner Scale: Understand global database consistency, TrueTime atomic clock synchronization, and consistent hashing ring partitions.",
                 "Googliness Attributes: Demonstrate intellectual humility, proactive technical ownership, and navigating ambiguous requirements."
-            ]
-        },
-        "Microsoft": {
-            "company_focus": "Microsoft prioritizes enterprise system reliability, Azure cloud integrations (Cosmos DB, Azure Service Bus), ASP.NET Core & TypeScript ecosystems, and Growth Mindset team collaboration.",
-            "resume_bridge": f"Highlight how your skills in {', '.join(resume_skills[:4]) if resume_skills else 'software engineering'} map to Microsoft's enterprise architecture requirements for {role} roles.",
-            "short_summary": [
-                f"Microsoft {role} Core Blueprint: Focus on clean SOLID object-oriented design, async/await concurrency, and ASP.NET Core middleware pipelines.",
-                "Cosmos DB & Azure Architecture: Understand multi-master global database replication, RBAC enterprise security, and microservice isolation.",
-                "Growth Mindset Culture: Demonstrate adaptability, taking constructive feedback during coding loops, and continuous learning."
+            ],
+            "flashcards": [
+                {"front": f"Google {role} Pitch", "back": f"Walk through your technical journey focusing on how your background fits Google's {role} expectations.", "category": "Resume Screen", "round": 1},
+                {"front": "Google Metric Standard", "back": "Quantify your achievements (e.g., 'managed 15k QPS', 'improved query latency by 35%', 'reduced memory footprint by 2.5GB').", "category": "HM Screen", "round": 1},
+                {"front": "Spanner vs BigTable for Google", "back": "Spanner provides external consistency (TrueTime) for ACID transactions; BigTable provides petabyte-scale low-latency key-value writes.", "category": "Google DSA & Core", "round": 2},
+                {"front": "Google Big-O Algorithmic Rigor", "back": "Derive tight upper and lower bounds (O and Omega) and analyze space stack allocation before coding.", "category": "Algorithms", "round": 2},
+                {"front": "TrueTime & Paxos at Google", "back": "TrueTime utilizes atomic clocks and GPS receivers to bound clock uncertainty, enabling global serializable transactions.", "category": "System Design", "round": 3},
+                {"front": "gRPC & Protocol Buffers at Google", "back": "Binary serialization format with strongly typed schemas over HTTP/2 multiplexing, reducing payload sizes compared to JSON.", "category": "Distributed Systems", "round": 3},
+                {"front": "Googliness Attributes for " + role, "back": "Demonstrate intellectual humility, active listening during code reviews, and leading without formal authority.", "category": "Behavioral STAR", "round": 4},
+                {"front": "Navigating Ambiguous Scope at Google", "back": "Define minimal viable boundaries, state design assumptions explicitly, and validate with telemetry metrics.", "category": "Leadership STAR", "round": 4}
             ]
         },
         "Amazon": {
-            "company_focus": "Amazon prioritizes Operational Excellence, AWS cloud scalability (DynamoDB single-table sharding, SQS queues, Lambda), p99 latency SLAs, and strict alignment with Amazon's 16 Leadership Principles.",
+            "company_focus": f"Amazon prioritizes Operational Excellence, AWS cloud scalability (DynamoDB single-table sharding, SQS queues, Lambda), p99 latency SLAs, and strict alignment with Amazon's 16 Leadership Principles for {role} candidates.",
             "resume_bridge": f"Map your experience in {', '.join(resume_skills[:4]) if resume_skills else 'software development'} to Amazon's AWS cloud architecture and Customer Obsession standards for {role} roles.",
             "short_summary": [
                 f"Amazon {role} Core Blueprint: Work backwards from customer requirements, design modular microservices, and optimize p99 latency.",
                 "AWS & DynamoDB Scale: Master partition key strategies, SQS message decoupling, and serverless concurrency management.",
                 "Leadership Principles: Prepare STAR stories highlighting Customer Obsession, Ownership, Bias for Action, and Frugality."
-            ]
-        },
-        "Netflix": {
-            "company_focus": "Netflix prioritizes microservice fault tolerance, Chaos Engineering resilience, high-concurrency Java/RxJava video telemetry pipelines, Cassandra NoSQL sharding, and Freedom & Responsibility culture.",
-            "resume_bridge": f"Map your technical stack in {', '.join(resume_skills[:4]) if resume_skills else 'software engineering'} to Netflix's high-throughput video streaming infrastructure for {role} candidates.",
-            "short_summary": [
-                f"Netflix {role} Core Blueprint: Design resilient, decoupled streaming pipelines with Hystrix/Resilience4j circuit breakers and client-side load balancing.",
-                "Chaos Engineering: Build graceful degradation strategies for microservices during regional infrastructure outages.",
-                "Freedom & Responsibility: Demonstrate high individual ownership, direct technical communication, and self-directed execution."
+            ],
+            "flashcards": [
+                {"front": f"Customer Obsession Pitch ({role})", "back": f"Frame your resume achievements around solving customer pain points and driving business metrics for Amazon {role}.", "category": "Resume Screen", "round": 1},
+                {"front": "Quantifying Amazon Scale", "back": "State your system metrics clearly: p99 latency (ms), TPS/QPS throughput, and AWS infrastructure cost savings.", "category": "HM Screen", "round": 1},
+                {"front": "Amazon Clean OOP Coding", "back": "Write modular, production-ready code with single-responsibility classes, defensive input checks, and clear variable naming.", "category": "Coding Loop", "round": 2},
+                {"front": "Sliding Window & Hash Map Patterns", "back": "Optimize O(N^2) brute force string/array problems to O(N) using sliding window pointers and auxiliary frequency maps.", "category": "Algorithms", "round": 2},
+                {"front": "DynamoDB Single-Table Design", "back": "Model multi-entity relationships in a single DynamoDB table using composite Partition Keys (PK) and Sort Keys (SK).", "category": "AWS Architecture", "round": 3},
+                {"front": "SQS Decoupling & Backpressure", "back": "Decouple synchronous API dependencies with SQS message queues and Dead Letter Queues (DLQ) for failed consumer retries.", "category": "System Design", "round": 3},
+                {"front": "Amazon 16 LPs Alignment", "back": "Every behavioral answer must explicitly map to Amazon LPs (Customer Obsession, Ownership, Have Backbone; Disagree and Commit).", "category": "Behavioral STAR", "round": 4},
+                {"front": "Bias for Action & Ownership STAR", "back": "Describe a scenario where you took calculated risks to unblock production deployment without waiting for top-down direction.", "category": "Leadership STAR", "round": 4}
             ]
         },
         "Meta": {
-            "company_focus": "Meta prioritizes rapid problem-solving execution speed (solving 2 coding problems in 45 min), GraphQL/React UI performance, Relay state management, RocksDB storage engines, and Move Fast culture.",
+            "company_focus": f"Meta prioritizes rapid problem-solving execution speed (solving 2 coding problems in 45 min), GraphQL/React UI performance, Relay state management, RocksDB storage engines, and Move Fast culture for {role} roles.",
             "resume_bridge": f"Highlight how your skills in {', '.join(resume_skills[:4]) if resume_skills else 'software development'} align with Meta's high-velocity product engineering standards for {role} positions.",
             "short_summary": [
                 f"Meta {role} Core Blueprint: Solve 2 LeetCode Medium/Hard algorithmic problems cleanly within 45 minutes with rapid dry-running.",
                 "GraphQL & UI Architecture: Master optimistic UI updates, normalized client-side state, and query batching.",
                 "Move Fast Culture: Demonstrate rapid iteration, unblocking team bottlenecks, and pragmatic engineering execution."
+            ],
+            "flashcards": [
+                {"front": f"Move Fast Pitch for Meta ({role})", "back": f"Pitch your engineering background emphasizing rapid feature delivery, high execution velocity, and product impact.", "category": "Resume Screen", "round": 1},
+                {"front": "Meta Product Impact Metrics", "back": "Highlight user engagement metrics, DAU/MAU scalability, render time optimization, and payload compression.", "category": "HM Screen", "round": 1},
+                {"front": "Meta 2-in-45min Coding Strategy", "back": "Spend 2 mins clarifying, 3 mins explaining algorithm, 12 mins coding, 3 mins dry-running for EACH of the 2 questions.", "category": "Meta DSA", "round": 2},
+                {"front": "Top-K Heaps & Graph BFS/DFS", "back": "Master Min-Heap for Top-K elements in O(N log K) and BFS queue for shortest path in unweighted social graphs.", "category": "Algorithms", "round": 2},
+                {"front": "GraphQL Relay Query Batching", "back": "Prevent N+1 query problem by batching and deferring nested fields with GraphQL DataLoader and Relay fragments.", "category": "Frontend/API Architecture", "round": 3},
+                {"front": "RocksDB & Tao Graph Engine", "back": "Understand Meta's persistent key-value store optimized for fast SSD writes and Tao distributed graph caching.", "category": "System Design", "round": 3},
+                {"front": "Meta 'Be Direct & Candid' STAR", "back": "Provide an example where you gave constructive, direct code feedback that improved team engineering standards.", "category": "Behavioral STAR", "round": 4},
+                {"front": "Unblocking Team Bottlenecks", "back": "Demonstrate how you proactively identified technical debt or missing API contracts to keep product shipping on schedule.", "category": "Leadership STAR", "round": 4}
+            ]
+        },
+        "Netflix": {
+            "company_focus": f"Netflix prioritizes microservice fault tolerance, Chaos Engineering resilience, high-concurrency Java/RxJava video telemetry pipelines, Cassandra NoSQL sharding, and Freedom & Responsibility culture for {role} roles.",
+            "resume_bridge": f"Map your technical stack in {', '.join(resume_skills[:4]) if resume_skills else 'software engineering'} to Netflix's high-throughput video streaming infrastructure for {role} candidates.",
+            "short_summary": [
+                f"Netflix {role} Core Blueprint: Design resilient, decoupled streaming pipelines with Resilience4j circuit breakers and client-side load balancing.",
+                "Chaos Engineering: Build graceful degradation strategies for microservices during regional infrastructure outages.",
+                "Freedom & Responsibility: Demonstrate high individual ownership, direct technical communication, and self-directed execution."
+            ],
+            "flashcards": [
+                {"front": f"Freedom & Responsibility Pitch ({role})", "back": f"Showcase your self-driven execution, high technical autonomy, and operational accountability for Netflix {role}.", "category": "Resume Screen", "round": 1},
+                {"front": "High-Density Talent Signals", "back": "Articulate how you operate without micro-management and take responsibility for production deployment decisions.", "category": "HM Screen", "round": 1},
+                {"front": "RxJava & Async Event Loops", "back": "Process non-blocking I/O event streams, handle backpressure, and prevent main thread blocking under high load.", "category": "Concurrency", "round": 2},
+                {"front": "Thread-Safe Data Structures", "back": "Utilize ConcurrentHashMap, AtomicLong, and CopyOnWriteArrayList to prevent race conditions without heavy locks.", "category": "Coding Loop", "round": 2},
+                {"front": "Chaos Engineering & Circuit Breakers", "back": "Inject synthetic failures (Chaos Monkey) and configure Resilience4j fallback responses to prevent cascading outages.", "category": "System Design", "round": 3},
+                {"front": "Cassandra NoSQL Sharding at Netflix", "back": "Partition video viewing telemetry across Cassandra cluster nodes using wide-column rows and time-series keys.", "category": "Distributed Storage", "round": 3},
+                {"front": "Context Not Control Culture", "back": "Explain how you set clear technical context for peers rather than prescribing rigid top-down rules.", "category": "Behavioral STAR", "round": 4},
+                {"front": "Direct Technical Feedback Scenario", "back": "Share a time you delivered uncomfortable, honest feedback to a peer that resulted in better system reliability.", "category": "Leadership STAR", "round": 4}
+            ]
+        },
+        "Microsoft": {
+            "company_focus": f"Microsoft prioritizes enterprise system reliability, Azure cloud integrations (Cosmos DB, Azure Service Bus), ASP.NET Core & TypeScript ecosystems, and Growth Mindset team collaboration for {role} positions.",
+            "resume_bridge": f"Highlight how your skills in {', '.join(resume_skills[:4]) if resume_skills else 'software engineering'} map to Microsoft's enterprise architecture requirements for {role} roles.",
+            "short_summary": [
+                f"Microsoft {role} Core Blueprint: Focus on clean SOLID object-oriented design, async/await concurrency, and ASP.NET Core middleware pipelines.",
+                "Cosmos DB & Azure Architecture: Understand multi-master global database replication, RBAC enterprise security, and microservice isolation.",
+                "Growth Mindset Culture: Demonstrate adaptability, taking constructive feedback during coding loops, and continuous learning."
+            ],
+            "flashcards": [
+                {"front": f"Growth Mindset Pitch for Microsoft ({role})", "back": f"Highlight your continuous learning curve, enterprise software contributions, and collaborative engineering approach.", "category": "Resume Screen", "round": 1},
+                {"front": "Enterprise Systems Metric", "back": "Quantify your enterprise impact: multi-tenant security RBAC, database migration zero-downtime, and service uptime SLAs.", "category": "HM Screen", "round": 1},
+                {"front": "SOLID OOP Design Principles", "back": "Apply Single Responsibility, Open-Closed, Liskov Substitution, Interface Segregation, and Dependency Inversion.", "category": "Object Oriented Design", "round": 2},
+                {"front": "Recursion & Tree/Graph Traversal", "back": "Implement clean recursive algorithms with memoization and iterative stack fallbacks to avoid call stack overflow.", "category": "Algorithms", "round": 2},
+                {"front": "Cosmos DB Multi-Master Replication", "back": "Configure global multi-region write locations with configurable consistency levels (Strong, Bounded Staleness, Session, Eventual).", "category": "Azure Cloud", "round": 3},
+                {"front": "ASP.NET Core Middleware & Azure RBAC", "back": "Structure request pipeline handlers for JWT authentication, role-based access control, and secret key vaulting.", "category": "System Design", "round": 3},
+                {"front": "Growth Mindset in Microsoft Loops", "back": "Demonstrate enthusiasm when accepting interviewer hints, quickly incorporating feedback into your solution.", "category": "Behavioral STAR", "round": 4},
+                {"front": "One Microsoft Collaboration", "back": "Describe cross-team alignment where you collaborated across departments to build an integrated platform solution.", "category": "Leadership STAR", "round": 4}
             ]
         },
         "Apple": {
-            "company_focus": "Apple prioritizes low-level system performance, C++/Swift memory management (ARC), thread safety, hardware-software integration, privacy-first architecture, and extreme attention to detail.",
+            "company_focus": f"Apple prioritizes low-level system performance, C++/Swift memory management (ARC), thread safety, hardware-software integration, privacy-first architecture, and extreme attention to detail for {role} candidates.",
             "resume_bridge": f"Map your background in {', '.join(resume_skills[:4]) if resume_skills else 'software development'} to Apple's low-level performance and privacy standards for {role} roles.",
             "short_summary": [
                 f"Apple {role} Core Blueprint: Manage CPU cache lines, thread pools, and memory layout to eliminate latency spikes.",
                 "Privacy-First Architecture: Design on-device computations and secure enclave integrations protecting user data.",
                 "Craftsmanship & Detail: Demonstrate meticulous attention to code quality, edge-case handling, and elegant API interfaces."
+            ],
+            "flashcards": [
+                {"front": f"Craftsmanship Pitch for Apple ({role})", "back": f"Emphasize your attention to low-level details, memory efficiency, code aesthetics, and user privacy for Apple {role}.", "category": "Resume Screen", "round": 1},
+                {"front": "Low-Level Performance Stack", "back": "Detail your experience with memory profiling, CPU cache hit ratios, frame rate consistency (60/120fps), and binary size.", "category": "HM Screen", "round": 1},
+                {"front": "C++ / Swift ARC Memory Management", "back": "Prevent retain cycles using weak/unowned references, manage heap vs stack allocation, and debug memory leaks.", "category": "Memory & Core DSA", "round": 2},
+                {"front": "Pointer Hygiene & Cache Optimization", "back": "Structure data contiguously in memory to leverage CPU L1/L2 cache prefetching and avoid pointer indirection overhead.", "category": "Low Level Coding", "round": 2},
+                {"front": "Privacy-First On-Device Architecture", "back": "Perform data tokenization and feature extraction locally on-device, sending minimal anonymized telemetry to backend.", "category": "System Design", "round": 3},
+                {"front": "CloudKit Sync & Secure Enclave", "back": "Store sensitive keys inside Secure Enclave hardware while maintaining end-to-end encrypted device syncing via CloudKit.", "category": "Security & Storage", "round": 3},
+                {"front": "Apple Obsessive Attention to Detail", "back": "Explain how you caught an obscure edge case or micro-performance regression before it reached production release.", "category": "Behavioral STAR", "round": 4},
+                {"front": "Privacy as a Human Right STAR", "back": "Describe an architectural decision where you chose on-device privacy protection over easier server-side data collection.", "category": "Leadership STAR", "round": 4}
             ]
         },
         "Stripe": {
-            "company_focus": "Stripe prioritizes financial-grade API idempotency, ACID ledger database consistency, developer ergonomics (SDKs & REST docs), zero-downtime database migrations, and robust error handling.",
+            "company_focus": f"Stripe prioritizes financial-grade API idempotency, ACID ledger database consistency, developer ergonomics (SDKs & REST docs), zero-downtime database migrations, and robust error handling for {role} candidates.",
             "resume_bridge": f"Highlight how your experience in {', '.join(resume_skills[:4]) if resume_skills else 'software engineering'} directly maps to Stripe's financial infrastructure requirements for {role} positions.",
             "short_summary": [
                 f"Stripe {role} Core Blueprint: Build idempotent API endpoints using unique idempotency keys to prevent duplicate financial mutations.",
                 "ACID Consistency: Master Postgres multi-table transactions with serializable isolation levels and distributed Saga patterns.",
                 "Developer Ergonomics: Design intuitive, self-describing REST APIs with clear error contracts and SDK compatibility."
+            ],
+            "flashcards": [
+                {"front": f"Financial Engineering Pitch ({role})", "back": f"Pitch your software experience with high-reliability systems, API design standards, and precision engineering for Stripe {role}.", "category": "Resume Screen", "round": 1},
+                {"front": "Stripe Idempotency & Precision Signals", "back": "Quantify your API uptime, transaction success rate (99.999%), and error recovery mechanisms in past financial/SaaS projects.", "category": "HM Screen", "round": 1},
+                {"front": "Stripe Real-World API Coding", "back": "Write clean API route handlers that parse payload parameters, validate inputs, execute business logic, and handle HTTP errors.", "category": "API Coding Loop", "round": 2},
+                {"front": "Parsing Complex Payloads & Edge Cases", "back": "Handle malformed JSON, missing fields, type coercion, and unexpected null values gracefully without throwing unhandled exceptions.", "category": "Coding Rigor", "round": 2},
+                {"front": "Idempotency Keys & Saga Pattern", "back": "Store unique Idempotency-Key headers in Redis to return cached transaction results on network retries without double charging.", "category": "Financial System Design", "round": 3},
+                {"front": "Postgres Serializable ACID Transactions", "back": "Execute financial ledger mutations inside atomic transactions with serializable isolation levels to prevent phantom reads.", "category": "Database Consistency", "round": 3},
+                {"front": "Developer Ergonomics & API Quality", "back": "Describe how you designed a REST endpoint or SDK interface that made integration seamless and error-proof for developers.", "category": "Behavioral STAR", "round": 4},
+                {"front": "Handling Financial Edge Cases STAR", "back": "Walk through a complex bug involving race conditions or payment timeouts and how you built a permanent automated test suite for it.", "category": "Leadership STAR", "round": 4}
             ]
         }
     }
@@ -1607,20 +1677,11 @@ Return ONLY a JSON object (no markdown, no preamble) with this exact structure:
         "company_focus": selected["company_focus"],
         "resume_bridge": selected["resume_bridge"],
         "mistake_corrections": [
-            "Explain consistent hashing by walking through ring hashing partitions and virtual nodes.",
-            "Compare replication lag bottlenecks across primary-replica databases vs event log streams."
+            f"Review {company}'s specific architectural trade-offs for {role} candidates.",
+            f"Practice writing clean, self-documenting code under time constraints for {company} loops."
         ],
         "short_summary": selected["short_summary"],
-        "flashcards": [
-            {"front": f"Elevator Pitch for {company}", "back": f"Walk through your technical journey in 60s focusing on how your background fits {company}'s {role} needs.", "category": "Resume Fit", "round": 1},
-            {"front": "System Scale Context", "back": "Quantify your achievements (e.g., 'managed 15k QPS', 'improved query latency by 35%', 'reduced cloud spend by $12k/yr').", "category": "HM screening", "round": 1},
-            {"front": "LRU Cache Eviction", "back": "Evicts least recently used items. Can be implemented in O(1) time complexity using a Doubly Linked List and a Hash Map.", "category": "Data Structures", "round": 2},
-            {"front": "Binary Search template", "back": "Utilized to find elements in sorted space. Loop pattern: while left <= right: mid = left + (right - left) // 2.", "category": "Algorithms", "round": 2},
-            {"front": "CAP Theorem", "back": "States that a distributed data store can simultaneously provide at most two of: Consistency, Availability, Partition Tolerance.", "category": "System Design", "round": 3},
-            {"front": "Database Sharding", "back": "Horizontal partitioning of database rows across multiple servers based on a shard key to support high read/write throughput.", "category": "Databases", "round": 3},
-            {"front": f"Cultural Values at {company}", "back": f"Align behavioral STAR responses with {company}'s core leadership principles and engineering ownership.", "category": "Behavioral STAR", "round": 4},
-            {"front": "Handling Ambiguous Requirements", "back": "Clarify design scope, define minimal viable boundaries, align with stakeholders early, and build iterative releases.", "category": "Leadership STAR", "round": 4}
-        ]
+        "flashcards": selected["flashcards"]
     }
 
 

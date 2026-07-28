@@ -154,49 +154,68 @@ const COMPANY_PROFILES = {
   }
 }
 
-const ROLE_BLUEPRINTS = {
-  'Software Engineer': {
-    1: (comp) => `The Resume Fit loop at ${comp} evaluates your software engineering fundamentals, OOP principles, and code ownership. ${comp} interviewers check whether you understand why specific frameworks and design patterns were selected. Quantify your contributions using measurable metrics such as latency reduction, query optimization, or bug reduction at ${comp}'s scale.`,
-    2: (comp) => `The Algorithms & Coding loop at ${comp} evaluates your core data structures, algorithmic efficiency, and Big-O runtime analysis for Software Engineer candidates. ${comp} engineers test how methodically you break down complex problems, select appropriate patterns (sliding window, binary search, graph traversals, dynamic programming), and write modular, bug-free code.`,
-    3: (comp) => `The System Design loop at ${comp} tests your ability to architect scalable, fault-tolerant, high-throughput backend services. ${comp} grades candidates on defining clear system boundaries, capacity planning (QPS, storage), selecting database paradigms (SQL vs NoSQL), setting up multi-tier caching (Redis), and implementing load balancers.`,
-    4: (comp) => `The Behavioral & Leadership loop at ${comp} measures your emotional intelligence, cross-functional collaboration, and cultural alignment for Software Engineers. Frame responses using the structured STAR method: Situation, Task, Action, Result. Highlight personal initiative, trade-offs negotiated with leads, and technical disagreement resolutions.`
+const COMPANY_TECH_MATRIX = {
+  Google: {
+    stack: "Go, C++, Java, MapReduce, Spanner, gRPC / Protocol Buffers, Borg",
+    dsaFocus: "Big-O space/time mathematical rigor, graph algorithms (BFS/DFS, Dijkstra), Tries, and dry-running code methodically",
+    systemFocus: "Spanner distributed transactions, TrueTime atomic synchronization, gRPC microservices, and Borg container scheduling",
+    cultureFocus: "Googliness, intellectual humility, collaborative problem solving, and navigating ambiguous requirements"
   },
-  'Frontend Developer': {
-    1: (comp) => `The Resume Fit loop at ${comp} evaluates your frontend engineering mastery, component design patterns, and UI state architecture. ${comp} interviewers inspect your understanding of Virtual DOM diffing, CSS layout engine performance, and client-side bundler optimizations. Quantify metrics like Core Web Vitals (LCP, CLS, FID) and load time improvements at ${comp}.`,
-    2: (comp) => `The Frontend Coding loop at ${comp} evaluates your JavaScript/TypeScript mastery, DOM manipulation, custom React hooks, and async data fetching. ${comp} engineers grade how methodically you implement UI components, handle debounce/throttle logic, write accessible HTML elements, and manage complex component re-render lifecycles.`,
-    3: (comp) => `The Frontend Architecture loop at ${comp} tests your capacity to design large-scale web applications. ${comp} grades candidates on micro-frontend decomposition, client-side caching (React Query/Zustand), state normalization, code-splitting, CDN asset distribution, and offline-first PWA caching strategies.`,
-    4: (comp) => `The Behavioral loop for Frontend Developers at ${comp} measures your collaboration with UX designers, product managers, and backend teams. Use the STAR method to describe how you negotiated design trade-offs, advocated for user accessibility (a11y), and resolved cross-functional feedback.`
+  Amazon: {
+    stack: "Java, Kotlin, AWS Lambda, DynamoDB, SQS, Kinesis, CloudWatch",
+    dsaFocus: "clean production-ready OOP code, sliding window algorithms, tree/graph problems, and O(1) hash map lookups",
+    systemFocus: "DynamoDB single-table partition key design, SQS queue decoupling, Lambda serverless scaling, and p99 latency monitoring",
+    cultureFocus: "Amazon's 16 Leadership Principles (Customer Obsession, Ownership, Bias for Action, Frugality)"
   },
-  'Backend Developer': {
-    1: (comp) => `The Resume Fit loop at ${comp} evaluates your backend engineering depth, API design decisions, and database schema architectures. ${comp} interviewers inspect your understanding of REST vs gRPC protocols, database indexing strategies, and server latency profiles. Articulate your contributions using throughput (QPS), memory efficiency, and uptime SLAs at ${comp}.`,
-    2: (comp) => `The Backend Coding loop at ${comp} evaluates your data structure utilization, concurrency control, stream processing, and multi-threading primitives. ${comp} engineers test how you handle race conditions, implement thread-safe connection pools, build custom middleware, and structure clean API handlers under load.`,
-    3: (comp) => `The Backend System Design loop at ${comp} tests your ability to design enterprise-grade backend infrastructure. ${comp} grades candidates on database sharding, read-replicas, multi-tier Redis caching, message queue decoupling (Kafka/RabbitMQ), rate-limiting middleware, and zero-downtime deployment strategies.`,
-    4: (comp) => `The Behavioral loop for Backend Developers at ${comp} measures your ownership during production incidents, on-call debugging, and post-mortem analysis. Use the STAR method to highlight how you managed critical outages, communicated status to stakeholders, and implemented preventive measures.`
+  Meta: {
+    stack: "Hack, C++, Python, React, Relay, GraphQL, RocksDB, Memcached, Tao",
+    dsaFocus: "rapid execution velocity (solving 2 LeetCode Medium/Hard in 45 min), top-k heap patterns, and instantaneous Big-O analysis",
+    systemFocus: "GraphQL query federation, Relay client state normalization, RocksDB key-value engines, and Tao social graph database",
+    cultureFocus: "Move Fast, Focus on Impact, Be Direct & Candid, and driving unblocked team velocity"
   },
-  'Full Stack Developer': {
-    1: (comp) => `The Resume Fit loop at ${comp} evaluates your end-to-end full stack architecture, from React/Vue UI components down to Django/Node APIs and PostgreSQL database models. ${comp} interviewers inspect how seamlessly you integrate frontend state with backend microservices and manage deployment pipelines.`,
-    2: (comp) => `The Full Stack Coding loop at ${comp} tests both algorithmic problem solving and end-to-end feature implementation. ${comp} engineers evaluate your ability to write clean frontend components, construct REST/GraphQL endpoints, implement server-side validation, and handle database queries efficiently.`,
-    3: (comp) => `The Full Stack System Design loop at ${comp} tests your capacity to architect full web applications. ${comp} grades candidates on SSR vs CSR hydration strategies, API gateway routing, database schema normalization, Redis caching layers, CDN static asset delivery, and CI/CD automated test pipelines.`,
-    4: (comp) => `The Behavioral loop for Full Stack Developers at ${comp} measures your versatility, cross-domain communication, and balancing frontend UX priorities with backend infrastructure constraints. Frame your STAR responses around team velocity and product delivery at ${comp}.`
+  Netflix: {
+    stack: "Java, RxJava, Spring Boot, Resilience4j, Cassandra NoSQL, Eureka, Ribbon",
+    dsaFocus: "concurrency, thread-safe data structures, non-blocking I/O event loops, and stream processing",
+    systemFocus: "Chaos Engineering fault injection, Resilience4j circuit breakers, Cassandra NoSQL sharding, and Eureka service discovery",
+    cultureFocus: "Freedom & Responsibility, Context Not Control, High Density of Talent, and transparent peer feedback"
   },
-  'System Architect': {
-    1: (comp) => `The Resume Fit loop at ${comp} evaluates your senior architectural vision, distributed systems track record, and technical leadership. ${comp} interviewers inspect your past high-scale projects, failure domain isolations, and multi-year infrastructure roadmaps. Highlight scale metrics (e.g. handling 500k QPS, multi-region failovers).`,
-    2: (comp) => `The Technical Deep-Dive loop for System Architects at ${comp} evaluates low-level network protocol trade-offs, consensus algorithms (Raft/Paxos), distributed locking mechanisms, and memory-mapped file storage. ${comp} engineers test your rigorous complexity analysis and distributed edge-case handling.`,
-    3: (comp) => `The System Design loop at ${comp} tests your blueprinting of global, fault-tolerant platforms. ${comp} grades candidates on CAP theorem trade-offs, global DNS load balancing, Kafka event log streams, multi-region database sharding, circuit breaking, and disaster recovery SLA guarantees.`,
-    4: (comp) => `The Architectural Leadership loop at ${comp} measures your technical influence, driving consensus across engineering teams, and managing technical debt vs feature velocity. Use the STAR method to demonstrate mentoring senior staff and setting platform standards.`
+  Microsoft: {
+    stack: "C#, .NET Core, TypeScript, Azure Cosmos DB, Azure Service Bus, Fluent UI",
+    dsaFocus: "SOLID OOP design principles, recursion, tree/graph traversals, and clean maintainable code structure",
+    systemFocus: "Cosmos DB multi-master replication, ASP.NET Core middleware pipelines, Azure Service Bus, and Enterprise RBAC security",
+    cultureFocus: "Growth Mindset, One Microsoft collaboration, customer empathy, and receptive attitude to interviewer hints"
   },
-  'ML Engineer': {
-    1: (comp) => `The Resume Fit loop at ${comp} evaluates your Machine Learning engineering background, model architecture choices, and ML pipeline deployments. ${comp} interviewers inspect your understanding of PyTorch/TensorFlow frameworks, feature store pipelines, and model evaluation metrics (Precision, Recall, F1, AUC-ROC).`,
-    2: (comp) => `The ML Coding & Algorithms loop at ${comp} evaluates matrix operations, tensor manipulation, gradient descent optimization, and data preprocessing algorithms. ${comp} engineers test your proficiency in vectorized NumPy/Pandas computations, custom loss function implementations, and Big-O algorithm efficiency.`,
-    3: (comp) => `The ML System Design loop at ${comp} tests your capacity to architect production ML infrastructure. ${comp} grades candidates on real-time feature extraction pipelines, vector database search (Pinecone/Milvus), GPU inference latency optimization, model quantization, and automated CI/CD model retraining.`,
-    4: (comp) => `The Behavioral loop for ML Engineers at ${comp} measures your collaboration with data scientists, product managers, and backend infrastructure teams. Use the STAR method to explain how you navigated model bias, trade-offs between model accuracy vs inference latency, and data governance.`
+  Apple: {
+    stack: "Swift, Objective-C, C++, Metal, CoreML, CloudKit, macOS/iOS internals",
+    dsaFocus: "low-level algorithm efficiency, ARC memory management, CPU cache lines, and thread synchronization",
+    systemFocus: "on-device computation, CloudKit device synchronization, Secure Enclave encryption, and low-latency edge delivery",
+    cultureFocus: "obsessive craftsmanship, attention to micro-details, privacy as a fundamental human right, and code elegance"
+  },
+  Stripe: {
+    stack: "Ruby, Go, Java, TypeScript, PostgreSQL, Redis, Stripe Elements",
+    dsaFocus: "real-world API execution, parsing complex JSON payloads, data transformation pipelines, and edge-case handling",
+    systemFocus: "financial-grade idempotency keys, ACID ledger transactions in Postgres, Saga distributed transactions, and PCI-DSS compliance",
+    cultureFocus: "developer ergonomics, financial integrity, micro-details matter, and long-term technical rigor"
   }
 }
 
 const getRoleBlueprint = (roundNum, comp, rTitle) => {
-  const roleMap = ROLE_BLUEPRINTS[rTitle] || ROLE_BLUEPRINTS['Software Engineer']
-  const fn = roleMap[roundNum] || ROLE_BLUEPRINTS['Software Engineer'][roundNum]
-  return fn(comp)
+  const info = COMPANY_TECH_MATRIX[comp] || COMPANY_TECH_MATRIX.Google
+  const primaryLang = info.stack.split(',')[0].trim()
+
+  if (roundNum === 1) {
+    return `The Resume Fit loop at ${comp} evaluates your ${rTitle} track record against ${comp}'s specific technology ecosystem (${info.stack}). ${comp} interviewers check whether you understand why specific frameworks and design patterns were selected. Quantify your contributions using measurable metrics such as latency reduction, query optimization, or operational scale at ${comp}.`
+  }
+  if (roundNum === 2) {
+    return `The Coding & Algorithms loop at ${comp} for ${rTitle} candidates evaluates ${info.dsaFocus}. ${comp} engineers test how methodically you break down complex problems, write modular bug-free code in ${primaryLang}, and derive Big-O space and time complexity bounds.`
+  }
+  if (roundNum === 3) {
+    return `The System Architecture loop at ${comp} evaluates your ability to design scalable, fault-tolerant platforms for ${rTitle} roles. ${comp} grades candidates on ${info.systemFocus}, defining system boundaries, capacity planning (QPS, storage), and selecting database paradigms.`
+  }
+  if (roundNum === 4) {
+    return `The Behavioral & Leadership loop at ${comp} measures your emotional intelligence, cross-functional collaboration, and cultural alignment for ${rTitle} positions. ${comp} looks for alignment with ${info.cultureFocus}. Frame responses using the structured STAR method (Situation, Task, Action, Result) with quantitative impact metrics.`
+  }
+  return `The ${comp} interview loop for ${rTitle} candidates.`
 }
 
 const PLAYBOOK_DATA = {
@@ -308,7 +327,7 @@ export default function RevisionPage() {
 
   useEffect(() => {
     fetchGuide()
-  }, [])
+  }, [company, role])
 
   const getFilteredFlashcards = (roundNum) => {
     if (!guide || !guide.flashcards) return []
