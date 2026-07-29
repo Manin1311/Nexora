@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight, Zap, Trophy, Code2, Brain, Rocket,
   Clock, ChevronRight, Flame, TrendingUp, Play, CheckCircle,
   Lock, Swords, FlaskConical, Bot, Palette, Star, MessageSquare,
   BarChart2, CheckSquare, Send, BookOpen, Layers,
-  ShieldCheck, HelpCircle, ChevronDown, Sparkles, Users
+  ShieldCheck, HelpCircle, ChevronDown, Sparkles, Users, CreditCard
 } from 'lucide-react'
 import { challengeService } from '@/services/challengeService'
 import { authService } from '@/services/authService'
@@ -1033,8 +1033,224 @@ function BottomCtaButton() {
   )
 }
 
+/* ── Dummy Checkout Payment Modal ── */
+function PaymentModal({ plan, onClose, onSuccess }) {
+  const [method, setMethod] = useState('card') // 'card' | 'upi'
+  const [name, setName] = useState('')
+  const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242')
+  const [expiry, setExpiry] = useState('12/28')
+  const [cvv, setCvv] = useState('123')
+  const [upiId, setUpiId] = useState('user@okaxis')
+  const [status, setStatus] = useState('idle') // 'idle' | 'processing' | 'success'
+  const { activatePro } = useAuth()
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  const handlePay = (e) => {
+    e.preventDefault()
+    setStatus('processing')
+    setTimeout(() => {
+      setStatus('success')
+      activatePro()
+      setTimeout(() => {
+        onClose()
+        onSuccess()
+      }, 1500)
+    }, 1800)
+  }
+
+  return createPortal(
+    <AnimatePresence>
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 99999,
+        background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24
+      }} onClick={onClose}>
+        <motion.div
+          initial={{ scale: 0.92, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.92, opacity: 0, y: 20 }}
+          transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+          onClick={e => e.stopPropagation()}
+          style={{
+            width: '100%', maxWidth: 460,
+            background: 'var(--card-bg, #0f0f1c)',
+            border: '1px solid rgba(99,102,241,0.3)',
+            borderRadius: 24, padding: 32,
+            boxShadow: '0 30px 80px rgba(0,0,0,0.8), 0 0 40px rgba(99,102,241,0.15)',
+            position: 'relative', overflow: 'hidden'
+          }}
+        >
+          {/* Subtle gradient glow header */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899)' }} />
+
+          {/* Close button */}
+          <button onClick={onClose} style={{ position: 'absolute', top: 20, right: 20, background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 24, cursor: 'pointer', lineHeight: 1 }}>×</button>
+
+          {status === 'success' ? (
+            <div style={{ textAlign: 'center', padding: '32px 0' }}>
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1.1 }} transition={{ type: 'spring' }}>
+                <CheckCircle size={64} style={{ color: '#34d399', margin: '0 auto 16px', display: 'block' }} />
+              </motion.div>
+              <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-heading)', marginBottom: 8 }}>🎉 Payment Successful!</h3>
+              <p style={{ fontSize: 14, color: '#34d399', fontWeight: 600, marginBottom: 4 }}>{plan.name} Tier Activated</p>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Redirecting to your Nexora Dashboard...</p>
+            </div>
+          ) : status === 'processing' ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', border: '4px solid rgba(99,102,241,0.2)', borderTopColor: '#6366f1', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+              <h4 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 8 }}>Processing Secure Payment...</h4>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Communicating with Stripe Payment Gateway</p>
+            </div>
+          ) : (
+            <div>
+              {/* Header */}
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <ShieldCheck size={16} style={{ color: '#34d399' }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Secure 256-Bit SSL Checkout</span>
+                </div>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-heading)', margin: 0 }}>Upgrade to {plan.name}</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
+                  Amount due: <strong style={{ color: '#818cf8', fontSize: 16 }}>{plan.price}</strong>
+                </p>
+              </div>
+
+              {/* Payment Method Toggle */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 20, background: 'rgba(255,255,255,0.04)', padding: 4, borderRadius: 12, border: '1px solid var(--glass-border)' }}>
+                <button
+                  type="button"
+                  onClick={() => setMethod('card')}
+                  style={{
+                    padding: '8px 12px', borderRadius: 8, border: 'none',
+                    background: method === 'card' ? '#6366f1' : 'transparent',
+                    color: method === 'card' ? '#fff' : 'var(--text-muted)',
+                    fontWeight: 700, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.2s'
+                  }}
+                >
+                  <CreditCard size={14} /> Credit / Debit Card
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMethod('upi')}
+                  style={{
+                    padding: '8px 12px', borderRadius: 8, border: 'none',
+                    background: method === 'upi' ? '#6366f1' : 'transparent',
+                    color: method === 'upi' ? '#fff' : 'var(--text-muted)',
+                    fontWeight: 700, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.2s'
+                  }}
+                >
+                  ⚡ UPI / GPay
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handlePay} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {method === 'card' ? (
+                  <>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Cardholder Name</label>
+                      <input
+                        type="text" required placeholder="e.g. Alex Chen"
+                        value={name} onChange={e => setName(e.target.value)}
+                        style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Card Number</label>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type="text" required placeholder="4242 4242 4242 4242"
+                          value={cardNumber} onChange={e => setCardNumber(e.target.value)}
+                          style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                        />
+                        <span style={{ position: 'absolute', right: 12, top: 10, fontSize: 11, fontWeight: 800, color: '#818cf8' }}>VISA</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Expiry Date</label>
+                        <input
+                          type="text" required placeholder="MM/YY"
+                          value={expiry} onChange={e => setExpiry(e.target.value)}
+                          style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>CVV / CVC</label>
+                        <input
+                          type="password" required maxLength={4} placeholder="123"
+                          value={cvv} onChange={e => setCvv(e.target.value)}
+                          style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>VPA / UPI ID</label>
+                    <input
+                      type="text" required placeholder="e.g. username@upi or phone@gpay"
+                      value={upiId} onChange={e => setUpiId(e.target.value)}
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                    />
+                    <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>Accepts Google Pay, PhonePe, Paytm, BHIM</p>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  style={{
+                    width: '100%', padding: '14px', borderRadius: 12,
+                    background: 'linear-gradient(135deg, #111111, #1f1f2e)', color: '#fff',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    fontSize: 14, fontWeight: 800, cursor: 'pointer', marginTop: 8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.4)'
+                  }}
+                >
+                  <Lock size={15} /> Pay {plan.price} & Unlock Pro
+                </button>
+
+                <p style={{ fontSize: 11, textAlign: 'center', color: 'var(--text-muted)', margin: 0 }}>
+                  🔒 Test sandbox payment — no real money will be charged.
+                </p>
+              </form>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </AnimatePresence>,
+    document.body
+  )
+}
+
 /* ── Premium Pricing Cards ── */
 function Pricing() {
+  const [activePlan, setActivePlan] = useState(null)
+  const navigate = useNavigate()
+  const { isAuthenticated, isPro } = useAuth()
+
+  const handleSelectPlan = (plan) => {
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+    if (plan.name === 'Starter') {
+      navigate('/challenges')
+      return
+    }
+    if (isPro && plan.name === 'Pro Acceleration') {
+      navigate('/challenges')
+      return
+    }
+    setActivePlan(plan)
+  }
+
   return (
     <section id="pricing" className="section" style={{ background: 'var(--section-alt-bg)', position: 'relative', zIndex: 1, scrollMarginTop: '60px' }}>
       <div className="container">
@@ -1070,12 +1286,19 @@ function Pricing() {
                 ))}
               </ul>
             </div>
-            <PricingCTA to='/challenges' toGuest='/register' label='Start Free' style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'rgba(99,102,241,0.06)', color: 'var(--text-heading)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }} />
+            <button
+              onClick={() => handleSelectPlan({ name: 'Starter', price: '$0' })}
+              style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'rgba(99,102,241,0.06)', color: 'var(--text-heading)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+            >
+              {isAuthenticated ? 'Go to Dashboard' : 'Start Free'}
+            </button>
           </div>
 
           {/* Card 2: Pro */}
-          <div style={{ background: 'var(--glass-bg)', border: '2px solid #6366f1', borderRadius: '20px', padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 20px 40px rgba(99,102,241,0.15)', position: 'relative' }}>
-            <span style={{ position: 'absolute', top: -12, right: 24, padding: '4px 12px', borderRadius: '9999px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Most Popular</span>
+          <div style={{ background: 'var(--glass-bg)', border: isPro ? '2px solid #34d399' : '2px solid #6366f1', borderRadius: '20px', padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: isPro ? '0 20px 40px rgba(52,211,153,0.2)' : '0 20px 40px rgba(99,102,241,0.15)', position: 'relative' }}>
+            <span style={{ position: 'absolute', top: -12, right: 24, padding: '4px 12px', borderRadius: '9999px', background: isPro ? 'linear-gradient(135deg,#10b981,#34d399)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {isPro ? '✨ Active Plan' : 'Most Popular'}
+            </span>
             <div>
               <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-heading)', marginBottom: 8 }}>Pro Acceleration</h3>
               <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>Everything needed for FAANG prep.</p>
@@ -1091,7 +1314,19 @@ function Pricing() {
                 ))}
               </ul>
             </div>
-            <PricingCTA to='/challenges' toGuest='/register' label='Get Pro Acceleration' style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: 'none', background: '#111111', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }} />
+            <button
+              onClick={() => handleSelectPlan({ name: 'Pro Acceleration', price: '$19/mo' })}
+              style={{
+                width: '100%', padding: '12px 0', borderRadius: '10px',
+                border: isPro ? '1px solid rgba(52,211,153,0.5)' : 'none',
+                background: isPro ? 'rgba(52,211,153,0.15)' : '#111111',
+                color: isPro ? '#34d399' : '#fff',
+                fontWeight: 800, fontSize: 13, cursor: 'pointer',
+                boxShadow: isPro ? '0 4px 14px rgba(52,211,153,0.2)' : '0 4px 12px rgba(0,0,0,0.2)'
+              }}
+            >
+              {isPro ? '✓ Active Pro Plan' : 'Get Pro Acceleration'}
+            </button>
           </div>
 
           {/* Card 3: Enterprise */}
@@ -1110,11 +1345,24 @@ function Pricing() {
                 ))}
               </ul>
             </div>
-            <PricingCTA to='/challenges' toGuest='/register' label='Contact Sales' style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'rgba(99,102,241,0.06)', color: 'var(--text-heading)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }} />
+            <button
+              onClick={() => handleSelectPlan({ name: 'Enterprise', price: '$49/mo' })}
+              style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'rgba(99,102,241,0.06)', color: 'var(--text-heading)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+            >
+              Contact Sales
+            </button>
           </div>
 
         </div>
       </div>
+
+      {activePlan && (
+        <PaymentModal
+          plan={activePlan}
+          onClose={() => setActivePlan(null)}
+          onSuccess={() => navigate('/challenges')}
+        />
+      )}
     </section>
   )
 }

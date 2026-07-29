@@ -77,8 +77,17 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  const [isPro, setIsPro] = useState(() => {
+    return localStorage.getItem('nexora_is_pro') === 'true'
+  })
+
+  const activatePro = () => {
+    localStorage.setItem('nexora_is_pro', 'true')
+    setIsPro(true)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, isAuthenticated, login, register, logout, refreshUser, loginWithGoogle }}>
+    <AuthContext.Provider value={{ user, loading, isAuthenticated, isPro, activatePro, login, register, logout, refreshUser, loginWithGoogle }}>
       {children}
     </AuthContext.Provider>
   )
