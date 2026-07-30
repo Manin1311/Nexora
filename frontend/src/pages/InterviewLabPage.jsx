@@ -51,13 +51,16 @@ const stagger = {
   item:      { hidden:{ opacity:0, y:16 }, show:{ opacity:1, y:0, transition:{ duration:0.35, ease:[0.4,0,0.2,1] } } },
 }
 
+import LimitExceededModal from '@/components/ui/LimitExceededModal'
+
 export default function InterviewLabPage() {
   const [selectedMode, setSelectedMode] = useState(null)
   const [configOpen,   setConfigOpen]   = useState(false)
   const [sessions,     setSessions]     = useState([])
   const [config,       setConfig]       = useState({ difficulty:'mid', total_questions:5, topic:'' })
   const [starting,     setStarting]     = useState(false)
-  const { isAuthenticated } = useAuth()
+  const [showLimitModal, setShowLimitModal] = useState(false)
+  const { isAuthenticated, checkInterviewLimit, recordInterviewUsage } = useAuth()
   const navigate = useNavigate()
   const { isOpen: tourOpen, openTour, closeTour } = usePageTour('interview')
 
@@ -82,17 +85,27 @@ export default function InterviewLabPage() {
 
   const handleModeSelect = mode => {
     if (!isAuthenticated) { navigate('/login'); return }
+    if (!checkInterviewLimit()) {
+      setShowLimitModal(true)
+      return
+    }
     setSelectedMode(mode); setConfigOpen(true)
   }
 
   const handleStart = async () => {
     if (!selectedMode) return
+    if (!checkInterviewLimit()) {
+      setConfigOpen(false)
+      setShowLimitModal(true)
+      return
+    }
     setStarting(true)
     try {
       const { data } = await interviewService.startSession({
         mode: selectedMode.id, difficulty: config.difficulty,
         total_questions: config.total_questions, topic: config.topic,
       })
+      recordInterviewUsage()
       navigate(`/interview/${data.id}`)
     } catch { alert('Failed to start. Please try again.') }
     finally { setStarting(false) }
@@ -383,6 +396,11 @@ export default function InterviewLabPage() {
         isOpen={tourOpen}
         onClose={closeTour}
         accentColor="#10b981"
+      />
+      <LimitExceededModal
+        featureName="AI Mock Interviews"
+        isOpen={showLimitModal}
+        onClose={() => setShowLimitModal(false)}
       />
     </PageWrapper>
   )

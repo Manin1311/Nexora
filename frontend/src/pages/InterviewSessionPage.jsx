@@ -111,9 +111,10 @@ export default function InterviewSessionPage() {
   // Live Coaching states
   const [onboarded, setOnboarded] = useState(false)
   const [cameraActive, setCameraActive] = useState(false)
-  const [speechMode, setSpeechMode] = useState(false)
+  const [speechMode, setSpeechMode] = useState(true)
   const [isListening, setIsListening] = useState(false)
   const [speechSupported, setSpeechSupported] = useState(false)
+  const [mediaPermissionError, setMediaPermissionError] = useState(false)
 
   // Real-time analysis metrics
   const [fillerWords, setFillerWords] = useState(0)
@@ -239,6 +240,13 @@ export default function InterviewSessionPage() {
     }
   }, [])
 
+  // Auto-attach video stream as soon as videoRef element mounts
+  useEffect(() => {
+    if (cameraActive && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current
+    }
+  }, [cameraActive, onboarded])
+
   const cleanupMedia = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
@@ -260,7 +268,12 @@ export default function InterviewSessionPage() {
     setCameraActive(false)
   }
 
+  const shouldListenRef = useRef(false)
+  const baseTextRef = useRef('')
+  const finalChunksRef = useRef([])
+
   const cleanupSpeech = () => {
+    shouldListenRef.current = false
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop()
@@ -385,11 +398,11 @@ export default function InterviewSessionPage() {
 
 
 
-  // Start Camera Stream
+  // Start Camera & Audio Stream (Seamless Video + Mic Initializer)
   const startCamera = async () => {
     cleanupMedia()
     try {
-      // Try to get both video and audio
+      // Primary: Try getting both Video and Audio
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 320, height: 240, frameRate: { ideal: 15 } },
         audio: true
@@ -397,28 +410,21 @@ export default function InterviewSessionPage() {
       streamRef.current = stream
       setCameraActive(true)
 
-      // Attach stream to video element
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-        }
-      }, 200)
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
 
-      // Initialize Audio Visualizer
       startAudioVisualizer(stream)
     } catch (err) {
-      console.warn('Full camera + audio access failed, trying audio-only fallback:', err)
+      console.warn('Camera stream failed/occupied, attempting audio-only fallback:', err?.name, err?.message)
       try {
-        // Fallback: Try to get audio-only (in case webcam is missing, disabled, or occupied by Zoom/OBS/etc)
-        const audioStream = await navigator.mediaDevices.getUserMedia({
-          audio: true
-        })
+        // Fallback: Audio-only (Mic stream for spectrum visualizer & speech)
+        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
         streamRef.current = audioStream
-        setCameraActive(false) // No camera, but mic works!
+        setCameraActive(false)
         startAudioVisualizer(audioStream)
       } catch (audioErr) {
-        console.warn('Audio-only fallback also failed:', audioErr)
-        alert('Could not access camera or microphone. Continuing in text-only mode.')
+        console.warn('Audio stream also unavailable:', audioErr?.name, audioErr?.message)
         setCameraActive(false)
       }
     }
@@ -480,68 +486,99 @@ export default function InterviewSessionPage() {
     }
   }
 
-  // Speech Recognition Start/Stop
+  // Speech Recognition Start/Stop (Strict Mode: Requires Camera + Mic)
   const toggleListening = () => {
     if (!speechSupported) return
+    if (!cameraActive) {
+      setMediaPermissionError(true)
+      setSpeechMode(false)
+      cleanupSpeech()
+      return
+    }
 
     if (isListening) {
       cleanupSpeech()
     } else {
       cleanupSpeech()
+      shouldListenRef.current = true
+      baseTextRef.current = answerRef.current || ''
+      finalChunksRef.current = []
+
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
       const rec = new SpeechRecognition()
       rec.continuous = true
       rec.interimResults = true
-      rec.lang = 'en-US'
 
       if (!startTimeRef.current) {
         startTimeRef.current = Date.now()
       }
 
       rec.onstart = () => setIsListening(true)
+
       rec.onresult = (event) => {
-        let newFinalText = ''
+        let finalParts = []
         let interimText = ''
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
+
+        for (let i = 0; i < event.results.length; ++i) {
+          const phrase = event.results[i][0].transcript.trim()
+          if (!phrase) continue
+
           if (event.results[i].isFinal) {
-            newFinalText += event.results[i][0].transcript
+            finalParts.push(phrase)
           } else {
-            interimText += event.results[i][0].transcript
+            interimText = phrase
           }
         }
-        if (newFinalText) {
-          // Commit finalized text once
-          committedTextRef.current = (
-            committedTextRef.current
-              ? committedTextRef.current + ' ' + newFinalText.trim()
-              : newFinalText.trim()
-          )
-          setAnswer(committedTextRef.current)
-        } else if (interimText) {
-          // Show interim preview on top of already-committed text (no duplication)
-          const preview = committedTextRef.current
-            ? committedTextRef.current + ' ' + interimText
-            : interimText
-          setAnswer(preview)
+
+        const base = baseTextRef.current.trim()
+        const finals = finalParts.join(' ').trim()
+
+        let fullText = base
+        if (finals) {
+          fullText = fullText ? fullText + ' ' + finals : finals
         }
+        if (interimText) {
+          fullText = fullText ? fullText + ' ' + interimText : interimText
+        }
+
+        setAnswer(fullText)
       }
+
       rec.onerror = (err) => {
+        if (err.error === 'no-speech' || err.error === 'aborted') {
+          // Silence or brief pause detected; keep shouldListenRef true so onend auto-restarts!
+          return
+        }
         console.error('Speech recognition error code:', err.error, err)
-        setIsListening(false)
-        if (err.error === 'network') {
-          console.warn('Network-based Speech Recognition error. Switching to keyboard mode.')
-          setSpeechMode(false)
+        if (err.error === 'not-allowed' || err.error === 'permission-denied' || err.error === 'service-not-allowed') {
+          shouldListenRef.current = false
+          setIsListening(false)
+          setMediaPermissionError(true)
         }
       }
-      rec.onend = () => setIsListening(false)
+
+      rec.onend = () => {
+        if (shouldListenRef.current) {
+          try {
+            // Update base text to currently accumulated full text before starting next chunk
+            baseTextRef.current = answerRef.current || ''
+            finalChunksRef.current = []
+            rec.start()
+          } catch {
+            setIsListening(false)
+          }
+        } else {
+          setIsListening(false)
+        }
+      }
 
       try {
         rec.start()
         recognitionRef.current = rec
       } catch (err) {
         console.error('Speech recognition start failed:', err)
+        shouldListenRef.current = false
         setIsListening(false)
-        setSpeechMode(false)
       }
     }
   }
@@ -900,6 +937,8 @@ export default function InterviewSessionPage() {
           </span>
         </div>
 
+
+
         {/* Onboarding Prep Checklist (Optional) */}
         {!onboarded ? (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ ...S.card, padding: 36, maxWidth: 640, margin: '20px auto', textAlign: 'center' }}>
@@ -1052,8 +1091,9 @@ export default function InterviewSessionPage() {
                         />
                       ) : (
                         <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-                          <VideoOff size={32} style={{ color: '#ef4444', marginBottom: 8 }} />
+                          <VideoOff size={28} style={{ color: '#ef4444', marginBottom: 6 }} />
                           <div style={{ fontSize: 12, fontWeight: 700 }}>Webcam Offline</div>
+                          <div style={{ fontSize: 10, color: '#34d399', fontWeight: 600, marginTop: 4 }}>🎤 Voice Mode Active</div>
                         </div>
                       )}
                       <div style={{ position: 'absolute', bottom: 12, left: 12, background: 'rgba(0,0,0,0.6)', padding: '4px 10px', borderRadius: 12, fontSize: 10, fontWeight: 700, color: '#fff' }}>
@@ -1133,23 +1173,15 @@ export default function InterviewSessionPage() {
 
                   </div>
 
-                  {/* Right controls: Chat panel & submit */}
+                  {/* Right controls: Submit / Next */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     
                     {!answered && (
-                      <>
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                          onClick={toggleListening}
-                          style={{ padding: '0 16px', height: 40, borderRadius: 10, border: 'none', background: isListening ? '#ef4444' : '#8b5cf6', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {isListening ? <><MicOff size={13} /> Speak Off</> : <><Mic size={13} /> Speak On</>}
-                        </motion.button>
-                        
-                        <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                          onClick={() => setShowChatPanel(!showChatPanel)}
-                          style={{ padding: '0 16px', height: 40, borderRadius: 10, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-color)', fontWeight: 700, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <Keyboard size={13} /> Chat ({showChatPanel ? 'Hide' : 'Show'})
-                        </motion.button>
-                      </>
+                      <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        onClick={toggleListening}
+                        style={{ padding: '0 16px', height: 40, borderRadius: 10, border: 'none', background: isListening ? '#ef4444' : '#8b5cf6', color: '#fff', fontWeight: 700, fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {isListening ? <><MicOff size={13} /> Stop Voice</> : <><Mic size={13} /> Speak Answer</>}
+                      </motion.button>
                     )}
 
                     {answered && currentIdx < session.questions.length - 1 && (
@@ -1165,43 +1197,36 @@ export default function InterviewSessionPage() {
 
                 </div>
 
-                {/* Chat Panel / Keyboard Input drawer */}
-                <AnimatePresence>
-                  {showChatPanel && !answered && (
-                    <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 16, padding: 20, boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                        <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-heading)', textTransform: 'uppercase', margin: 0 }}>Meet Answer Input Chat</h4>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{answer.length} chars</span>
-                      </div>
-                      <textarea
-                        value={answer}
-                        onChange={e => setAnswer(e.target.value)}
-                        placeholder="Type your verbal response here or verify speech transcript..."
-                        rows={4}
-                        style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-color)', fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
-                      />
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
-                        <button onClick={() => setShowChatPanel(false)} style={{ padding: '6px 12px', border: 'none', background: 'transparent', color: 'var(--text-muted)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-                        <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                          onClick={() => {
-                            handleSubmitAnswer()
-                            setShowChatPanel(false)
-                          }}
-                          disabled={!answer.trim() || submitting}
-                          className="btn-primary"
-                          style={{ padding: '6px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: 'none', cursor: 'pointer', opacity: !answer.trim() ? 0.5 : 1 }}>
-                          {submitting ? 'Sending...' : 'Send Message'}
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                {/* Permanent Answer Input Box for Boardroom Mode */}
+                {!answered && (
+                  <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 16, padding: 20, marginTop: 16, boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-heading)', textTransform: 'uppercase', margin: 0 }}>Answer Response Input</h4>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{answer.length} chars</span>
+                    </div>
+                    <textarea
+                      value={answer}
+                      onChange={e => setAnswer(e.target.value)}
+                      placeholder="Type your response here or speak using the button above..."
+                      rows={4}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-color)', fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
+                      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        onClick={handleSubmitAnswer}
+                        disabled={!answer.trim() || submitting}
+                        className="btn-primary"
+                        style={{ padding: '8px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer', opacity: !answer.trim() || submitting ? 0.55 : 1 }}>
+                        {submitting ? 'Sending...' : 'Submit Answer'}
+                      </motion.button>
+                    </div>
+                  </div>
+                )}
 
               </div>
             ) : (
               // Original Solo Interview View
-              <div>
-                <div style={{ display: 'grid', gridTemplateColumns: speechMode ? '1.8fr 1fr' : '1fr', gap: 24 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr', gap: 24 }}>
                   
                   {/* LEFT COLUMN: Question and Input Panel */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1232,7 +1257,7 @@ export default function InterviewSessionPage() {
                                 
                                 {/* Live Action Controls */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  {speechMode && speechSupported && (
+                                  {speechSupported && (
                                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                                       type="button"
                                       onClick={toggleListening}
@@ -1240,22 +1265,20 @@ export default function InterviewSessionPage() {
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: 8,
-                                        padding: '8px 16px',
+                                        padding: '10px 18px',
                                         borderRadius: 10,
                                         fontSize: 13,
-                                        fontWeight: 600,
+                                        fontWeight: 700,
                                         cursor: 'pointer',
+                                        background: isListening ? 'linear-gradient(135deg,#ef4444,#dc2626)' : 'linear-gradient(135deg,#8b5cf6,#7c3aed)',
                                         border: 'none',
                                         color: '#fff',
-                                        background: isListening ? 'linear-gradient(135deg,#ef4444,#dc2626)' : 'rgba(139,92,246,0.15)',
-                                        border: isListening ? 'none' : '1px solid rgba(139,92,246,0.3)',
-                                        color: isListening ? '#fff' : '#a78bfa',
-                                        boxShadow: isListening ? '0 0 12px rgba(239,68,68,0.5)' : 'none'
+                                        boxShadow: isListening ? '0 0 16px rgba(239,68,68,0.6)' : '0 4px 14px rgba(139,92,246,0.3)'
                                       }}>
                                       {isListening ? (
-                                        <><MicOff size={14} /> Stop Voice</>
+                                        <><MicOff size={15} /> Stop Recording</>
                                       ) : (
-                                        <><Mic size={14} /> Speak Answer</>
+                                        <><Mic size={15} /> Record Voice</>
                                       )}
                                     </motion.button>
                                   )}
@@ -1336,117 +1359,89 @@ export default function InterviewSessionPage() {
                     </div>
                   </div>
 
-                  {/* RIGHT COLUMN: Webcam Stream and Web Audio Visualizer */}
-                  {speechMode && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                      
-                      {/* Camera Frame */}
-                      <div style={{ ...S.card, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-                        <div style={{
-                          position: 'relative',
-                          width: '100%',
-                          paddingTop: '75%',
-                          borderRadius: 12,
-                          overflow: 'hidden',
-                          border: '2px solid #8b5cf6',
-                          boxShadow: '0 0 15px rgba(139, 92, 246, 0.4)',
-                          background: '#0a0a16',
-                        }}>
-                          {cameraActive ? (
-                            <video
-                              ref={videoRef}
-                              autoPlay
-                              playsInline
-                              muted
-                              style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                transform: 'scaleX(-1)'
-                              }}
-                            />
-                          ) : (
-                            <div style={{
+                  {/* RIGHT COLUMN: Webcam Stream and Web Audio Visualizer (Permanently Rendered) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    
+                    {/* Camera Frame */}
+                    <div style={{ ...S.card, padding: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+                      <div style={{
+                        position: 'relative',
+                        width: '100%',
+                        paddingTop: '75%',
+                        borderRadius: 12,
+                        overflow: 'hidden',
+                        border: '2px solid #8b5cf6',
+                        boxShadow: '0 0 15px rgba(139, 92, 246, 0.4)',
+                        background: '#0a0a16',
+                      }}>
+                        {cameraActive ? (
+                          <video
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            style={{
                               position: 'absolute',
                               top: 0,
                               left: 0,
-                              right: 0,
-                              bottom: 0,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: 'var(--text-muted)'
-                            }}>
-                              <VideoOff size={32} style={{ marginBottom: 8, color: '#fb7185' }} />
-                              <p style={{ fontSize: 12, margin: 0 }}>Webcam Offline</p>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* GPU-Accelerated Audio Spectrum bar visualizer */}
-                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                            Audio Wave Visualizer
-                          </span>
-                          <canvas
-                            ref={canvasRef}
-                            height={50}
-                            style={{
                               width: '100%',
-                              height: 50,
-                              borderRadius: 8,
-                              background: 'rgba(0, 0, 0, 0.3)',
-                              border: '1px solid var(--glass-border)'
+                              height: '100%',
+                              objectFit: 'cover',
+                              transform: 'scaleX(-1)'
                             }}
                           />
-                        </div>
-
-                        {/* Live Communication metrics */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, width: '100%' }}>
-                          <div style={{ padding: 12, borderRadius: 10, background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', textAlign: 'center' }}>
-                            <div style={{ fontSize: 22, fontWeight: 900, color: '#818cf8', fontVariantNumeric: 'tabular-nums' }}>{wpm}</div>
-                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>Est. WPM</div>
-                          </div>
-                          <div style={{ padding: 12, borderRadius: 10, background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)', textAlign: 'center' }}>
-                            <div style={{ fontSize: 22, fontWeight: 900, color: '#fbbf24', fontVariantNumeric: 'tabular-nums' }}>{fillerWords}</div>
-                            <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>Filler words</div>
-                          </div>
-                        </div>
-
-                        {/* Mode fallback button */}
-                        <button
-                          onClick={() => {
-                            cleanupMedia()
-                            cleanupSpeech()
-                            setSpeechMode(false)
-                          }}
-                          style={{
-                            width: '100%',
-                            padding: '10px',
-                            borderRadius: 8,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            background: 'transparent',
-                            border: '1px dashed var(--glass-border)',
-                            color: 'var(--text-muted)',
-                            cursor: 'pointer',
+                        ) : (
+                          <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: 6
+                            color: 'var(--text-muted)'
                           }}>
-                          <Keyboard size={14} /> Switch to Keyboard Mode
-                        </button>
+                            <VideoOff size={32} style={{ marginBottom: 8, color: '#fb7185' }} />
+                            <p style={{ fontSize: 12, margin: 0, fontWeight: 700 }}>Webcam Offline</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* GPU-Accelerated Audio Spectrum bar visualizer */}
+                      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                          Audio Wave Visualizer
+                        </span>
+                        <canvas
+                          ref={canvasRef}
+                          height={50}
+                          style={{
+                            width: '100%',
+                            height: 50,
+                            borderRadius: 8,
+                            background: 'rgba(0, 0, 0, 0.3)',
+                            border: '1px solid var(--glass-border)'
+                          }}
+                        />
+                      </div>
+
+                      {/* Live Communication metrics */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, width: '100%' }}>
+                        <div style={{ padding: 12, borderRadius: 10, background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', textAlign: 'center' }}>
+                          <div style={{ fontSize: 22, fontWeight: 900, color: '#818cf8', fontVariantNumeric: 'tabular-nums' }}>{wpm}</div>
+                          <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>Est. WPM</div>
+                        </div>
+                        <div style={{ padding: 12, borderRadius: 10, background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)', textAlign: 'center' }}>
+                          <div style={{ fontSize: 22, fontWeight: 900, color: '#fbbf24', fontVariantNumeric: 'tabular-nums' }}>{fillerWords}</div>
+                          <div style={{ fontSize: 9, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>Filler words</div>
+                        </div>
                       </div>
                     </div>
-                  )}
+                  </div>
 
                 </div>
-              </div>
             )}
           </div>
         )}

@@ -1236,6 +1236,10 @@ function Pricing() {
   const { isAuthenticated, isPro } = useAuth()
 
   const handleSelectPlan = (plan) => {
+    if (plan.name === 'Enterprise') {
+      navigate('/contact')
+      return
+    }
     if (!isAuthenticated) {
       navigate('/login')
       return
@@ -1279,7 +1283,7 @@ function Pricing() {
                 <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 4 }}>/ forever</span>
               </div>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: 'var(--text-color)', marginBottom: 32 }}>
-                {['Basic coding challenges', '1 dynamic repository scan / week', '1 AI mock interview / week', 'Saves interview history'].map(f => (
+                {['Basic coding challenges', '3 dynamic repository scans / week', '3 AI mock interviews / week', 'Saves interview history'].map(f => (
                   <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <CheckCircle size={14} style={{ color: '#10b981', flexShrink: 0 }} /> {f}
                   </li>

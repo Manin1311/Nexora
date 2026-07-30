@@ -59,6 +59,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('nexora_refresh')
     setUser(null)
     setIsAuthenticated(false)
+    setIsPro(false)
   }
 
   const refreshUser = async () => {
@@ -77,17 +78,66 @@ export function AuthProvider({ children }) {
     return data
   }
 
-  const [isPro, setIsPro] = useState(() => {
-    return localStorage.getItem('nexora_is_pro') === 'true'
-  })
+  const [isPro, setIsPro] = useState(false)
+
+  useEffect(() => {
+    // Clear old global un-scoped key if present
+    localStorage.removeItem('nexora_is_pro')
+
+    if (user?.email) {
+      const proState = localStorage.getItem(`nexora_is_pro_${user.email}`) === 'true'
+      setIsPro(proState)
+    } else {
+      setIsPro(false)
+    }
+  }, [user])
 
   const activatePro = () => {
-    localStorage.setItem('nexora_is_pro', 'true')
+    if (user?.email) {
+      localStorage.setItem(`nexora_is_pro_${user.email}`, 'true')
+    }
     setIsPro(true)
   }
 
+  const getInterviewUsageCount = () => {
+    const key = user?.email ? `nexora_interview_count_${user.email}` : 'nexora_interview_count_guest'
+    return parseInt(localStorage.getItem(key) || '0', 10)
+  }
+
+  const recordInterviewUsage = () => {
+    const key = user?.email ? `nexora_interview_count_${user.email}` : 'nexora_interview_count_guest'
+    const curr = getInterviewUsageCount()
+    localStorage.setItem(key, (curr + 1).toString())
+  }
+
+  const checkInterviewLimit = () => {
+    if (isPro) return true
+    return getInterviewUsageCount() < 3
+  }
+
+  const getScanUsageCount = () => {
+    const key = user?.email ? `nexora_scan_count_${user.email}` : 'nexora_scan_count_guest'
+    return parseInt(localStorage.getItem(key) || '0', 10)
+  }
+
+  const recordScanUsage = () => {
+    const key = user?.email ? `nexora_scan_count_${user.email}` : 'nexora_scan_count_guest'
+    const curr = getScanUsageCount()
+    localStorage.setItem(key, (curr + 1).toString())
+  }
+
+  const checkScanLimit = () => {
+    if (isPro) return true
+    return getScanUsageCount() < 3
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, isAuthenticated, isPro, activatePro, login, register, logout, refreshUser, loginWithGoogle }}>
+    <AuthContext.Provider value={{
+      user, loading, isAuthenticated, isPro, activatePro,
+      login, register, logout, refreshUser, loginWithGoogle,
+      checkInterviewLimit, recordInterviewUsage, getInterviewUsageCount,
+      checkScanLimit, recordScanUsage, getScanUsageCount
+    }}>
       {children}
     </AuthContext.Provider>
   )

@@ -15,7 +15,7 @@ const NAV_LINKS = [
 ]
 
 export default function LandingNavbar() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isPro } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const [scrolled,    setScrolled]    = useState(false)
   const [mobileOpen,  setMobileOpen]  = useState(false)
@@ -144,6 +144,11 @@ export default function LandingNavbar() {
               fontSize: 13, fontWeight: 600, color: 'var(--text-color)' }}>
               <Avatar src={user?.profile?.avatar} name={user?.full_name} rank={user?.profile?.dev_rank} size="xs" />
               <span>{user?.full_name?.split(' ')[0]}</span>
+              {isPro && (
+                <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', padding: '2px 8px', borderRadius: 8, letterSpacing: '0.05em' }}>
+                  PRO
+                </span>
+              )}
             </Link>
           ) : (
             <>

@@ -51,9 +51,12 @@ const S = {
   }
 }
 
+import LimitExceededModal from '@/components/ui/LimitExceededModal'
+
 /* ─── Main Component ────────────────────────────────────────────────── */
 export default function ProfilePage() {
-  const { user, refreshUser } = useAuth()
+  const { user, refreshUser, isPro, checkScanLimit, recordScanUsage } = useAuth()
+  const [showScanLimitModal, setShowScanLimitModal] = useState(false)
   const [editOpen,     setEditOpen]     = useState(false)
   const [saving,       setSaving]       = useState(false)
   const [summary,      setSummary]      = useState(null)
@@ -207,6 +210,14 @@ export default function ProfilePage() {
                       color: rankMeta.color, background: rankMeta.bg, border:`1px solid ${rankMeta.accent}30` }}>
                       {rankMeta.icon} {rankMeta.label}
                     </span>
+                    {isPro && (
+                      <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'4px 12px',
+                        borderRadius:20, fontSize:12, fontWeight:800,
+                        color: '#fff', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        boxShadow: '0 4px 12px rgba(99,102,241,0.4)', border: '1px solid rgba(255,255,255,0.3)' }}>
+                        ✨ PRO ACCELERATED
+                      </span>
+                    )}
                   </div>
 
                   {/* Bio */}
@@ -372,7 +383,13 @@ export default function ProfilePage() {
                 {profile.github_connected && (
                   <div style={{ display:'flex', gap:8 }}>
                     <motion.button whileHover={{ scale:1.04 }} whileTap={{ scale:0.96 }}
-                      onClick={async () => { setGhLoading(true); try { const d = await githubService.scan(); setGhData(d) } catch {} finally { setGhLoading(false) } }}
+                      onClick={async () => {
+                        if (!checkScanLimit()) {
+                          setShowScanLimitModal(true)
+                          return
+                        }
+                        setGhLoading(true); try { const d = await githubService.scan(); recordScanUsage(); setGhData(d) } catch {} finally { setGhLoading(false) }
+                      }}
                       style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:8,
                         background:'rgba(99,102,241,0.08)', border:'1px solid rgba(99,102,241,0.2)',
                         color:'#818cf8', cursor:'pointer', fontSize:12, fontWeight:700, outline:'none' }}>
@@ -612,6 +629,11 @@ export default function ProfilePage() {
         </AnimatePresence>,
         document.body
       )}
+      <LimitExceededModal
+        featureName="Repository Scans"
+        isOpen={showScanLimitModal}
+        onClose={() => setShowScanLimitModal(false)}
+      />
     </PageWrapper>
   )
 }
