@@ -486,15 +486,9 @@ export default function InterviewSessionPage() {
     }
   }
 
-  // Speech Recognition Start/Stop (Strict Mode: Requires Camera + Mic)
+  // Speech Recognition Start/Stop
   const toggleListening = () => {
     if (!speechSupported) return
-    if (!cameraActive) {
-      setMediaPermissionError(true)
-      setSpeechMode(false)
-      cleanupSpeech()
-      return
-    }
 
     if (isListening) {
       cleanupSpeech()
