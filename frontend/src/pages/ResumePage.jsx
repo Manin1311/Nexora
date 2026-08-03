@@ -1141,7 +1141,7 @@ export default function ResumePage() {
   }
 
   const handleAudit = async () => {
-    if (!targetRole.trim()) return
+    const roleToAudit = targetRole.trim() || resume.target_role || 'Software Developer'
     setAuditing(true)
     setAuditResult(null)
     // Save first so backend has latest data
@@ -1152,10 +1152,10 @@ export default function ResumePage() {
       skills: resume.skills,
       education: stripIds(resume.education),
       certifications: stripIds(resume.certifications),
-      target_role: targetRole,
+      target_role: roleToAudit,
     }).catch(() => {})
     try {
-      const res = await resumeService.runAudit(targetRole)
+      const res = await resumeService.runAudit(roleToAudit)
       setAuditResult(res.data)
     } finally {
       setAuditing(false)
@@ -1173,7 +1173,7 @@ export default function ResumePage() {
   ]
 
   const handleJdMatch = async () => {
-    if (!jobDescription.trim()) return
+    const jdToMatch = jobDescription.trim() || resume.target_role || 'General Software Engineer Role'
     setMatching(true)
     setMatchResult(null)
 
@@ -1189,7 +1189,7 @@ export default function ResumePage() {
     }).catch(() => {})
 
     try {
-      const res = await resumeService.tailorResume(jobDescription)
+      const res = await resumeService.tailorResume(jdToMatch)
       setMatchResult(res.data)
     } catch (e) {
       console.error(e)
@@ -1368,45 +1368,237 @@ export default function ResumePage() {
     }
   }
 
-  const handlePrint = () => {
-    const el = document.getElementById('resume-preview')
-    if (!el) return
-    // Use outerHTML so the root element's inline styles are included
-    const html = el.outerHTML
-    const win = window.open('', '_blank', 'width=900,height=700')
-    win.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>Resume — ${resume.personal_info?.name || 'Nexora'}</title>
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Georgia&display=swap" rel="stylesheet" />
-          <style>
-            /* Force color printing — MUST be outside @media print */
-            *, *::before, *::after {
-              box-sizing: border-box;
-              margin: 0; padding: 0;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              color-adjust: exact !important;
-            }
-            html, body {
-              background: #fff !important;
-              font-family: 'Inter', sans-serif;
-              width: 100%;
-            }
-            @media print {
-              @page { margin: 0.4cm; size: A4 portrait; }
-            }
-          </style>
-        </head>
-        <body>${html}</body>
-      </html>
-    `)
-    win.document.close()
-    win.focus()
-    setTimeout(() => { win.print(); win.close() }, 800)
+  const handlePrint = async () => {
+    const { jsPDF } = await import('jspdf')
+
+    const pi     = resume.personal_info || {}
+    const doc    = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pageW  = doc.internal.pageSize.getWidth()
+    const pageH  = doc.internal.pageSize.getHeight()
+    const margin = 15
+    const col    = pageW - margin * 2
+    let   y      = margin
+
+    const checkPage = (needed = 6) => {
+      if (y + needed > pageH - margin) { doc.addPage(); y = margin }
+    }
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+    const text = (str, x, fontSize, style = 'normal', color = [30,30,30]) => {
+      doc.setFont('helvetica', style)
+      doc.setFontSize(fontSize)
+      doc.setTextColor(...color)
+      const lines = doc.splitTextToSize(String(str || ''), col - (x - margin))
+      doc.text(lines, x, y)
+      y += lines.length * fontSize * 0.38 + 1
+    }
+
+    const hRule = (thick = false) => {
+      doc.setDrawColor(thick ? 30 : 180, thick ? 30 : 180, thick ? 30 : 180)
+      doc.setLineWidth(thick ? 0.5 : 0.2)
+      doc.line(margin, y, pageW - margin, y)
+      y += 3
+    }
+
+    const section = (title) => {
+      checkPage(10)
+      y += 2
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(10)
+      doc.setTextColor(30, 30, 30)
+      doc.text(title.toUpperCase(), margin, y)
+      y += 3
+      hRule()
+    }
+
+    // ── Header ────────────────────────────────────────────────────────────────
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(20)
+    doc.setTextColor(15, 15, 15)
+    doc.text(pi.name || 'Your Name', margin, y)
+    y += 8
+
+    if (pi.title) {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(11)
+      doc.setTextColor(80, 80, 80)
+      doc.text(pi.title, margin, y)
+      y += 6
+    }
+
+    const contacts = [pi.email, pi.phone, pi.linkedin, pi.github, pi.website].filter(Boolean)
+    if (contacts.length) {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
+      doc.setTextColor(80, 80, 80)
+      doc.text(contacts.join('  ·  '), margin, y)
+      y += 5
+    }
+
+    hRule(true)
+
+    // ── Summary ───────────────────────────────────────────────────────────────
+    if (pi.summary) {
+      section('Summary')
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9.5)
+      doc.setTextColor(40, 40, 40)
+      const lines = doc.splitTextToSize(pi.summary, col)
+      checkPage(lines.length * 4)
+      doc.text(lines, margin, y)
+      y += lines.length * 3.6 + 2
+    }
+
+    // ── Experience ────────────────────────────────────────────────────────────
+    if (resume.experience?.length) {
+      section('Experience')
+      for (const exp of resume.experience) {
+        checkPage(10)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(10)
+        doc.setTextColor(20, 20, 20)
+        doc.text(exp.role || '', margin, y)
+
+        const rightText = [exp.start_date, exp.end_date].filter(Boolean).join(' – ')
+        if (rightText) {
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(8.5)
+          doc.setTextColor(100, 100, 100)
+          const tw = doc.getTextWidth(rightText)
+          doc.text(rightText, pageW - margin - tw, y)
+        }
+        y += 4.5
+
+        if (exp.company || exp.location) {
+          doc.setFont('helvetica', 'italic')
+          doc.setFontSize(9)
+          doc.setTextColor(80, 80, 80)
+          doc.text([exp.company, exp.location].filter(Boolean).join(', '), margin, y)
+          y += 4
+        }
+
+        for (const bullet of exp.bullets || []) {
+          checkPage(6)
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(9)
+          doc.setTextColor(40, 40, 40)
+          const lines = doc.splitTextToSize('• ' + bullet, col - 4)
+          doc.text(lines, margin + 2, y)
+          y += lines.length * 3.5 + 0.5
+        }
+        y += 2
+      }
+    }
+
+    // ── Projects ──────────────────────────────────────────────────────────────
+    if (resume.projects?.length) {
+      section('Projects')
+      for (const proj of resume.projects) {
+        checkPage(10)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(10)
+        doc.setTextColor(20, 20, 20)
+        doc.text(proj.name || '', margin, y)
+        y += 4.5
+
+        if (proj.tech_stack) {
+          doc.setFont('helvetica', 'italic')
+          doc.setFontSize(8.5)
+          doc.setTextColor(80, 80, 80)
+          doc.text(proj.tech_stack, margin, y)
+          y += 4
+        }
+
+        for (const bullet of proj.bullets || []) {
+          checkPage(6)
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(9)
+          doc.setTextColor(40, 40, 40)
+          const lines = doc.splitTextToSize('• ' + bullet, col - 4)
+          doc.text(lines, margin + 2, y)
+          y += lines.length * 3.5 + 0.5
+        }
+        y += 2
+      }
+    }
+
+    // ── Skills ────────────────────────────────────────────────────────────────
+    if (resume.skills?.length) {
+      section('Skills')
+      for (const sg of resume.skills) {
+        checkPage(5)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(9)
+        doc.setTextColor(40, 40, 40)
+        const label = sg.category ? sg.category + ': ' : ''
+        const items = (sg.items || []).join(', ')
+        const full  = label + items
+        const lines = doc.splitTextToSize(full, col)
+        doc.text(lines, margin, y)
+        y += lines.length * 3.8 + 1
+      }
+    }
+
+    // ── Education ─────────────────────────────────────────────────────────────
+    if (resume.education?.length) {
+      section('Education')
+      for (const edu of resume.education) {
+        checkPage(8)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(10)
+        doc.setTextColor(20, 20, 20)
+        doc.text(edu.degree || '', margin, y)
+
+        const rightEdu = edu.grad_year ? String(edu.grad_year) : ''
+        if (rightEdu) {
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(8.5)
+          doc.setTextColor(100, 100, 100)
+          const tw = doc.getTextWidth(rightEdu)
+          doc.text(rightEdu, pageW - margin - tw, y)
+        }
+        y += 4.5
+
+        if (edu.institution) {
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(9)
+          doc.setTextColor(70, 70, 70)
+          const ln = [edu.institution, edu.gpa ? `GPA: ${edu.gpa}` : ''].filter(Boolean).join('  |  ')
+          doc.text(ln, margin, y)
+          y += 4
+        }
+        y += 1
+      }
+    }
+
+    // ── Certifications ────────────────────────────────────────────────────────
+    if (resume.certifications?.length) {
+      section('Certifications')
+      for (const cert of resume.certifications) {
+        checkPage(6)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(9.5)
+        doc.setTextColor(20, 20, 20)
+        const line1 = cert.name || ''
+        const meta  = [cert.issuer, cert.year].filter(Boolean).join(', ')
+        doc.text(line1, margin, y)
+        y += 4
+        if (meta) {
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(8.5)
+          doc.setTextColor(80, 80, 80)
+          doc.text(meta, margin, y)
+          y += 4
+        }
+        y += 1
+      }
+    }
+
+    // ── Save ──────────────────────────────────────────────────────────────────
+    const filename = `${(pi.name || 'Resume').replace(/\s+/g, '_')}_Resume.pdf`
+    doc.save(filename)
   }
+
 
   const PreviewComponent = PREVIEW_MAP[activeTemplate] || ClassicPreview
 
@@ -1611,7 +1803,7 @@ export default function ResumePage() {
                   placeholder="e.g. React Frontend Developer, Backend Python Engineer…"
                   style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-color)', fontSize: 14 }}
                 />
-                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleAudit} disabled={auditing || !targetRole.trim()}
+                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} onClick={handleAudit} disabled={auditing}
                   className={auditing ? '' : 'btn-primary'}
                   style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: auditing ? '#475569' : undefined, color: auditing ? '#fff' : undefined, fontWeight: 800, fontSize: 14, cursor: auditing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
                   {auditing ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Analyzing…</> : <><Sparkles size={16} /> Run ATS Audit</>}
@@ -1767,7 +1959,7 @@ export default function ResumePage() {
                     rows={5}
                     style={{ width: '100%', padding: '12px 16px', borderRadius: 10, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-color)', fontSize: 13, resize: 'vertical', fontFamily: 'inherit' }}
                   />
-                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleJdMatch} disabled={matching || !jobDescription.trim()}
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleJdMatch} disabled={matching}
                     className={matching ? '' : 'btn-primary'}
                     style={{ padding: '12px 24px', borderRadius: 10, border: 'none', background: matching ? '#475569' : undefined, color: matching ? '#fff' : undefined, fontWeight: 800, fontSize: 14, cursor: matching ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, alignSelf: 'flex-start' }}>
                     {matching ? <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Matching…</> : <><Sparkles size={16} /> Audit & Tailor Resume</>}

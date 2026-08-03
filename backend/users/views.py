@@ -302,16 +302,21 @@ class ResumeAuditView(APIView):
 
     def post(self, request):
         target_role = request.data.get('target_role', '').strip()
-        if not target_role:
-            return Response({'error': 'target_role is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             resume = Resume.objects.get(user=request.user)
         except Resume.DoesNotExist:
             return Response({'error': 'No resume found. Please build or upload your resume first.'}, status=status.HTTP_404_NOT_FOUND)
 
+        if not target_role:
+            target_role = resume.target_role or 'Software Developer'
+
         resume_data = ResumeSerializer(resume).data
-        audit = audit_resume_ats(dict(resume_data), target_role)
+        # Strip non-resume fields so keyword matching stays deterministic
+        clean_resume_data = {k: v for k, v in dict(resume_data).items()
+                             if k not in ('audit_report', 'ats_score', 'target_role',
+                                          'is_premium_unlocked', 'id', 'created_at', 'updated_at')}
+        audit = audit_resume_ats(clean_resume_data, target_role)
 
         resume.target_role  = target_role
         resume.ats_score    = audit.get('ats_score', 0)
@@ -345,16 +350,21 @@ class ResumeTailorView(APIView):
 
     def post(self, request):
         job_description = request.data.get('job_description', '').strip()
-        if not job_description:
-            return Response({'error': 'job_description is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             resume = Resume.objects.get(user=request.user)
         except Resume.DoesNotExist:
             return Response({'error': 'No resume found. Please build or upload your resume first.'}, status=status.HTTP_404_NOT_FOUND)
 
+        if not job_description:
+            job_description = resume.target_role or 'General Software Engineer Role'
+
         resume_data = ResumeSerializer(resume).data
-        tailored_report = tailor_resume_ats(dict(resume_data), job_description)
+        # Strip non-resume fields so keyword matching stays deterministic
+        clean_resume_data = {k: v for k, v in dict(resume_data).items()
+                             if k not in ('audit_report', 'ats_score', 'target_role',
+                                          'is_premium_unlocked', 'id', 'created_at', 'updated_at')}
+        tailored_report = tailor_resume_ats(clean_resume_data, job_description)
 
         resume.ats_score = tailored_report.get('ats_score', resume.ats_score)
         resume.audit_report = tailored_report
