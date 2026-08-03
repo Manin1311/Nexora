@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import roadmapService from '@/services/roadmapService'
 import resumeService from '@/services/resumeService'
+import { cacheGet, cacheSet } from '@/services/cache'
 import YoutubePlayerModal from '@/components/ui/YoutubePlayerModal'
 import PageTour, { HelpButton } from '@/components/ui/PageTour'
 import { usePageTour } from '@/components/ui/usePageTour'
@@ -305,8 +306,11 @@ const FOCUS_AREA_COLORS = [
 ]
 
 export default function RoadmapPage() {
-  const [roadmap,      setRoadmap]      = useState(null)
-  const [loading,      setLoading]      = useState(true)
+  const [roadmap,      setRoadmap]      = useState(() => {
+    const c = cacheGet('roadmap-data', null)
+    return c ? c.data : null
+  })
+  const [loading,      setLoading]      = useState(() => !cacheGet('roadmap-data', null))
   const [generating,   setGenerating]   = useState(false)
   const [error,        setError]        = useState('')
   const [selectedRole, setSelectedRole] = useState('fullstack_dev')
@@ -316,7 +320,10 @@ export default function RoadmapPage() {
   const navigate = useNavigate()
   const { isOpen: tourOpen, openTour, closeTour } = usePageTour('roadmap')
 
-  const [wizardStep, setWizardStep] = useState('select') // 'select', 'verify', 'active'
+  const [wizardStep, setWizardStep] = useState(() => {
+    const c = cacheGet('roadmap-data', null)
+    return (c && c.data && c.data.active !== false && c.data.weeks) ? 'active' : 'select'
+  })
   const [verifying, setVerifying] = useState(false)
   const [verificationError, setVerificationError] = useState(false)
   const [isResumeEmpty, setIsResumeEmpty] = useState(false)
@@ -352,42 +359,49 @@ export default function RoadmapPage() {
     }
   }
 
-  useEffect(() => {
-    loadRoadmap()
-  }, [])
-
-  const loadRoadmap = async () => {
-    setLoading(true)
+  const loadRoadmap = async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const data = await roadmapService.get()
+      cacheSet('roadmap-data', null, data)
       if (!data || data.active === false || !data.weeks) {
         setRoadmap(null)
         setWizardStep('select')
       } else {
         setRoadmap(data)
         setWizardStep('active')
-        // Sync the role selector to the current roadmap's target role
         if (data.target_role) setSelectedRole(data.target_role)
-        // Auto-expand first incomplete week
         const firstIncomplete = data.weeks?.find(w => !w.is_completed)
         if (firstIncomplete) {
-          setExpandedWeeks({ [firstIncomplete.id]: true })
+          setExpandedWeeks(prev => ({ [firstIncomplete.id]: true, ...prev }))
         }
-        // Fetch dynamic YouTube resources
         const roleSkills = ROLE_SKILLS[data.target_role] || []
         fetchYoutubeResourcesForSkills(roleSkills)
       }
     } catch (e) {
       if (e?.response?.status === 404) {
-        setRoadmap(null) // No roadmap yet — show generator
+        setRoadmap(null)
         setWizardStep('select')
       } else {
-        setError('Failed to load roadmap. Please try again.')
+        setError('Failed to load learning path.')
       }
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
+
+  useEffect(() => {
+    const cached = cacheGet('roadmap-data', null)
+    if (cached && !cached.stale) {
+      setLoading(false)
+      if (cached.data?.target_role) setSelectedRole(cached.data.target_role)
+    } else if (cached && cached.stale) {
+      setLoading(false)
+      loadRoadmap(true)
+    } else {
+      loadRoadmap(false)
+    }
+  }, [])
 
   const handleVerifySkills = async () => {
     setVerifying(true)
@@ -467,7 +481,23 @@ export default function RoadmapPage() {
       setShowRoleSelect(false)
       const firstWeek = data.weeks?.[0]
       if (firstWeek) setExpandedWeeks({ [firstWeek.id]: true })
-      
+
+      // Sync target role label across the platform (Resume Hub → Dev Mentor)
+      try {
+        const roleLabel = TARGET_ROLES.find(r => r.value === selectedRole)?.label || selectedRole
+        const existing = await resumeService.getResume()
+        const existingData = existing.data || {}
+        await resumeService.saveResume({
+          personal_info:   existingData.personal_info   || {},
+          experience:      existingData.experience      || [],
+          projects:        existingData.projects        || [],
+          skills:          existingData.skills          || [],
+          education:       existingData.education       || [],
+          certifications:  existingData.certifications  || [],
+          target_role:     roleLabel,
+        })
+      } catch (e) {}
+
       // Fetch dynamic YouTube resources
       const roleSkills = ROLE_SKILLS[selectedRole] || []
       fetchYoutubeResourcesForSkills(roleSkills)

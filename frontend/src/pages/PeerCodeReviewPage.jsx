@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext'
 import PageWrapper from '@/components/layout/PageWrapper'
 import PageTour, { HelpButton } from '@/components/ui/PageTour'
 import { usePageTour } from '@/components/ui/usePageTour'
+import { cacheGet, cacheSet } from '@/services/cache'
 
 const TOUR_STEPS = [
   {
@@ -60,9 +61,13 @@ export default function PeerCodeReviewPage() {
   const [searchParams] = useSearchParams()
   const { isOpen: tourOpen, openTour, closeTour } = usePageTour('peer-review')
 
-  const [requests, setRequests] = useState([])
+  const [requests, setRequests] = useState(() => {
+    // Pre-populate from cache so feed shows instantly on return
+    const cached = cacheGet('peer-reviews-all', null)
+    return cached ? cached.data : []
+  })
   const [selectedRequest, setSelectedRequest] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => !cacheGet('peer-reviews-all', null))
   const [loadingDetail, setLoadingDetail] = useState(false)
 
   // Filters
@@ -96,9 +101,8 @@ export default function PeerCodeReviewPage() {
   // Toast
   const [toast, setToast] = useState(null)
 
-  // Load feed requests
-  const fetchRequests = async () => {
-    setLoading(true)
+  const fetchRequests = async (silent = false) => {
+    if (!silent) setLoading(true)
     try {
       const params = {}
       if (filterSource === 'me') {
@@ -108,6 +112,7 @@ export default function PeerCodeReviewPage() {
       }
       const res = await peerReviewService.getAll(params)
       const data = res.data || []
+      cacheSet(`peer-reviews-${filterSource}`, null, data)
       setRequests(data)
 
       // Auto select first or keep selected
@@ -122,7 +127,22 @@ export default function PeerCodeReviewPage() {
   }
 
   useEffect(() => {
-    fetchRequests()
+    const cacheKey = `peer-reviews-${filterSource}`
+    const cached = cacheGet(cacheKey, null)
+    if (cached && !cached.stale) {
+      // Fresh cache: show immediately, no spinner
+      setRequests(cached.data)
+      setLoading(false)
+      if (cached.data.length > 0 && !selectedRequest) loadDetail(cached.data[0].id)
+    } else if (cached && cached.stale) {
+      // Stale: show immediately, refresh silently
+      setRequests(cached.data)
+      setLoading(false)
+      if (cached.data.length > 0 && !selectedRequest) loadDetail(cached.data[0].id)
+      fetchRequests(true)
+    } else {
+      fetchRequests(false)
+    }
   }, [filterSource])
 
   // Handle pre-fill from query param `?project=<id>`

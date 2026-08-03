@@ -74,7 +74,7 @@ input::-webkit-credentials-auto-fill-button {
 /* ── Base Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overscroll-behavior-y: contain; }
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -83,6 +83,7 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+  overscroll-behavior-y: contain;
   transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -255,7 +256,7 @@ body {
 
 /* ── Scrollbar Hide ── */
 .no-scrollbar::-webkit-scrollbar { display:none; }
-.no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+.no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; overscroll-behavior-y: contain; }
 
 /* ── Sidebar Layout & Responsiveness ── */
 .app-container {

@@ -21,16 +21,22 @@ class LandingReviewView(View):
     """
 
     def get(self, request, *args, **kwargs):
-        reviews = list(
-            LandingReview.objects.values('id', 'name', 'role', 'text', 'rating', 'created_at')
+        user_reviews = list(
+            LandingReview.objects.order_by('-created_at').values('id', 'name', 'role', 'text', 'rating', 'created_at')
         )
-        # If the DB is still empty, return seed data so the carousel is never blank
-        if not reviews:
-            return JsonResponse({'reviews': SEED_REVIEWS}, status=200)
-        # Convert datetime to str
-        for r in reviews:
+        for r in user_reviews:
             r['created_at'] = r['created_at'].isoformat()
-        return JsonResponse({'reviews': reviews}, status=200)
+
+        # Combine user reviews + seed reviews, ensuring no duplicate entries
+        seen = set()
+        unique_reviews = []
+        for r in user_reviews + SEED_REVIEWS:
+            key = (r.get('name', '').strip().lower(), r.get('text', '').strip().lower())
+            if key not in seen:
+                seen.add(key)
+                unique_reviews.append(r)
+
+        return JsonResponse({'reviews': unique_reviews}, status=200)
 
     def post(self, request, *args, **kwargs):
         try:

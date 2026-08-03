@@ -981,7 +981,7 @@ function Testimonials() {
 
           <div className="marquee-container">
             <div className="marquee-content-reverse">
-              {[...reviews, ...reviews, ...reviews].map((t, idx) => (
+              {[...reviews, ...reviews].map((t, idx) => (
                 <div key={idx} style={{ flexShrink: 0, width: '360px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '20px', padding: '32px', boxShadow: 'var(--glass-shadow)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', whiteSpace: 'normal' }}>
                   <div>
                     <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
@@ -1037,10 +1037,10 @@ function BottomCtaButton() {
 function PaymentModal({ plan, onClose, onSuccess }) {
   const [method, setMethod] = useState('card') // 'card' | 'upi'
   const [name, setName] = useState('')
-  const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242')
-  const [expiry, setExpiry] = useState('12/28')
-  const [cvv, setCvv] = useState('123')
-  const [upiId, setUpiId] = useState('user@okaxis')
+  const [cardNumber, setCardNumber] = useState('')
+  const [expiry, setExpiry] = useState('')
+  const [cvv, setCvv] = useState('')
+  const [upiId, setUpiId] = useState('')
   const [status, setStatus] = useState('idle') // 'idle' | 'processing' | 'success'
   const { activatePro } = useAuth()
 
@@ -1104,7 +1104,7 @@ function PaymentModal({ plan, onClose, onSuccess }) {
               <div style={{ width: 48, height: 48, borderRadius: '50%', border: '4px solid rgba(99,102,241,0.2)', borderTopColor: '#6366f1', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
               <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
               <h4 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 8 }}>Processing Secure Payment...</h4>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Communicating with Stripe Payment Gateway</p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Communicating with Payment Gateway</p>
             </div>
           ) : (
             <div>
@@ -1155,7 +1155,7 @@ function PaymentModal({ plan, onClose, onSuccess }) {
                     <div>
                       <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Cardholder Name</label>
                       <input
-                        type="text" required placeholder="e.g. Alex Chen"
+                        type="text" required placeholder="Enter cardholder name"
                         value={name} onChange={e => setName(e.target.value)}
                         style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
                       />
@@ -1164,11 +1164,10 @@ function PaymentModal({ plan, onClose, onSuccess }) {
                       <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>Card Number</label>
                       <div style={{ position: 'relative' }}>
                         <input
-                          type="text" required placeholder="4242 4242 4242 4242"
+                          type="text" required placeholder="Enter your card number"
                           value={cardNumber} onChange={e => setCardNumber(e.target.value)}
                           style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
                         />
-                        <span style={{ position: 'absolute', right: 12, top: 10, fontSize: 11, fontWeight: 800, color: '#818cf8' }}>VISA</span>
                       </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -1183,7 +1182,7 @@ function PaymentModal({ plan, onClose, onSuccess }) {
                       <div>
                         <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>CVV / CVC</label>
                         <input
-                          type="password" required maxLength={4} placeholder="123"
+                          type="password" required maxLength={4} placeholder="CVV"
                           value={cvv} onChange={e => setCvv(e.target.value)}
                           style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
                         />
@@ -1194,7 +1193,7 @@ function PaymentModal({ plan, onClose, onSuccess }) {
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>VPA / UPI ID</label>
                     <input
-                      type="text" required placeholder="e.g. username@upi or phone@gpay"
+                      type="text" required placeholder="username@upi or phone@gpay"
                       value={upiId} onChange={e => setUpiId(e.target.value)}
                       style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
                     />
@@ -1217,7 +1216,7 @@ function PaymentModal({ plan, onClose, onSuccess }) {
                 </button>
 
                 <p style={{ fontSize: 11, textAlign: 'center', color: 'var(--text-muted)', margin: 0 }}>
-                  🔒 Test sandbox payment — no real money will be charged.
+                  🔒 Encrypted 256-Bit SSL Transaction
                 </p>
               </form>
             </div>
@@ -1236,10 +1235,6 @@ function Pricing() {
   const { isAuthenticated, isPro } = useAuth()
 
   const handleSelectPlan = (plan) => {
-    if (plan.name === 'Enterprise') {
-      navigate('/contact')
-      return
-    }
     if (!isAuthenticated) {
       navigate('/login')
       return
@@ -1248,15 +1243,11 @@ function Pricing() {
       navigate('/challenges')
       return
     }
-    if (isPro && plan.name === 'Pro Acceleration') {
-      navigate('/challenges')
-      return
-    }
     setActivePlan(plan)
   }
 
   return (
-    <section id="pricing" className="section" style={{ background: 'var(--section-alt-bg)', position: 'relative', zIndex: 1, scrollMarginTop: '60px' }}>
+    <section id="pricing" style={{ padding: '100px 0', position: 'relative' }}>
       <div className="container">
         <motion.div variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once:true }}
           style={{ textAlign:'center', marginBottom:64 }}>
@@ -1271,7 +1262,7 @@ function Pricing() {
           </p>
         </motion.div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', maxWidth: '1000px', margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '28px', maxWidth: '780px', margin: '0 auto' }}>
           
           {/* Card 1: Starter */}
           <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '20px', padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 'var(--glass-shadow)' }}>
@@ -1330,30 +1321,6 @@ function Pricing() {
               }}
             >
               {isPro ? '✓ Active Pro Plan' : 'Get Pro Acceleration'}
-            </button>
-          </div>
-
-          {/* Card 3: Enterprise */}
-          <div style={{ background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '20px', padding: '32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 'var(--glass-shadow)' }}>
-            <div>
-              <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-heading)', marginBottom: 8 }}>Enterprise</h3>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>For engineering bootcamps and teams.</p>
-              <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 28 }}>
-                <span style={{ fontSize: 36, fontWeight: 900, color: 'var(--text-heading)' }}>Custom</span>
-              </div>
-              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: 'var(--text-color)', marginBottom: 32 }}>
-                {['Boocamp grading pipelines', 'Customizable rubric modules', 'Dedicated support mentor channels', 'CSV analytics exports'].map(f => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <CheckCircle size={14} style={{ color: '#10b981', flexShrink: 0 }} /> {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <button
-              onClick={() => handleSelectPlan({ name: 'Enterprise', price: '$49/mo' })}
-              style={{ width: '100%', padding: '12px 0', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'rgba(99,102,241,0.06)', color: 'var(--text-heading)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
-            >
-              Contact Sales
             </button>
           </div>
 

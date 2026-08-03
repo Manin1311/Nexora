@@ -5,6 +5,7 @@ import api from '@/services/api'
 import PageWrapper from '@/components/layout/PageWrapper'
 import PageTour, { HelpButton } from '@/components/ui/PageTour'
 import { usePageTour } from '@/components/ui/usePageTour'
+import { cacheGet, cacheSet } from '@/services/cache'
 
 const REVISION_TOUR_STEPS = [
   {
@@ -304,29 +305,42 @@ const PLAYBOOK_DATA = {
 export default function RevisionPage() {
   const [company, setCompany] = useState('Google')
   const [role, setRole] = useState('Software Engineer')
-  const [guide, setGuide] = useState(null)
+  const [guide, setGuide] = useState(() => {
+    const c = cacheGet('revision-Google-Software Engineer', null)
+    return c ? c.data : null
+  })
   const [loading, setLoading] = useState(false)
   const [activeCardIdx, setActiveCardIdx] = useState(null)
   const [viewMode, setViewMode] = useState('flashcard')
   const [activeRound, setActiveRound] = useState(2)
   const { isOpen: tourOpen, openTour, closeTour } = usePageTour('revision')
   
-  const fetchGuide = () => {
-    setLoading(true)
+  const fetchGuide = (silent = false) => {
+    if (!silent) setLoading(true)
+    const key = `revision-${company}-${role}`
     api.get(`/interviews/revision/?company=${encodeURIComponent(company)}&role=${encodeURIComponent(role)}`)
       .then(res => {
+        cacheSet(key, null, res.data)
         setGuide(res.data)
-        setLoading(false)
-        setActiveCardIdx(null)
+        if (!silent) setActiveCardIdx(null)
       })
       .catch(err => {
         console.error('Error compiling guide:', err)
-        setLoading(false)
       })
+      .finally(() => { if (!silent) setLoading(false) })
   }
 
   useEffect(() => {
-    fetchGuide()
+    const key = `revision-${company}-${role}`
+    const cached = cacheGet(key, null)
+    if (cached && !cached.stale) {
+      setGuide(cached.data)
+    } else if (cached && cached.stale) {
+      setGuide(cached.data)
+      fetchGuide(true)
+    } else {
+      fetchGuide(false)
+    }
   }, [company, role])
 
   const getFilteredFlashcards = (roundNum) => {

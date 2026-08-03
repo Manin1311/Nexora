@@ -173,7 +173,13 @@ function StatBadge({ label, value, color = '#818cf8' }) {
   )
 }
 
-function PlayerSlot({ player, isYou, isFilled }) {
+function PlayerSlot({ player, isYou, isFilled, currentUser }) {
+  const displayName = isFilled
+    ? (isYou
+        ? (currentUser?.full_name || (currentUser?.email ? currentUser.email.split('@')[0] : null) || player?.name || 'You')
+        : (player?.name || 'Opponent'))
+    : 'Waiting...'
+
   return (
     <div style={{
       flex:1, padding:'20px 24px', borderRadius:16,
@@ -200,7 +206,7 @@ function PlayerSlot({ player, isYou, isFilled }) {
       </div>
       <div style={{ textAlign:'center' }}>
         <div style={{ fontWeight:800, fontSize:14, color: isFilled ? 'var(--text-heading)' : 'rgba(255,255,255,0.15)' }}>
-          {isFilled ? player.name : 'Waiting...'}
+          {displayName}
         </div>
         <div style={{ fontSize:11, color: isFilled ? (isYou ? '#818cf8' : '#f87171') : 'transparent', fontWeight:600 }}>
           {isYou ? 'You' : 'Opponent'}
@@ -1066,10 +1072,10 @@ export default function CodeArenaPage() {
             {/* Player slots */}
             <div style={{ display:'flex', gap:16, width:'100%', maxWidth:520 }}>
               {Object.entries(roomPlayers).map(([id, p]) => (
-                <PlayerSlot key={id} player={p} isYou={id === myId} isFilled={true} />
+                <PlayerSlot key={id} player={p} isYou={id === myId} isFilled={true} currentUser={user} />
               ))}
               {Object.keys(roomPlayers).length < 2 && (
-                <PlayerSlot player={null} isYou={false} isFilled={false} />
+                <PlayerSlot player={null} isYou={false} isFilled={false} currentUser={user} />
               )}
             </div>
 

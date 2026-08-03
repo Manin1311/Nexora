@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import PageWrapper from '@/components/layout/PageWrapper'
 import PageTour, { HelpButton } from '@/components/ui/PageTour'
 import { usePageTour } from '@/components/ui/usePageTour'
+import { cacheGet, cacheSet } from '@/services/cache'
 
 const INTERVIEW_TOUR_STEPS = [
   {
@@ -56,7 +57,10 @@ import LimitExceededModal from '@/components/ui/LimitExceededModal'
 export default function InterviewLabPage() {
   const [selectedMode, setSelectedMode] = useState(null)
   const [configOpen,   setConfigOpen]   = useState(false)
-  const [sessions,     setSessions]     = useState([])
+  const [sessions, setSessions] = useState(() => {
+    const c = cacheGet('interview-sessions', null)
+    return c ? c.data : []
+  })
   const [config,       setConfig]       = useState({ difficulty:'mid', total_questions:5, topic:'' })
   const [starting,     setStarting]     = useState(false)
   const [showLimitModal, setShowLimitModal] = useState(false)
@@ -65,9 +69,17 @@ export default function InterviewLabPage() {
   const { isOpen: tourOpen, openTour, closeTour } = usePageTour('interview')
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isAuthenticated) return
+    const cached = cacheGet('interview-sessions', null)
+    if (cached && !cached.stale) {
+      setSessions(cached.data)
+    } else {
       interviewService.getSessions()
-        .then(r => setSessions(r.data.results || r.data))
+        .then(r => {
+          const data = r.data.results || r.data
+          cacheSet('interview-sessions', null, data)
+          setSessions(data)
+        })
         .catch(() => {})
     }
   }, [isAuthenticated])

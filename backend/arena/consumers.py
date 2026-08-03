@@ -45,7 +45,7 @@ class ArenaConsumer(AsyncWebsocketConsumer):
             return
 
         self.user_id = str(user.id)
-        self.username = user.full_name or user.email
+        self.username = user.full_name or (user.email.split('@')[0] if getattr(user, 'email', None) else "Developer")
 
         room = ROOMS.get(self.room_code)
         if room is None:
@@ -65,7 +65,7 @@ class ArenaConsumer(AsyncWebsocketConsumer):
             await self.accept()
             await self._send_json({
                 "type": "error",
-                "message": "You cannot join your own battle room. Share the room code with another developer to start!"
+                "message": f"Both browser windows are currently logged into the SAME account ('{self.username}'). Please log out in one window and log in with a DIFFERENT account to battle!"
             })
             await self.close(code=4000)
             return

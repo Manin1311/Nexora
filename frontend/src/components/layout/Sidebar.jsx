@@ -103,7 +103,7 @@ function NotificationBell() {
     loadNotifications(true) // Load silently on mount
     const interval = setInterval(() => {
       loadNotifications(false) // Play sound on new unread notifications
-    }, 15000)
+    }, 60000) // Poll every 60s instead of 15s to reduce server load
     return () => clearInterval(interval)
   }, [])
 
@@ -348,6 +348,7 @@ function SidebarInner({
         padding: isCollapsed ? '20px 8px' : '20px 14px 20px 14px',
         overflowY: 'auto',
         overflowX: 'hidden',
+        overscrollBehaviorY: 'contain',
       }}
     >
       {/* ── Brand ── */}

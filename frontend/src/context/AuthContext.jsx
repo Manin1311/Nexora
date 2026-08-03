@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { authService } from '@/services/authService'
+import { cacheClear } from '@/services/cache'
 
 const AuthContext = createContext(null)
 
@@ -57,6 +58,7 @@ export function AuthProvider({ children }) {
     } catch {}
     localStorage.removeItem('nexora_access')
     localStorage.removeItem('nexora_refresh')
+    cacheClear() // Wipe all cached data on logout — prevents cross-user data leaks
     setUser(null)
     setIsAuthenticated(false)
     setIsPro(false)

@@ -9,11 +9,14 @@ echo   NEXORA BACKEND ^| Django Dev Server
 echo   Auto-restart is ENABLED. Do NOT close this window.
 echo ============================================================
 echo.
-echo [%TIME%] Starting Django server on http://localhost:8000 ...
+
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8000 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
+
+echo [%TIME%] Starting Django server on http://127.0.0.1:8000 ...
 echo.
 
 cd /d "%~dp0backend"
-python manage.py runserver
+python manage.py runserver 127.0.0.1:8000
 
 echo.
 echo ============================================================

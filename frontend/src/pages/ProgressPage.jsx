@@ -11,6 +11,8 @@ import PageWrapper from '@/components/layout/PageWrapper'
 import AnimatedCounter from '@/components/ui/AnimatedCounter'
 import PageTour, { HelpButton } from '@/components/ui/PageTour'
 import { usePageTour } from '@/components/ui/usePageTour'
+import { useCachedFetch } from '@/hooks/useCachedFetch'
+import SkeletonBlock from '@/components/ui/SkeletonBlock'
 
 const PROGRESS_TOUR_STEPS = [
   {
@@ -70,40 +72,24 @@ const stagger = {
 export default function ProgressPage() {
   const { user } = useAuth()
   const { isOpen: tourOpen, openTour, closeTour } = usePageTour('progress')
-  const [summary,      setSummary]      = useState(null)
-  const [activities,   setActivities]   = useState([])
-  const [achievements, setAchievements] = useState([])
-  const [certificates, setCertificates] = useState([])
-  const [loading,      setLoading]      = useState(true)
-  const [activeTab,    setActiveTab]    = useState('overview')
+  const [activeTab, setActiveTab] = useState('overview')
 
-  useEffect(() => {
-    Promise.all([
-      progressService.getSummary(),
-      progressService.getActivity(),
-      progressService.getAchievements(),
-      progressService.getCertificates(),
-    ]).then(([s, a, ach, cert]) => {
-      setSummary(s.data)
-      setActivities(a.data.results || a.data)
-      setAchievements(ach.data.results || ach.data)
-      setCertificates(cert.data.results || cert.data)
-    }).catch(() => {}).finally(() => setLoading(false))
-  }, [])
+  const { data: summary,      loading: l1 } = useCachedFetch('progress-summary',       () => progressService.getSummary(),      null)
+  const { data: activitiesRaw,loading: l2 } = useCachedFetch('progress-activity',      () => progressService.getActivity(),     [])
+  const { data: achievementsRaw,loading:l3} = useCachedFetch('progress-achievements',  () => progressService.getAchievements(), [])
+  const { data: certificatesRaw,loading:l4} = useCachedFetch('progress-certificates',  () => progressService.getCertificates(), [])
 
-  if (loading) return (
-    <PageWrapper>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'128px 0' }}>
-        <Loader2 className="spinning" size={32} style={{ color:'#6366f1' }} />
-      </div>
-    </PageWrapper>
-  )
+  const loading       = l1 || l2 || l3 || l4
+  const activities    = activitiesRaw?.results   || activitiesRaw   || []
+  const achievements  = achievementsRaw?.results || achievementsRaw || []
+  const certificates  = certificatesRaw?.results || certificatesRaw || []
 
-  const rank      = summary?.rank || user?.profile?.dev_rank || 'explorer'
-  const xp        = summary?.xp  || user?.profile?.total_xp  || 0
-  const rankMeta  = RANK_META[rank] || RANK_META.explorer
-  const rankPct   = summary?.rank_progress || 0
-  const streak    = summary?.streak_days || user?.profile?.streak_days || 0
+  // Derive rank/xp from user profile immediately (no wait needed) — API refines these once loaded
+  const rank     = summary?.rank || user?.profile?.dev_rank || 'explorer'
+  const xp       = summary?.xp  || user?.profile?.total_xp  || 0
+  const rankMeta = RANK_META[rank] || RANK_META.explorer
+  const rankPct  = summary?.rank_progress || 0
+  const streak   = summary?.streak_days || user?.profile?.streak_days || 0
 
   const tabCounts = {
     overview: '', activity: activities.length, achievements: achievements.length, certificates: certificates.length,

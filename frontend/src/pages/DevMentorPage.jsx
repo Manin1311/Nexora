@@ -8,6 +8,7 @@ import {
 import { mentorService } from '@/services/mentorService'
 import { progressService } from '@/services/progressService'
 import roadmapService from '@/services/roadmapService'
+import resumeService from '@/services/resumeService'
 import { useAuth } from '@/context/AuthContext'
 import PageWrapper from '@/components/layout/PageWrapper'
 import PageTour, { HelpButton } from '@/components/ui/PageTour'
@@ -488,6 +489,7 @@ export default function DevMentorPage() {
   const [viewMode,       setViewMode]       = useState('chat') // 'chat' | 'matcher'
   const [summary,        setSummary]        = useState(null)
   const [roadmap,        setRoadmap]        = useState(null)
+  const [resume,         setResume]         = useState(null)
   
   const messagesContainerRef = useRef(null)
   const inputRef       = useRef(null)
@@ -496,6 +498,7 @@ export default function DevMentorPage() {
   useEffect(() => {
     progressService.getSummary().then(res => setSummary(res.data)).catch(() => {})
     roadmapService.get().then(res => setRoadmap(res)).catch(() => {})
+    resumeService.getResume().then(res => setResume(res.data)).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -673,14 +676,7 @@ export default function DevMentorPage() {
 
   const currentPersona = PERSONAS[assistantRole] || PERSONAS.advisor
 
-  if (loading) return (
-    <PageWrapper>
-      <div style={{ display:'flex', alignItems:'center', justifyContent: 'center', padding:'128px 0' }}>
-        <Loader2 className="spinning" size={32} style={{ color:'#6366f1' }} />
-      </div>
-    </PageWrapper>
-  )
-
+  // Derive rank immediately from auth context — no wait for API
   const userRank = summary?.rank || user?.profile?.dev_rank || 'explorer'
   const rankMeta = RANK_META[userRank] || RANK_META.explorer
 
@@ -1011,18 +1007,10 @@ export default function DevMentorPage() {
               <div style={{ marginBottom:12 }}>
                 <span style={{ fontSize:10, color:'var(--text-muted)', fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, display:'block', marginBottom:4 }}>Target Role</span>
                 <span style={{ fontSize:14, fontWeight:900, color:'var(--text-heading)', lineHeight:1.2 }}>
-                  {targetRoleLabels[roadmap?.target_role] || 'Software Engineer'}
+                  {targetRoleLabels[roadmap?.target_role] || roadmap?.target_role || targetRoleLabels[resume?.target_role] || resume?.target_role || 'Software Engineer'}
                 </span>
               </div>
 
-              {/* Target Focus */}
-              <div style={{ marginBottom:14, padding:'9px 12px', borderRadius:10,
-                background:'rgba(99,102,241,0.05)', border:'1px solid rgba(99,102,241,0.12)' }}>
-                <span style={{ fontSize:9, color:'var(--text-muted)', textTransform:'uppercase', fontWeight:700, letterSpacing:0.5, display:'block', marginBottom:3 }}>Target Focus</span>
-                <span style={{ fontSize:12, color:'var(--text-color)', fontWeight:700 }}>
-                  🏢 {user?.profile?.target_company || 'Big Tech FAANG Companies'}
-                </span>
-              </div>
 
               {/* XP Progress */}
               <div style={{ marginBottom:14 }}>

@@ -9,10 +9,10 @@ export default function LimitExceededModal({ featureName = 'AI Mock Interviews',
   const [showCheckout, setShowCheckout] = useState(false)
   const [method, setMethod] = useState('card')
   const [name, setName] = useState('')
-  const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242')
-  const [expiry, setExpiry] = useState('12/28')
-  const [cvv, setCvv] = useState('123')
-  const [upiId, setUpiId] = useState('user@okaxis')
+  const [cardNumber, setCardNumber] = useState('')
+  const [expiry, setExpiry] = useState('')
+  const [cvv, setCvv] = useState('')
+  const [upiId, setUpiId] = useState('')
   const [status, setStatus] = useState('idle')
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function LimitExceededModal({ featureName = 'AI Mock Interviews',
                 <div style={{ width: 48, height: 48, borderRadius: '50%', border: '4px solid rgba(99,102,241,0.2)', borderTopColor: '#6366f1', margin: '0 auto 20px', animation: 'spin 0.8s linear infinite' }} />
                 <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
                 <h4 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-heading)', marginBottom: 8 }}>Processing Secure Payment...</h4>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Communicating with Stripe Payment Gateway</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Communicating with Payment Gateway</p>
               </div>
             ) : (
               <div>
@@ -112,7 +112,7 @@ export default function LimitExceededModal({ featureName = 'AI Mock Interviews',
                   {method === 'card' ? (
                     <>
                       <input type="text" required placeholder="Cardholder Name" value={name} onChange={e => setName(e.target.value)} style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
-                      <input type="text" required placeholder="4242 4242 4242 4242" value={cardNumber} onChange={e => setCardNumber(e.target.value)} style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+                      <input type="text" required placeholder="Enter your card number" value={cardNumber} onChange={e => setCardNumber(e.target.value)} style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                         <input type="text" required placeholder="MM/YY" value={expiry} onChange={e => setExpiry(e.target.value)} style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
                         <input type="password" required maxLength={4} placeholder="CVV" value={cvv} onChange={e => setCvv(e.target.value)} style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />

@@ -104,8 +104,9 @@ class GetRoomView(APIView):
 
         # Prevent creator/host from self-joining their own room in another window
         if host_id and user_id == host_id and user_id in room["players"]:
+            user_name = request.user.full_name or request.user.email.split('@')[0]
             return Response(
-                {"error": "You cannot join your own battle room. Share the room code with another developer!"},
+                {"error": f"Both browser windows are currently logged into the SAME account ('{user_name}'). Please log out in one window and log in with a DIFFERENT account to battle!"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 

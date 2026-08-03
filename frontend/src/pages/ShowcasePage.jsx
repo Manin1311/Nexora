@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext'
 import PageWrapper from '@/components/layout/PageWrapper'
 import PageTour, { HelpButton } from '@/components/ui/PageTour'
 import { usePageTour } from '@/components/ui/usePageTour'
+import { cacheGet, cacheSet } from '@/services/cache'
 
 const SHOWCASE_TOUR_STEPS = [
   {
@@ -658,10 +659,12 @@ function ProjectDetailModal({ project, isOpen, onClose, onLike, isOwn, user, onE
   )
 }
 
-/* ── Main Page ── */
 export default function ShowcasePage() {
-  const [projects,      setProjects]      = useState([])
-  const [loading,       setLoading]       = useState(true)
+  const [projects,      setProjects]      = useState(() => {
+    const c = cacheGet('showcase-all', null)
+    return c ? c.data : []
+  })
+  const [loading,       setLoading]       = useState(() => !cacheGet('showcase-all', null))
   const [modalOpen,     setModalOpen]     = useState(false)
   const [detailOpen,    setDetailOpen]    = useState(false)
   const [editProject,   setEditProject]   = useState(null)
@@ -670,14 +673,28 @@ export default function ShowcasePage() {
   const { isAuthenticated, user } = useAuth()
   const { isOpen: tourOpen, openTour, closeTour } = usePageTour('showcase')
 
-  const loadProjects = () => {
+  const loadProjects = (silent = false) => {
     showcaseService.getAll()
-      .then(r => setProjects(r.data.results || r.data))
+      .then(r => {
+        const data = r.data.results || r.data
+        cacheSet('showcase-all', null, data)
+        setProjects(data)
+      })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => { if (!silent) setLoading(false) })
   }
 
-  useEffect(() => { loadProjects() }, [])
+  useEffect(() => {
+    const cached = cacheGet('showcase-all', null)
+    if (cached && !cached.stale) {
+      setLoading(false) // instant
+    } else if (cached && cached.stale) {
+      setLoading(false)
+      loadProjects(true) // background refresh
+    } else {
+      loadProjects(false)
+    }
+  }, [])
 
   const handleEdit   = p => { setEditProject(p); setModalOpen(true) }
   const handleDelete = async id => {
