@@ -271,16 +271,41 @@ export default function InterviewSessionPage() {
   const shouldListenRef = useRef(false)
   const baseTextRef = useRef('')
   const finalChunksRef = useRef([])
+  const restartSpeechTimeoutRef = useRef(null)
 
   const cleanupSpeech = () => {
     shouldListenRef.current = false
+    if (restartSpeechTimeoutRef.current) {
+      clearTimeout(restartSpeechTimeoutRef.current)
+      restartSpeechTimeoutRef.current = null
+    }
     if (recognitionRef.current) {
       try {
+        recognitionRef.current.onresult = null
+        recognitionRef.current.onend = null
+        recognitionRef.current.onerror = null
         recognitionRef.current.stop()
       } catch {}
       recognitionRef.current = null
     }
     setIsListening(false)
+  }
+
+  const handleAnswerChange = (newVal) => {
+    setAnswer(newVal)
+    answerRef.current = newVal
+    baseTextRef.current = newVal
+
+    if (shouldListenRef.current) {
+      if (restartSpeechTimeoutRef.current) {
+        clearTimeout(restartSpeechTimeoutRef.current)
+      }
+      restartSpeechTimeoutRef.current = setTimeout(() => {
+        if (shouldListenRef.current) {
+          startSpeechInstance()
+        }
+      }, 350)
+    }
   }
 
   const cleanTextForSpeech = (text) => {
@@ -487,93 +512,114 @@ export default function InterviewSessionPage() {
   }
 
   // Speech Recognition Start/Stop
+  const startSpeechInstance = () => {
+    if (!speechSupported) return
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onresult = null
+        recognitionRef.current.onend = null
+        recognitionRef.current.onerror = null
+        recognitionRef.current.stop()
+      } catch {}
+      recognitionRef.current = null
+    }
+
+    if (!shouldListenRef.current) return
+
+    baseTextRef.current = answerRef.current || ''
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) return
+
+    const rec = new SpeechRecognition()
+    rec.continuous = true
+    rec.interimResults = true
+
+    if (!startTimeRef.current) {
+      startTimeRef.current = Date.now()
+    }
+
+    rec.onstart = () => {
+      if (shouldListenRef.current) {
+        setIsListening(true)
+      }
+    }
+
+    rec.onresult = (event) => {
+      if (!shouldListenRef.current) return
+
+      let finalParts = []
+      let interimText = ''
+
+      for (let i = 0; i < event.results.length; ++i) {
+        const phrase = event.results[i][0].transcript.trim()
+        if (!phrase) continue
+
+        if (event.results[i].isFinal) {
+          finalParts.push(phrase)
+        } else {
+          interimText = phrase
+        }
+      }
+
+      const base = baseTextRef.current.trim()
+      const finals = finalParts.join(' ').trim()
+
+      let fullText = base
+      if (finals) {
+        fullText = fullText ? fullText + ' ' + finals : finals
+      }
+      if (interimText) {
+        fullText = fullText ? fullText + ' ' + interimText : interimText
+      }
+
+      setAnswer(fullText)
+    }
+
+    rec.onerror = (err) => {
+      if (err.error === 'no-speech' || err.error === 'aborted') {
+        return
+      }
+      console.error('Speech recognition error code:', err.error, err)
+      if (err.error === 'not-allowed' || err.error === 'permission-denied' || err.error === 'service-not-allowed') {
+        shouldListenRef.current = false
+        setIsListening(false)
+        setMediaPermissionError(true)
+      }
+    }
+
+    rec.onend = () => {
+      if (shouldListenRef.current) {
+        try {
+          baseTextRef.current = answerRef.current || ''
+          rec.start()
+        } catch {
+          setIsListening(false)
+        }
+      } else {
+        setIsListening(false)
+      }
+    }
+
+    try {
+      rec.start()
+      recognitionRef.current = rec
+    } catch (err) {
+      console.error('Speech recognition start failed:', err)
+      shouldListenRef.current = false
+      setIsListening(false)
+    }
+  }
+
   const toggleListening = () => {
     if (!speechSupported) return
 
-    if (isListening) {
+    if (isListening || shouldListenRef.current) {
       cleanupSpeech()
     } else {
-      cleanupSpeech()
       shouldListenRef.current = true
-      baseTextRef.current = answerRef.current || ''
-      finalChunksRef.current = []
-
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-      const rec = new SpeechRecognition()
-      rec.continuous = true
-      rec.interimResults = true
-
-      if (!startTimeRef.current) {
-        startTimeRef.current = Date.now()
-      }
-
-      rec.onstart = () => setIsListening(true)
-
-      rec.onresult = (event) => {
-        let finalParts = []
-        let interimText = ''
-
-        for (let i = 0; i < event.results.length; ++i) {
-          const phrase = event.results[i][0].transcript.trim()
-          if (!phrase) continue
-
-          if (event.results[i].isFinal) {
-            finalParts.push(phrase)
-          } else {
-            interimText = phrase
-          }
-        }
-
-        const base = baseTextRef.current.trim()
-        const finals = finalParts.join(' ').trim()
-
-        let fullText = base
-        if (finals) {
-          fullText = fullText ? fullText + ' ' + finals : finals
-        }
-        if (interimText) {
-          fullText = fullText ? fullText + ' ' + interimText : interimText
-        }
-
-        setAnswer(fullText)
-      }
-
-      rec.onerror = (err) => {
-        if (err.error === 'no-speech' || err.error === 'aborted') {
-          // Silence or brief pause detected; keep shouldListenRef true so onend auto-restarts!
-          return
-        }
-        console.error('Speech recognition error code:', err.error, err)
-        if (err.error === 'not-allowed' || err.error === 'permission-denied' || err.error === 'service-not-allowed') {
-          shouldListenRef.current = false
-          setIsListening(false)
-          setMediaPermissionError(true)
-        }
-      }
-
-      rec.onend = () => {
-        if (shouldListenRef.current) {
-          try {
-            // Update base text to currently accumulated full text before starting next chunk
-            baseTextRef.current = answerRef.current || ''
-            finalChunksRef.current = []
-            rec.start()
-          } catch {
-            setIsListening(false)
-          }
-        } else {
-          setIsListening(false)
-        }
-      }
-
-      try {
-        rec.start()
-        recognitionRef.current = rec
-      } catch (err) {
-        console.error('Speech recognition start failed:', err)
-        shouldListenRef.current = false
-        setIsListening(false)
-      }
+      startSpeechInstance()
     }
   }
 
@@ -1200,7 +1246,7 @@ export default function InterviewSessionPage() {
                     </div>
                     <textarea
                       value={answer}
-                      onChange={e => setAnswer(e.target.value)}
+                      onChange={e => handleAnswerChange(e.target.value)}
                       placeholder="Type your response here or speak using the button above..."
                       rows={4}
                       style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-color)', fontSize: 13, fontFamily: 'inherit', resize: 'vertical' }}
@@ -1240,7 +1286,7 @@ export default function InterviewSessionPage() {
                               <textarea
                                 ref={textareaRef}
                                 value={answer}
-                                onChange={e => setAnswer(e.target.value)}
+                                onChange={e => handleAnswerChange(e.target.value)}
                                 placeholder={speechMode ? "Click the microphone below to talk, or type here to start answering..." : "Type your answer here. Be specific and thorough..."}
                                 style={{ width: '100%', minHeight: 180, padding: '14px 16px', borderRadius: 12, fontSize: 14, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', outline: 'none', resize: 'vertical', lineHeight: 1.7, fontFamily: 'inherit', transition: 'all 0.4s ease' }}
                                 onFocus={e => e.target.style.borderColor = 'rgba(139,92,246,0.5)'}
