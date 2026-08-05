@@ -36,7 +36,15 @@ class CreateRoomView(APIView):
         
         if mode == "aptitude":
             challenge = None
-            questions = random.sample(APTITUDE_CHALLENGES, min(len(APTITUDE_CHALLENGES), 5))
+            easy_pool = [q for q in APTITUDE_CHALLENGES if q.get("difficulty") == "easy"]
+            med_pool  = [q for q in APTITUDE_CHALLENGES if q.get("difficulty") == "medium"]
+            hard_pool = [q for q in APTITUDE_CHALLENGES if q.get("difficulty") == "hard"]
+            
+            selected_easy = random.sample(easy_pool, min(len(easy_pool), 2))
+            selected_med  = random.sample(med_pool, min(len(med_pool), 1))
+            selected_hard = random.sample(hard_pool, min(len(hard_pool), 2))
+            
+            questions = selected_easy + selected_med + selected_hard
         else:
             challenge = random.choice(ARENA_CHALLENGES)
             questions = []

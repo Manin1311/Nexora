@@ -84,7 +84,7 @@ class ArenaConsumer(AsyncWebsocketConsumer):
             "name": player_display_name,
             "progress": 0,
             "tests_passed": 0,
-            "health": 100,
+            "health": 0 if room.get("mode") == "aptitude" else 100,
             "score": 0,
             "answered_in_round": False,
             "last_answer_correct": None,
@@ -343,33 +343,27 @@ class ArenaConsumer(AsyncWebsocketConsumer):
                 if not room or room["status"] != "battle":
                     return
 
-                correct_opt = questions[q_idx]["correct_option"]
+                q_obj = questions[q_idx]
+                correct_opt = q_obj["correct_option"]
+                q_diff = q_obj.get("difficulty", "easy")
+                points_for_q = 10 if q_diff == "easy" else (20 if q_diff == "medium" else 30)
+
                 player_ids = list(room["players"].keys())
-                
-                damage_taken = {pid: 0 for pid in player_ids}
                 correctness = {}
 
                 for pid in player_ids:
                     p = room["players"][pid]
                     ans = p.get("last_answer")
-                    if ans is None:
-                        damage_taken[pid] += 10
-                        correctness[pid] = False
-                    elif ans == correct_opt:
+                    if ans == correct_opt:
                         correctness[pid] = True
                         p["progress"] = min(p.get("progress", 0) + 20, 100)
-                        p["score"] = p.get("score", 0) + 100
-                        for opp_id in player_ids:
-                            if opp_id != pid:
-                                damage_taken[opp_id] += 20
+                        p["score"] = p.get("score", 0) + points_for_q
+                        p["health"] = min(p.get("health", 0) + points_for_q, 100)
                     else:
                         correctness[pid] = False
-                        damage_taken[pid] += 20
 
-                # Apply damages
                 for pid in player_ids:
                     p = room["players"][pid]
-                    p["health"] = max(p.get("health", 100) - damage_taken[pid], 0)
                     p["last_answer_correct"] = correctness[pid]
 
                 # Send round end event

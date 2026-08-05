@@ -702,23 +702,23 @@ export default function FundamentalsPage() {
           </div>
 
           {/* Main workspace */}
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '400px 1fr', gap: 12, minHeight: 0, position: 'relative', zIndex: 1, marginTop: 12 }}>
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'minmax(300px, 400px) 1fr', gap: 14, minHeight: 0, position: 'relative', zIndex: 1, marginTop: 12, width: '100%', boxSizing: 'border-box' }}>
 
             {/* Left: Problem Description */}
             <div style={{
               background: 'var(--card-bg)', border: '1px solid var(--card-border)',
               borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 16,
-              minHeight: 0, overflowY: 'auto'
+              minHeight: 0, overflowY: 'auto', overflowX: 'hidden', wordBreak: 'break-word'
             }} className="no-scrollbar">
 
               {/* Step Selector Tab */}
-              <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--card-border)', paddingBottom: 10 }}>
+              <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--card-border)', paddingBottom: 10, flexWrap: 'wrap' }}>
                 {challenges.map((c, idx) => (
                   <button
                     key={c.id}
                     onClick={() => setActiveChallengeIdx(idx)}
                     style={{
-                      flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none', outline: 'none',
+                      flex: 1, minWidth: 80, padding: '8px 12px', borderRadius: 8, border: 'none', outline: 'none',
                       fontSize: 12.5, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
                       background: activeChallengeIdx === idx ? 'rgba(99,102,241,0.12)' : 'transparent',
                       color: activeChallengeIdx === idx ? '#818cf8' : 'var(--text-muted)',
@@ -733,7 +733,7 @@ export default function FundamentalsPage() {
               {/* Active Question details */}
               {challenges[activeChallengeIdx] && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800, background: 'rgba(99,102,241,0.08)', color: '#818cf8' }}>
                       {challenges[activeChallengeIdx].topic}
                     </span>
@@ -745,10 +745,10 @@ export default function FundamentalsPage() {
                       {challenges[activeChallengeIdx].difficulty.toUpperCase()}
                     </span>
                   </div>
-                  <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-heading)', margin: 0 }}>
+                  <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-heading)', margin: 0, wordBreak: 'break-word' }}>
                     {challenges[activeChallengeIdx].title}
                   </h3>
-                  <p style={{ fontSize: 13, color: 'var(--text-color)', lineHeight: 1.6, whiteSpace: 'pre-line', margin: 0 }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-color)', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
                     {challenges[activeChallengeIdx].description}
                   </p>
                   <div style={{ marginTop: 8, padding: 14, borderRadius: 10, background: 'rgba(255,255,255,0.015)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 10 }}>

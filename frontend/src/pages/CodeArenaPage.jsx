@@ -1115,7 +1115,7 @@ export default function CodeArenaPage() {
                     <div>
                       <div style={{ fontSize:14, fontWeight:900, color:'#ffffff', letterSpacing: '-0.01em' }}>{myPlayer?.name || user?.full_name || 'You'}</div>
                       <div style={{ fontSize:11, color:'#818cf8', fontWeight:700, display:'flex', alignItems:'center', gap:4 }}>
-                        <Heart size={10} style={{ color:'#ef4444', fill:'#ef4444' }} /> HP: {myPlayer?.health ?? 100}/100
+                        <Trophy size={11} style={{ color:'#818cf8' }} /> SCORE: {myPlayer?.score ?? myPlayer?.health ?? 0}/100
                       </div>
                     </div>
                   </div>
@@ -1142,7 +1142,7 @@ export default function CodeArenaPage() {
                     <div style={{ textAlign:'right' }}>
                       <div style={{ fontSize:14, fontWeight:900, color:'#f87171', letterSpacing: '-0.01em' }}>{rival?.name || 'Opponent'}</div>
                       <div style={{ fontSize:11, color:'#f87171', fontWeight:700, display:'flex', alignItems:'center', gap:4, justifyContent:'flex-end' }}>
-                        <Heart size={10} style={{ color:'#ef4444', fill:'#ef4444' }} /> HP: {rival?.health ?? 100}/100
+                        <Trophy size={11} style={{ color:'#f87171' }} /> SCORE: {rival?.score ?? rival?.health ?? 0}/100
                       </div>
                     </div>
                     <div style={{ width:38, height:38, borderRadius:12, background:'linear-gradient(135deg,#ef4444,#f43f5e)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, border: '1px solid rgba(239,68,68,0.5)' }}>🥷</div>
