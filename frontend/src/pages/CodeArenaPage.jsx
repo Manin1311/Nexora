@@ -299,6 +299,18 @@ export default function CodeArenaPage() {
     triggerBattleViolationRef.current = triggerBattleViolation
   }, [triggerBattleViolation])
 
+  const isPrintScreenRef = useRef(false)
+
+  // Auto-collapse sidebar during battle for full screen experience
+  useEffect(() => {
+    if (screen === 'battle') {
+      window.dispatchEvent(new CustomEvent('nexora_sidebar_collapse', { detail: { collapsed: true } }))
+    } else {
+      const isSavedCollapsed = localStorage.getItem('nexora_sidebar_collapsed') === 'true'
+      window.dispatchEvent(new CustomEvent('nexora_sidebar_collapse', { detail: { collapsed: isSavedCollapsed } }))
+    }
+  }, [screen])
+
   // Battle proctoring window blur / visibility event listeners
   useEffect(() => {
     if (screen !== 'battle') return
@@ -317,10 +329,17 @@ export default function CodeArenaPage() {
 
     const handleBlur = () => {
       if (Date.now() - battleStartTimestampRef.current < 200) return
-      triggerBattleViolationRef.current?.()
+      if (isPrintScreenRef.current) return
+      // Ignore blur if document is still visible (e.g. Snipping tool / screenshot taking overlay)
+      setTimeout(() => {
+        if (document.hidden || document.visibilityState === 'hidden') {
+          triggerBattleViolationRef.current?.()
+        }
+      }, 150)
     }
 
     const handleVisibilityChange = () => {
+      if (isPrintScreenRef.current) return
       if (document.visibilityState === 'hidden') {
         if (Date.now() - battleStartTimestampRef.current < 200) return
         triggerBattleViolationRef.current?.()
@@ -336,6 +355,17 @@ export default function CodeArenaPage() {
 
     const handleKeyDown = (e) => {
       if (Date.now() - battleStartTimestampRef.current < 200) return
+      // Ignore screenshot shortcuts
+      if (
+        e.key === 'PrintScreen' ||
+        (e.key === 'S' && (e.metaKey || e.ctrlKey) && e.shiftKey) ||
+        (e.key === 's' && (e.metaKey || e.ctrlKey) && e.shiftKey)
+      ) {
+        isPrintScreenRef.current = true
+        setTimeout(() => { isPrintScreenRef.current = false }, 4000)
+        return
+      }
+
       if (
         e.key === 'Escape' ||
         e.key === 'Alt' ||

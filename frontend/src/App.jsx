@@ -102,6 +102,16 @@ function AppRoutes() {
     })
   }
 
+  useEffect(() => {
+    const handleSidebarEvent = (e) => {
+      if (typeof e.detail?.collapsed === 'boolean') {
+        setCollapsed(e.detail.collapsed)
+      }
+    }
+    window.addEventListener('nexora_sidebar_collapse', handleSidebarEvent)
+    return () => window.removeEventListener('nexora_sidebar_collapse', handleSidebarEvent)
+  }, [])
+
   const { isAuthenticated } = useAuth()
 
   const sidebarW = collapsed ? 68 : 216
