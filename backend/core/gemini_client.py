@@ -1158,19 +1158,20 @@ def parse_resume_from_text(raw_text: str) -> dict:
         "You are an expert resume parser. Extract ALL structured information from the raw resume text "
         "and return ONLY a valid JSON object with no markdown fencing. "
         "CRITICAL RULES: "
-        "1) Copy EVERY bullet point exactly as written — do NOT summarise, skip, or merge any bullet. "
-        "2) Include EVERY skill, technology, tool, language, and framework mentioned anywhere. "
-        "3) Extract the candidate's city/location from the header and put it in personal_info.location. "
-        "4) If the resume contains sections not covered by the standard schema (extra-curricular "
+        "1) Copy the candidate's FULL, COMPLETE Professional Summary / Objective / Profile verbatim into personal_info.summary — include ALL paragraphs, sentences, and words without truncating, shortening, or summarizing any part. "
+        "2) Copy EVERY bullet point under Experience and Projects exactly as written — do NOT summarise, skip, or merge any bullet. "
+        "3) Include EVERY skill, technology, tool, language, and framework mentioned anywhere in the resume. "
+        "4) Extract the candidate's city/location from the header and put it in personal_info.location. "
+        "5) If the resume contains sections not covered by the standard schema (extra-curricular "
         "activities, achievements, awards, volunteer work, publications, hobbies, languages spoken, "
-        "leadership, etc.) capture each such section in custom_sections as {\"title\": \"...\", "
-        "\"items\": [\"...\", ...]}.  Leave custom_sections as [] if there are none."
+        "soft skills, leadership, etc.) capture each such section in custom_sections as {\"title\": \"...\", "
+        "\"items\": [\"...\", ...]}. Leave custom_sections as [] if there are none."
     )
     prompt = f"""Parse the following resume text and extract ALL information into a structured JSON object.
 
 Return ONLY valid JSON with this exact structure (use empty arrays/dicts for missing sections):
 {{
-  "personal_info": {{"name": "", "title": "", "location": "", "email": "", "phone": "", "linkedin": "", "github": "", "website": "", "summary": ""}},
+  "personal_info": {{"name": "", "title": "", "location": "", "email": "", "phone": "", "linkedin": "", "github": "", "website": "", "summary": "COPY ENTIRE MULTI-PARAGRAPH SUMMARY VERBATIM"}},
   "experience": [
     {{"company": "", "role": "", "location": "", "start": "", "end": "", "current": false, "bullets": ["COPY EVERY BULLET VERBATIM"]}}
   ],
@@ -1185,7 +1186,7 @@ Return ONLY valid JSON with this exact structure (use empty arrays/dicts for mis
     {{"category": "Other", "items": []}}
   ],
   "education": [
-    {{"institution": "", "degree": "", "field": "", "year": "", "gpa": ""}}
+    {{"institution": "", "degree": "", "year": "", "gpa": ""}}
   ],
   "certifications": [
     {{"name": "", "issuer": "", "year": "", "url": ""}}
@@ -1196,11 +1197,13 @@ Return ONLY valid JSON with this exact structure (use empty arrays/dicts for mis
 }}
 
 IMPORTANT:
-- Copy ALL bullet points exactly — do NOT drop, shorten, or merge any.
+- Copy the entire Professional Summary / Objective verbatim into personal_info.summary without dropping any sentence or paragraph.
+- Copy ALL bullet points under Experience and Projects exactly as written — do NOT drop, shorten, or merge any.
 - Put location/city from the resume header into personal_info.location.
-- If a certification has a LinkedIn URL or credential link, put it in certifications[].url.
+- In education, put the complete degree name (including discipline e.g. "Bachelor of Engineering in Computer Science") into "degree".
+- If the Certifications section contains any text or link (even a single line like "All certifications are listed on LinkedIn: ..."), extract the description into certifications[].name and the URL into certifications[].url.
 - Classify skills correctly (Languages, Frameworks, Tools, Databases, Other). Put anything that doesn't fit neatly into Other.
-- Use custom_sections for: Extra-Curricular Activities, Achievements, Awards, Volunteer, Publications, Languages spoken, Leadership, Hobbies, etc.
+- Use custom_sections for: Extra-Curricular Activities, Achievements, Soft Skills, Awards, Volunteer, Publications, Languages spoken, Leadership, Hobbies, etc.
 
 RESUME TEXT:
 {raw_text[:15000]}"""
@@ -1211,7 +1214,15 @@ RESUME TEXT:
         text = re.sub(r'\s*```$', '', text)
         match = re.search(r'\{.*\}', text, re.DOTALL)
         if match:
-            parsed = json.loads(match.group())
+            json_str = match.group()
+            # Fix common LLM JSON syntax issues (trailing commas before closing brackets)
+            json_str = re.sub(r',\s*([\]}])', r'\1', json_str)
+            try:
+                parsed = json.loads(json_str)
+            except Exception:
+                # Handle unescaped newlines inside strings
+                json_str_clean = re.sub(r'[\r\n]+', ' ', json_str)
+                parsed = json.loads(json_str_clean)
             if isinstance(parsed, dict):
                 return parsed
     except Exception as e:
@@ -1319,10 +1330,18 @@ def calculate_deterministic_jd_match(resume_data: dict, job_description: str) ->
         'rest', 'graphql', 'grpc', 'microservices', 'system design', 'agile', 'scrum', 'devops', 'testing'
     ]
 
-    jd_keywords = [kw for kw in tech_catalog if re.search(r'\b' + re.escape(kw) + r'\b', jd_lower)]
+    def kw_in_text(kw, text):
+        k = kw.lower()
+        t = text.lower()
+        if k in ('c++', 'c#', 'ci/cd'):
+            return k in t
+        pattern = r'(?<![a-zA-Z0-9])' + re.escape(k) + r'(?![a-zA-Z0-9])'
+        return bool(re.search(pattern, t))
+
+    jd_keywords = [kw for kw in tech_catalog if kw_in_text(kw, jd_lower)]
 
     resume_text = json.dumps(resume_data).lower()
-    matched_keywords = [kw for kw in jd_keywords if re.search(r'\b' + re.escape(kw) + r'\b', resume_text)]
+    matched_keywords = [kw for kw in jd_keywords if kw_in_text(kw, resume_text)]
     missing_keywords = [kw for kw in jd_keywords if kw not in matched_keywords]
 
     if jd_keywords:

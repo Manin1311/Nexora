@@ -434,7 +434,7 @@ function PersonalSection({ data, onChange }) {
       <Input label="LinkedIn URL" value={data.linkedin || ''} onChange={set('linkedin')} placeholder="https://linkedin.com/in/..." />
       <Input label="GitHub URL" value={data.github || ''} onChange={set('github')} placeholder="https://github.com/..." />
       <div style={{ gridColumn: '1/-1' }}><Input label="Website / Portfolio" value={data.website || ''} onChange={set('website')} placeholder="https://yourportfolio.com" /></div>
-      <div style={{ gridColumn: '1/-1' }}><Input label="Professional Summary" value={data.summary || ''} onChange={set('summary')} placeholder="Brief 2–3 sentence professional summary..." rows={3} /></div>
+      <div style={{ gridColumn: '1/-1' }}><Input label="Professional Summary" value={data.summary || ''} onChange={set('summary')} placeholder="Professional summary / objective (multi-paragraph supported)..." rows={6} /></div>
     </div>
   )
 }
@@ -574,7 +574,7 @@ function SkillsSection({ groups, onChange }) {
 }
 
 function EducationSection({ items, onChange }) {
-  const add = () => onChange([...items, { _id: uid(), institution: '', degree: '', field: '', year: '', gpa: '' }])
+  const add = () => onChange([...items, { _id: uid(), institution: '', degree: '', year: '', gpa: '' }])
   const update = (id, data) => onChange(items.map(x => x._id === id ? { ...x, ...data } : x))
   const remove = (id) => onChange(items.filter(x => x._id !== id))
   return (
@@ -587,8 +587,7 @@ function EducationSection({ items, onChange }) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <Input label="Institution" value={edu.institution} onChange={v => update(edu._id, { institution: v })} placeholder="IIT Bombay" />
-            <Input label="Degree" value={edu.degree} onChange={v => update(edu._id, { degree: v })} placeholder="B.Tech" />
-            <Input label="Field of Study" value={edu.field} onChange={v => update(edu._id, { field: v })} placeholder="Computer Science" />
+            <Input label="Degree" value={edu.degree} onChange={v => update(edu._id, { degree: v })} placeholder="B.Tech in Computer Science" />
             <Input label="Year" value={edu.year} onChange={v => update(edu._id, { year: v })} placeholder="2022" />
             <Input label="GPA / %ile" value={edu.gpa} onChange={v => update(edu._id, { gpa: v })} placeholder="8.5 / 10" />
           </div>
@@ -686,9 +685,45 @@ function CustomSectionsSection({ items, onChange }) {
 }
 
 // ─── Resume Preview Templates ────────────────────────────────────────────────
+const isStr = (s) => Boolean(s && String(s).trim())
+
+const getValidExperience = (arr) => (arr || []).filter(e => e && (
+  isStr(e.company) || isStr(e.role) || isStr(e.location) || isStr(e.start) || isStr(e.end) || (e.bullets || []).some(isStr)
+))
+
+const getValidProjects = (arr) => (arr || []).filter(p => p && (
+  isStr(p.name) || isStr(p.description) || isStr(p.url) || 
+  (Array.isArray(p.tech_stack) ? p.tech_stack.some(isStr) : isStr(p.tech_stack)) || 
+  (p.bullets || []).some(isStr)
+))
+
+const getValidSkills = (arr) => (arr || []).map(g => ({
+  ...g,
+  items: (g.items || []).filter(isStr)
+})).filter(g => isStr(g.category) && g.items.length > 0)
+
+const getValidEducation = (arr) => (arr || []).filter(e => e && (
+  isStr(e.institution) || isStr(e.degree) || isStr(e.year) || isStr(e.gpa)
+))
+
+const getValidCerts = (arr) => (arr || []).filter(c => c && (
+  isStr(c.name) || isStr(c.issuer) || isStr(c.url) || isStr(c.year)
+))
+
+const getValidCustomSections = (arr) => (arr || []).map(sec => ({
+  ...sec,
+  items: (sec.items || []).filter(isStr)
+})).filter(sec => isStr(sec.title) && sec.items.length > 0)
+
 function ClassicPreview({ resume }) {
   const pi = resume.personal_info || {}
-  const allSkills = (resume.skills || []).flatMap(g => g.items || [])
+  const validExp = getValidExperience(resume.experience)
+  const validProj = getValidProjects(resume.projects)
+  const validSkills = getValidSkills(resume.skills)
+  const validEdu = getValidEducation(resume.education)
+  const validCerts = getValidCerts(resume.certifications)
+  const validCustom = getValidCustomSections(resume.custom_sections)
+
   return (
     <div id="resume-preview" style={{ fontFamily: 'Georgia, serif', color: '#1e293b', padding: '32px 40px', background: '#fff', fontSize: 12, lineHeight: 1.5, minHeight: 700 }}>
       {/* Header */}
@@ -701,25 +736,25 @@ function ClassicPreview({ resume }) {
       </div>
 
       {/* Summary */}
-      {pi.summary && (
+      {isStr(pi.summary) && (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: 2, marginBottom: 6 }}>Summary</div>
-          <p style={{ margin: 0, color: '#334155' }}>{pi.summary}</p>
+          <p style={{ margin: 0, color: '#334155', whiteSpace: 'pre-line' }}>{pi.summary}</p>
         </div>
       )}
 
       {/* Experience */}
-      {(resume.experience || []).length > 0 && (
+      {validExp.length > 0 && (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: 2, marginBottom: 8 }}>Experience</div>
-          {resume.experience.map((e, i) => (
+          {validExp.map((e, i) => (
             <div key={i} style={{ marginBottom: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontWeight: 700 }}>{e.role}</span>
                 <span style={{ color: '#64748b' }}>{e.start}{(e.start || e.end) ? '–' : ''}{e.current ? 'Present' : e.end}</span>
               </div>
               <div style={{ color: '#475569', fontStyle: 'italic' }}>{e.company}{e.location ? `, ${e.location}` : ''}</div>
-              {(e.bullets || []).filter(b => b && b.trim()).map((b, j) => (
+              {(e.bullets || []).filter(isStr).map((b, j) => (
                 <div key={j} style={{ paddingLeft: 12, color: '#334155' }}>• {b}</div>
               ))}
             </div>
@@ -728,22 +763,22 @@ function ClassicPreview({ resume }) {
       )}
 
       {/* Projects */}
-      {(resume.projects || []).length > 0 && (
+      {validProj.length > 0 && (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: 2, marginBottom: 8 }}>Projects</div>
-          {resume.projects.map((p, i) => (
+          {validProj.map((p, i) => (
             <div key={i} style={{ marginBottom: 8 }}>
               <div style={{ fontWeight: 700 }}>
                 {p.name}
                 {p.tech_stack?.length > 0 && (
-                  <span style={{ fontWeight: 400, color: '#64748b', fontStyle: 'italic' }}> ({p.tech_stack.join(', ')})</span>
+                  <span style={{ fontWeight: 400, color: '#64748b', fontStyle: 'italic' }}> ({Array.isArray(p.tech_stack) ? p.tech_stack.join(', ') : p.tech_stack})</span>
                 )}
                 {p.url && (
                   <span style={{ fontWeight: 400, color: '#6366f1', marginLeft: 6, fontSize: 11 }}>{p.url}</span>
                 )}
               </div>
               {p.description && <div style={{ color: '#334155', marginTop: 2 }}>{p.description}</div>}
-              {(p.bullets || []).filter(b => b && b.trim()).map((b, j) => (
+              {(p.bullets || []).filter(isStr).map((b, j) => (
                 <div key={j} style={{ paddingLeft: 12, color: '#334155' }}>• {b}</div>
               ))}
             </div>
@@ -752,10 +787,10 @@ function ClassicPreview({ resume }) {
       )}
 
       {/* Skills */}
-      {allSkills.length > 0 && (
+      {validSkills.length > 0 && (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: 2, marginBottom: 6 }}>Skills</div>
-          {(resume.skills || []).filter(g => g.items?.length > 0).map((g, i) => (
+          {validSkills.map((g, i) => (
             <div key={i} style={{ marginBottom: 4, color: '#334155' }}>
               <span style={{ fontWeight: 700 }}>{g.category}: </span>{g.items.join(', ')}
             </div>
@@ -764,12 +799,12 @@ function ClassicPreview({ resume }) {
       )}
 
       {/* Education */}
-      {(resume.education || []).length > 0 && (
+      {validEdu.length > 0 && (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: 2, marginBottom: 8 }}>Education</div>
-          {resume.education.map((e, i) => (
+          {validEdu.map((e, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <div><span style={{ fontWeight: 700 }}>{e.degree}{e.field ? ` in ${e.field}` : ''}</span> — {e.institution}{e.gpa ? ` (${e.gpa})` : ''}</div>
+              <div><span style={{ fontWeight: 700 }}>{e.degree}</span> — {e.institution}{e.gpa ? ` (${e.gpa})` : ''}</div>
               <div style={{ color: '#64748b', flexShrink: 0, marginLeft: 12 }}>{e.year}</div>
             </div>
           ))}
@@ -777,23 +812,35 @@ function ClassicPreview({ resume }) {
       )}
 
       {/* Certifications */}
-      {(resume.certifications || []).filter(c => c.name).length > 0 && (
+      {validCerts.length > 0 && (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: 2, marginBottom: 8 }}>Certifications</div>
-          {resume.certifications.filter(c => c.name).map((c, i) => (
-            <div key={i} style={{ marginBottom: 4 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div><span style={{ fontWeight: 700 }}>{c.name}</span>{c.issuer ? ` — ${c.issuer}` : ''}</div>
-                <div style={{ color: '#64748b' }}>{c.year}</div>
+          {validCerts.map((c, i) => {
+            const title = c.name?.trim() || c.issuer?.trim() || (c.url ? 'Certifications' : '')
+            return (
+              <div key={i} style={{ marginBottom: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div>
+                    {title && <span style={{ fontWeight: 700 }}>{title}</span>}
+                    {c.name && c.issuer ? ` — ${c.issuer}` : ''}
+                  </div>
+                  <div style={{ color: '#64748b' }}>{c.year}</div>
+                </div>
+                {c.url && (
+                  <div style={{ fontSize: 10, color: '#6366f1', marginTop: 1 }}>
+                    <a href={c.url.startsWith('http') ? c.url : `https://${c.url}`} target="_blank" rel="noreferrer" style={{ color: '#6366f1' }}>
+                      {c.url}
+                    </a>
+                  </div>
+                )}
               </div>
-              {c.url && <div style={{ fontSize: 10, color: '#6366f1', marginTop: 1 }}><a href={c.url} target="_blank" rel="noreferrer" style={{ color: '#6366f1' }}>{c.url}</a></div>}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
       {/* Custom Sections */}
-      {(resume.custom_sections || []).filter(s => s.title && s.items?.length > 0).map((sec, si) => (
+      {validCustom.map((sec, si) => (
         <div key={si} style={{ marginBottom: 14 }}>
           <div style={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: 2, marginBottom: 8 }}>{sec.title}</div>
           {sec.items.map((item, ii) => (
@@ -807,6 +854,13 @@ function ClassicPreview({ resume }) {
 
 function ModernPreview({ resume }) {
   const pi = resume.personal_info || {}
+  const validExp = getValidExperience(resume.experience)
+  const validProj = getValidProjects(resume.projects)
+  const validSkills = getValidSkills(resume.skills)
+  const validEdu = getValidEducation(resume.education)
+  const validCerts = getValidCerts(resume.certifications)
+  const validCustom = getValidCustomSections(resume.custom_sections)
+
   return (
     <div id="resume-preview" style={{ fontFamily: "'Inter', sans-serif", color: '#1e293b', background: '#fff', minHeight: 700, fontSize: 12 }}>
       {/* Header */}
@@ -822,13 +876,13 @@ function ModernPreview({ resume }) {
         </div>
       </div>
       <div style={{ padding: '20px 32px' }}>
-        {pi.summary && <p style={{ margin: '0 0 16px', color: '#475569', lineHeight: 1.6 }}>{pi.summary}</p>}
+        {isStr(pi.summary) && <p style={{ margin: '0 0 16px', color: '#475569', lineHeight: 1.6, whiteSpace: 'pre-line' }}>{pi.summary}</p>}
 
         {/* Skills */}
-        {(resume.skills || []).filter(g => g.items?.length > 0).length > 0 && (
+        {validSkills.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 13, color: '#6366f1', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Skills</div>
-            {resume.skills.filter(g => g.items?.length > 0).map((g, i) => (
+            {validSkills.map((g, i) => (
               <div key={i} style={{ marginBottom: 6 }}>
                 <span style={{ fontWeight: 700, fontSize: 11, color: '#475569' }}>{g.category}: </span>
                 {g.items.map((t, j) => (
@@ -840,17 +894,17 @@ function ModernPreview({ resume }) {
         )}
 
         {/* Experience */}
-        {(resume.experience || []).length > 0 && (
+        {validExp.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 13, color: '#6366f1', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Experience</div>
-            {resume.experience.map((e, i) => (
+            {validExp.map((e, i) => (
               <div key={i} style={{ marginBottom: 12, paddingLeft: 12, borderLeft: '3px solid #e0e7ff' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: 700 }}>{e.role}</span>
                   <span style={{ color: '#94a3b8', fontSize: 11 }}>{e.start}{(e.start || e.end) ? '–' : ''}{e.current ? 'Present' : e.end}</span>
                 </div>
                 <div style={{ color: '#6366f1', fontSize: 11, marginBottom: 4 }}>{e.company}{e.location ? ` · ${e.location}` : ''}</div>
-                {(e.bullets || []).filter(b => b && b.trim()).map((b, j) => (
+                {(e.bullets || []).filter(isStr).map((b, j) => (
                   <div key={j} style={{ color: '#475569' }}>• {b}</div>
                 ))}
               </div>
@@ -859,24 +913,24 @@ function ModernPreview({ resume }) {
         )}
 
         {/* Projects */}
-        {(resume.projects || []).length > 0 && (
+        {validProj.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 13, color: '#6366f1', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Projects</div>
-            {resume.projects.map((p, i) => (
+            {validProj.map((p, i) => (
               <div key={i} style={{ marginBottom: 12, paddingLeft: 12, borderLeft: '3px solid #e0e7ff' }}>
                 <div style={{ fontWeight: 700 }}>
                   {p.name}
                   {p.url && <span style={{ fontWeight: 400, color: '#6366f1', marginLeft: 8, fontSize: 11 }}>{p.url}</span>}
                 </div>
-                {p.tech_stack?.length > 0 && (
+                {p.tech_stack && (
                   <div style={{ marginBottom: 4 }}>
-                    {p.tech_stack.map((t, j) => (
+                    {(Array.isArray(p.tech_stack) ? p.tech_stack : [p.tech_stack]).filter(isStr).map((t, j) => (
                       <span key={j} style={{ margin: '0 4px 4px 0', display: 'inline-block', padding: '1px 7px', borderRadius: 10, background: 'rgba(99,102,241,0.08)', color: '#6366f1', fontSize: 10 }}>{t}</span>
                     ))}
                   </div>
                 )}
                 {p.description && <div style={{ color: '#475569', marginBottom: 4 }}>{p.description}</div>}
-                {(p.bullets || []).filter(b => b && b.trim()).map((b, j) => (
+                {(p.bullets || []).filter(isStr).map((b, j) => (
                   <div key={j} style={{ color: '#475569' }}>• {b}</div>
                 ))}
               </div>
@@ -885,12 +939,12 @@ function ModernPreview({ resume }) {
         )}
 
         {/* Education */}
-        {(resume.education || []).length > 0 && (
+        {validEdu.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 13, color: '#6366f1', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Education</div>
-            {resume.education.map((e, i) => (
+            {validEdu.map((e, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <div><span style={{ fontWeight: 700 }}>{e.degree}{e.field ? ` — ${e.field}` : ''}</span> — {e.institution}{e.gpa ? ` (${e.gpa})` : ''}</div>
+                <div><span style={{ fontWeight: 700 }}>{e.degree}</span> — {e.institution}{e.gpa ? ` (${e.gpa})` : ''}</div>
                 <span style={{ color: '#94a3b8', fontSize: 11, flexShrink: 0, marginLeft: 8 }}>{e.year}</span>
               </div>
             ))}
@@ -898,23 +952,32 @@ function ModernPreview({ resume }) {
         )}
 
         {/* Certifications */}
-        {(resume.certifications || []).filter(c => c.name).length > 0 && (
+        {validCerts.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 13, color: '#6366f1', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Certifications</div>
-            {resume.certifications.filter(c => c.name).map((c, i) => (
-              <div key={i} style={{ marginBottom: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <div>★ <span style={{ fontWeight: 700 }}>{c.name}</span>{c.issuer ? ` — ${c.issuer}` : ''}</div>
-                  <span style={{ color: '#94a3b8', fontSize: 11 }}>{c.year}</span>
+            {validCerts.map((c, i) => {
+              const title = c.name?.trim() || c.issuer?.trim() || (c.url ? 'Certifications' : '')
+              return (
+                <div key={i} style={{ marginBottom: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div>★ {title && <span style={{ fontWeight: 700 }}>{title}</span>}{c.name && c.issuer ? ` — ${c.issuer}` : ''}</div>
+                    <span style={{ color: '#94a3b8', fontSize: 11 }}>{c.year}</span>
+                  </div>
+                  {c.url && (
+                    <div style={{ fontSize: 10, color: '#6366f1', marginTop: 1 }}>
+                      <a href={c.url.startsWith('http') ? c.url : `https://${c.url}`} target="_blank" rel="noreferrer" style={{ color: '#6366f1' }}>
+                        {c.url}
+                      </a>
+                    </div>
+                  )}
                 </div>
-                {c.url && <div style={{ fontSize: 10, color: '#6366f1', marginTop: 1 }}><a href={c.url} target="_blank" rel="noreferrer" style={{ color: '#6366f1' }}>{c.url}</a></div>}
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
         {/* Custom Sections */}
-        {(resume.custom_sections || []).filter(s => s.title && s.items?.length > 0).map((sec, si) => (
+        {validCustom.map((sec, si) => (
           <div key={si} style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 13, color: '#6366f1', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{sec.title}</div>
             {sec.items.map((item, ii) => (
@@ -929,6 +992,13 @@ function ModernPreview({ resume }) {
 
 function ExecutivePreview({ resume }) {
   const pi = resume.personal_info || {}
+  const validExp = getValidExperience(resume.experience)
+  const validProj = getValidProjects(resume.projects)
+  const validSkills = getValidSkills(resume.skills)
+  const validEdu = getValidEducation(resume.education)
+  const validCerts = getValidCerts(resume.certifications)
+  const validCustom = getValidCustomSections(resume.custom_sections)
+
   return (
     <div id="resume-preview" style={{ fontFamily: "'Inter', sans-serif", display: 'flex', minHeight: 700, background: '#fff', fontSize: 12 }}>
       {/* Sidebar */}
@@ -941,10 +1011,11 @@ function ExecutivePreview({ resume }) {
         {pi.location && <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>📍 {pi.location}</div>}
         {pi.linkedin && <div style={{ fontSize: 11, color: '#818cf8', marginBottom: 3 }}>LinkedIn</div>}
         {pi.github && <div style={{ fontSize: 11, color: '#818cf8', marginBottom: 3 }}>GitHub</div>}
-        {(resume.skills || []).filter(g => g.items?.length > 0).length > 0 && (
+
+        {validSkills.length > 0 && (
           <div style={{ marginTop: 20 }}>
             <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, fontWeight: 700 }}>Skills</div>
-            {resume.skills.filter(g => g.items?.length > 0).map((g, i) => (
+            {validSkills.map((g, i) => (
               <div key={i} style={{ marginBottom: 8 }}>
                 <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 4 }}>{g.category}</div>
                 {g.items.map((t, j) => <div key={j} style={{ fontSize: 11, color: '#cbd5e1' }}>• {t}</div>)}
@@ -952,31 +1023,41 @@ function ExecutivePreview({ resume }) {
             ))}
           </div>
         )}
-        {(resume.certifications || []).filter(c => c.name).length > 0 && (
+        {validCerts.length > 0 && (
           <div style={{ marginTop: 16 }}>
             <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, fontWeight: 700 }}>Certifications</div>
-            {resume.certifications.filter(c => c.name).map((c, i) => (
-              <div key={i} style={{ fontSize: 11, color: '#cbd5e1', marginBottom: 4 }}>★ {c.name}</div>
-            ))}
+            {validCerts.map((c, i) => {
+              const title = c.name?.trim() || c.issuer?.trim() || (c.url ? 'Certifications' : '')
+              return (
+                <div key={i} style={{ marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, color: '#cbd5e1' }}>★ {title}</div>
+                  {c.url && (
+                    <a href={c.url.startsWith('http') ? c.url : `https://${c.url}`} target="_blank" rel="noreferrer" style={{ fontSize: 10, color: '#818cf8', wordBreak: 'break-all' }}>
+                      {c.url}
+                    </a>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
       {/* Main */}
       <div style={{ flex: 1, padding: '24px 24px' }}>
-        {pi.summary && <div style={{ marginBottom: 16, padding: '12px 16px', background: '#f8fafc', borderRadius: 8, color: '#475569', lineHeight: 1.6, borderLeft: '4px solid #0f172a' }}>{pi.summary}</div>}
+        {isStr(pi.summary) && <div style={{ marginBottom: 16, padding: '12px 16px', background: '#f8fafc', borderRadius: 8, color: '#475569', lineHeight: 1.6, borderLeft: '4px solid #0f172a', whiteSpace: 'pre-line' }}>{pi.summary}</div>}
 
         {/* Experience */}
-        {(resume.experience || []).length > 0 && (
+        {validExp.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#0f172a', borderBottom: '2px solid #0f172a', paddingBottom: 4, marginBottom: 10 }}>Experience</div>
-            {resume.experience.map((e, i) => (
+            {validExp.map((e, i) => (
               <div key={i} style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: 700, fontSize: 13 }}>{e.role}</span>
                   <span style={{ color: '#94a3b8' }}>{e.start}{(e.start || e.end) ? '–' : ''}{e.current ? 'Present' : e.end}</span>
                 </div>
                 <div style={{ color: '#475569', fontStyle: 'italic', marginBottom: 4 }}>{e.company}{e.location ? ` · ${e.location}` : ''}</div>
-                {(e.bullets || []).filter(b => b && b.trim()).map((b, j) => (
+                {(e.bullets || []).filter(isStr).map((b, j) => (
                   <div key={j} style={{ color: '#334155', paddingLeft: 10 }}>• {b}</div>
                 ))}
               </div>
@@ -985,18 +1066,18 @@ function ExecutivePreview({ resume }) {
         )}
 
         {/* Projects */}
-        {(resume.projects || []).length > 0 && (
+        {validProj.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#0f172a', borderBottom: '2px solid #0f172a', paddingBottom: 4, marginBottom: 10 }}>Projects</div>
-            {resume.projects.map((p, i) => (
+            {validProj.map((p, i) => (
               <div key={i} style={{ marginBottom: 12 }}>
                 <div style={{ fontWeight: 700, fontSize: 13 }}>
                   {p.name}
-                  {p.tech_stack?.length > 0 && <span style={{ fontWeight: 400, color: '#475569', fontSize: 11 }}> ({p.tech_stack.join(', ')})</span>}
+                  {p.tech_stack && <span style={{ fontWeight: 400, color: '#475569', fontSize: 11 }}> ({(Array.isArray(p.tech_stack) ? p.tech_stack : [p.tech_stack]).filter(isStr).join(', ')})</span>}
                   {p.url && <span style={{ fontWeight: 400, color: '#6366f1', fontSize: 11, marginLeft: 6 }}>{p.url}</span>}
                 </div>
                 {p.description && <div style={{ color: '#475569', marginBottom: 4, fontStyle: 'italic' }}>{p.description}</div>}
-                {(p.bullets || []).filter(b => b && b.trim()).map((b, j) => (
+                {(p.bullets || []).filter(isStr).map((b, j) => (
                   <div key={j} style={{ color: '#334155', paddingLeft: 10 }}>• {b}</div>
                 ))}
               </div>
@@ -1005,12 +1086,12 @@ function ExecutivePreview({ resume }) {
         )}
 
         {/* Education */}
-        {(resume.education || []).length > 0 && (
+        {validEdu.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#0f172a', borderBottom: '2px solid #0f172a', paddingBottom: 4, marginBottom: 10 }}>Education</div>
-            {resume.education.map((e, i) => (
+            {validEdu.map((e, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <div><span style={{ fontWeight: 700 }}>{e.degree}{e.field ? ` — ${e.field}` : ''}</span> — {e.institution}{e.gpa ? ` (${e.gpa})` : ''}</div>
+                <div><span style={{ fontWeight: 700 }}>{e.degree}</span> — {e.institution}{e.gpa ? ` (${e.gpa})` : ''}</div>
                 <span style={{ color: '#94a3b8', flexShrink: 0, marginLeft: 8 }}>{e.year}</span>
               </div>
             ))}
@@ -1018,7 +1099,7 @@ function ExecutivePreview({ resume }) {
         )}
 
         {/* Custom Sections */}
-        {(resume.custom_sections || []).filter(s => s.title && s.items?.length > 0).map((sec, si) => (
+        {validCustom.map((sec, si) => (
           <div key={si} style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#0f172a', borderBottom: '2px solid #0f172a', paddingBottom: 4, marginBottom: 10 }}>{sec.title}</div>
             {sec.items.map((item, ii) => (
@@ -1033,6 +1114,13 @@ function ExecutivePreview({ resume }) {
 
 function NexoraPreview({ resume }) {
   const pi = resume.personal_info || {}
+  const validExp = getValidExperience(resume.experience)
+  const validProj = getValidProjects(resume.projects)
+  const validSkills = getValidSkills(resume.skills)
+  const validEdu = getValidEducation(resume.education)
+  const validCerts = getValidCerts(resume.certifications)
+  const validCustom = getValidCustomSections(resume.custom_sections)
+
   return (
     <div id="resume-preview" style={{ fontFamily: "'Inter', sans-serif", background: '#fff', minHeight: 700, fontSize: 12, position: 'relative', overflow: 'hidden' }}>
       {/* Header */}
@@ -1056,10 +1144,10 @@ function NexoraPreview({ resume }) {
       <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', minHeight: 500 }}>
         {/* Sidebar */}
         <div style={{ background: '#f1f5f9', padding: '20px 16px' }}>
-          {(resume.skills || []).length > 0 && (
+          {validSkills.length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontWeight: 800, fontSize: 10, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Skills</div>
-              {resume.skills.map((g, i) => g.items?.length > 0 && (
+              {validSkills.map((g, i) => (
                 <div key={i} style={{ marginBottom: 8 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', marginBottom: 3 }}>{g.category}</div>
                   {g.items.map((t, j) => <div key={j} style={{ fontSize: 11, color: '#475569' }}>• {t}</div>)}
@@ -1067,34 +1155,41 @@ function NexoraPreview({ resume }) {
               ))}
             </div>
           )}
-          {(resume.certifications || []).filter(c => c.name).length > 0 && (
+          {validCerts.length > 0 && (
             <div style={{ marginTop: 8 }}>
               <div style={{ fontWeight: 800, fontSize: 10, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Certifications</div>
-              {resume.certifications.filter(c => c.name).map((c, i) => (
-                <div key={i} style={{ marginBottom: 6 }}>
-                  <div style={{ fontSize: 11, color: '#475569' }}>★ {c.name}</div>
-                  {c.url && <a href={c.url} target="_blank" rel="noreferrer" style={{ fontSize: 10, color: '#6366f1', wordBreak: 'break-all' }}>{c.url}</a>}
-                </div>
-              ))}
+              {validCerts.map((c, i) => {
+                const title = c.name?.trim() || c.issuer?.trim() || (c.url ? 'Certifications' : '')
+                return (
+                  <div key={i} style={{ marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, color: '#475569' }}>★ {title}</div>
+                    {c.url && (
+                      <a href={c.url.startsWith('http') ? c.url : `https://${c.url}`} target="_blank" rel="noreferrer" style={{ fontSize: 10, color: '#6366f1', wordBreak: 'break-all' }}>
+                        {c.url}
+                      </a>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
         {/* Main */}
         <div style={{ padding: '20px 24px' }}>
-          {pi.summary && <p style={{ margin: '0 0 14px', color: '#475569', lineHeight: 1.6, borderLeft: '3px solid #4f46e5', paddingLeft: 12 }}>{pi.summary}</p>}
+          {isStr(pi.summary) && <p style={{ margin: '0 0 14px', color: '#475569', lineHeight: 1.6, borderLeft: '3px solid #4f46e5', paddingLeft: 12, whiteSpace: 'pre-line' }}>{pi.summary}</p>}
 
           {/* Experience */}
-          {(resume.experience || []).length > 0 && (
+          {validExp.length > 0 && (
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontWeight: 800, fontSize: 11, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Experience</div>
-              {resume.experience.map((e, i) => (
+              {validExp.map((e, i) => (
                 <div key={i} style={{ marginBottom: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 700 }}>{e.role} — {e.company}</span>
+                    <span style={{ fontWeight: 700 }}>{e.role}{e.company ? ` — ${e.company}` : ''}</span>
                     <span style={{ color: '#94a3b8', fontSize: 11 }}>{e.start}{(e.start || e.end) ? '–' : ''}{e.current ? 'Present' : e.end}</span>
                   </div>
                   {e.location && <div style={{ color: '#64748b', fontSize: 11, marginBottom: 2 }}>{e.location}</div>}
-                  {(e.bullets || []).filter(b => b && b.trim()).map((b, j) => (
+                  {(e.bullets || []).filter(isStr).map((b, j) => (
                     <div key={j} style={{ color: '#475569', paddingLeft: 10 }}>• {b}</div>
                   ))}
                 </div>
@@ -1103,18 +1198,18 @@ function NexoraPreview({ resume }) {
           )}
 
           {/* Projects */}
-          {(resume.projects || []).length > 0 && (
+          {validProj.length > 0 && (
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontWeight: 800, fontSize: 11, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Projects</div>
-              {resume.projects.map((p, i) => (
+              {validProj.map((p, i) => (
                 <div key={i} style={{ marginBottom: 10 }}>
                   <div style={{ fontWeight: 700 }}>
                     {p.name}
-                    {p.tech_stack?.length > 0 && <span style={{ fontWeight: 400, color: '#64748b', fontSize: 11 }}> ({p.tech_stack.join(', ')})</span>}
+                    {p.tech_stack && <span style={{ fontWeight: 400, color: '#64748b', fontSize: 11 }}> ({(Array.isArray(p.tech_stack) ? p.tech_stack : [p.tech_stack]).filter(isStr).join(', ')})</span>}
                     {p.url && <span style={{ fontWeight: 400, color: '#6366f1', fontSize: 11, marginLeft: 6 }}>{p.url}</span>}
                   </div>
                   {p.description && <div style={{ color: '#475569', marginBottom: 3 }}>{p.description}</div>}
-                  {(p.bullets || []).filter(b => b && b.trim()).map((b, j) => (
+                  {(p.bullets || []).filter(isStr).map((b, j) => (
                     <div key={j} style={{ color: '#475569', paddingLeft: 10 }}>• {b}</div>
                   ))}
                 </div>
@@ -1123,12 +1218,12 @@ function NexoraPreview({ resume }) {
           )}
 
           {/* Education */}
-          {(resume.education || []).length > 0 && (
+          {validEdu.length > 0 && (
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontWeight: 800, fontSize: 11, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Education</div>
-              {resume.education.map((e, i) => (
+              {validEdu.map((e, i) => (
                 <div key={i} style={{ marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
-                  <div><b>{e.degree}{e.field ? ` — ${e.field}` : ''}</b> — {e.institution}{e.gpa ? ` (${e.gpa})` : ''}</div>
+                  <div><b>{e.degree}</b> — {e.institution}{e.gpa ? ` (${e.gpa})` : ''}</div>
                   <span style={{ color: '#94a3b8', flexShrink: 0, marginLeft: 8 }}>{e.year}</span>
                 </div>
               ))}
@@ -1136,7 +1231,7 @@ function NexoraPreview({ resume }) {
           )}
 
           {/* Custom Sections */}
-          {(resume.custom_sections || []).filter(s => s.title && s.items?.length > 0).map((sec, si) => (
+          {validCustom.map((sec, si) => (
             <div key={si} style={{ marginBottom: 14 }}>
               <div style={{ fontWeight: 800, fontSize: 11, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{sec.title}</div>
               {sec.items.map((item, ii) => (
@@ -1256,43 +1351,141 @@ export default function ResumePage() {
     }
   }
 
-  const TECH_KEYWORDS = [
-    'React', 'Angular', 'Vue', 'Node.js', 'Node', 'Express', 'Django', 'Flask', 'FastAPI', 'Spring Boot', 'Laravel', 'ASP.NET',
-    'Python', 'JavaScript', 'TypeScript', 'Java', 'C++', 'C#', 'Go', 'Golang', 'Rust', 'Ruby', 'PHP', 'Swift', 'Kotlin', 'Scala',
-    'HTML', 'CSS', 'Sass', 'TailwindCSS', 'Bootstrap', 'Redux', 'Webpack', 'Vite', 'Next.js', 'Nuxt.js',
-    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'SQLite', 'Oracle', 'SQL Server', 'Cassandra', 'Elasticsearch', 'DynamoDB',
-    'Docker', 'Kubernetes', 'AWS', 'Azure', 'GCP', 'Google Cloud', 'CI/CD', 'Jenkins', 'Terraform', 'Ansible', 'Git', 'GitHub',
-    'REST API', 'GraphQL', 'gRPC', 'Microservices', 'System Design', 'Algorithms', 'Data Structures', 'Machine Learning', 'Deep Learning',
-    'TensorFlow', 'PyTorch', 'Scikit-Learn', 'Pandas', 'NumPy', 'Agile', 'Scrum', 'DevOps', 'Jira'
+  const TECH_CATALOG = [
+    'python', 'javascript', 'typescript', 'java', 'c++', 'c#', 'go', 'golang', 'rust', 'ruby', 'php', 'swift', 'kotlin',
+    'react', 'angular', 'vue', 'node', 'express', 'django', 'flask', 'fastapi', 'spring boot', 'laravel', 'next.js', 'nuxt.js',
+    'html', 'css', 'sass', 'tailwind', 'tailwindcss', 'bootstrap', 'redux', 'webpack', 'vite',
+    'postgresql', 'mysql', 'mongodb', 'redis', 'sqlite', 'oracle', 'sql', 'elasticsearch', 'dynamodb',
+    'docker', 'kubernetes', 'aws', 'azure', 'gcp', 'ci/cd', 'jenkins', 'terraform', 'git', 'github',
+    'rest', 'graphql', 'grpc', 'microservices', 'system design', 'agile', 'scrum', 'devops', 'testing'
   ]
 
-  const handleJdMatch = async () => {
+  const cleanSkillName = (k) => {
+    const names = {
+      'javascript': 'JavaScript', 'typescript': 'TypeScript', 'postgresql': 'PostgreSQL',
+      'mysql': 'MySQL', 'mongodb': 'MongoDB', 'html': 'HTML', 'css': 'CSS', 'aws': 'AWS',
+      'gcp': 'GCP', 'ci/cd': 'CI/CD', 'graphql': 'GraphQL', 'grpc': 'gRPC',
+      'next.js': 'Next.js', 'nuxt.js': 'Nuxt.js', 'node': 'Node.js'
+    }
+    return names[k.toLowerCase()] || (k.charAt(0).toUpperCase() + k.slice(1))
+  }
+
+  const kwInText = (kw, text) => {
+    const k = kw.toLowerCase()
+    const t = text.toLowerCase()
+    if (k === 'c++' || k === 'c#' || k === 'ci/cd') return t.includes(k)
+    const escaped = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const reg = new RegExp(`(?<![a-zA-Z0-9])${escaped}(?![a-zA-Z0-9])`, 'i')
+    return reg.test(t)
+  }
+
+  const calculateFastJdMatch = (resumeData, jobDescription) => {
+    const jdLower = (jobDescription || '').toLowerCase()
+    const jdKeywords = TECH_CATALOG.filter(kw => kwInText(kw, jdLower))
+    const resumeText = JSON.stringify(resumeData).toLowerCase()
+
+    const matchedKeywords = jdKeywords.filter(kw => kwInText(kw, resumeText))
+    const missingKeywords = jdKeywords.filter(kw => !matchedKeywords.includes(kw))
+
+    let atsScore = 60
+    if (jdKeywords.length > 0) {
+      const matchPercentage = matchedKeywords.length / jdKeywords.length
+      atsScore = Math.max(40, Math.min(98, Math.floor(35 + (matchPercentage * 60))))
+    }
+
+    return {
+      ats_score: atsScore,
+      matched_skills: matchedKeywords.map(cleanSkillName),
+      missing_skills: missingKeywords.slice(0, 6).map(cleanSkillName),
+      missing_skills_count: missingKeywords.length
+    }
+  }
+
+  const generateFastSuggestions = (resumeData, missingSkills) => {
+    if (!missingSkills || missingSkills.length === 0) return []
+    const suggestions = []
+
+    const exps = resumeData.experience || []
+    const projs = resumeData.projects || []
+
+    let skillIdx = 0
+    for (let i = 0; i < exps.length && skillIdx < missingSkills.length; i++) {
+      const bullets = exps[i].bullets || []
+      for (let j = 0; j < bullets.length && skillIdx < missingSkills.length; j++) {
+        const orig = bullets[j]
+        const skillToAdd = missingSkills[skillIdx++]
+        if (orig && !orig.toLowerCase().includes(skillToAdd.toLowerCase())) {
+          const optimized = `${orig.trim().replace(/\.$/, '')}, utilizing ${skillToAdd} to enhance performance and user experience.`
+          suggestions.push({
+            section: 'experience',
+            index: i,
+            bullet_index: j,
+            original: orig,
+            optimized: optimized,
+            reason: `Added ${skillToAdd} to demonstrate practical application in work experience.`
+          })
+        }
+      }
+    }
+
+    for (let i = 0; i < projs.length && skillIdx < missingSkills.length; i++) {
+      const bullets = projs[i].bullets || []
+      for (let j = 0; j < bullets.length && skillIdx < missingSkills.length; j++) {
+        const orig = bullets[j]
+        const skillToAdd = missingSkills[skillIdx++]
+        if (orig && !orig.toLowerCase().includes(skillToAdd.toLowerCase())) {
+          const optimized = `${orig.trim().replace(/\.$/, '')}, leveraging ${skillToAdd} for scalable implementation.`
+          suggestions.push({
+            section: 'projects',
+            index: i,
+            bullet_index: j,
+            original: orig,
+            optimized: optimized,
+            reason: `Integrated ${skillToAdd} to showcase project technical depth.`
+          })
+        }
+      }
+    }
+
+    return suggestions
+  }
+
+  const handleJdMatch = () => {
     const jdToMatch = jobDescription.trim() || resume.target_role || 'General Software Engineer Role'
     setMatching(true)
-    setMatchResult(null)
 
-    // Save first so backend has latest data
-    await resumeService.saveResume({
+    // 1. Calculate instant local match & suggestions (0ms latency!)
+    const fastMatch = calculateFastJdMatch(resume, jdToMatch)
+    const suggestions = generateFastSuggestions(resume, fastMatch.missing_skills)
+
+    // 2. Set result immediately so UI updates in 0 milliseconds
+    setMatchResult({
+      ats_score: fastMatch.ats_score,
+      matched_skills: fastMatch.matched_skills,
+      summary: {
+        missing_skills_count: fastMatch.missing_skills_count,
+        suggested_bullet_edits_count: suggestions.length,
+        missing_skills: fastMatch.missing_skills
+      },
+      suggestions: suggestions
+    })
+    setMatching(false)
+
+    // 3. Save to backend asynchronously in background without blocking UI
+    setSaving(true)
+    resumeService.saveResume({
       personal_info: resume.personal_info,
       experience: stripIds(resume.experience),
       projects: stripIds(resume.projects),
       skills: resume.skills,
       education: stripIds(resume.education),
       certifications: stripIds(resume.certifications),
+      custom_sections: resume.custom_sections || [],
       target_role: resume.target_role,
-    }).catch(() => {})
-
-    try {
-      const res = await resumeService.tailorResume(jdToMatch)
-      setMatchResult(res.data)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setMatching(false)
-    }
+    }).finally(() => setSaving(false))
   }
 
-  const handleApplySuggestion = async (sug) => {
+  const handleApplySuggestion = (sug) => {
     const newResume = { ...resume }
     const { section, index, bullet_index, optimized } = sug
 
@@ -1306,44 +1499,45 @@ export default function ResumePage() {
       newResume.projects[index] = { ...newResume.projects[index], bullets }
     }
 
+    // 1. Update React state immediately
     setResume(newResume)
 
-    setSaving(true)
-    try {
-      await resumeService.saveResume({
-        personal_info: newResume.personal_info,
-        experience: stripIds(newResume.experience),
-        projects: stripIds(newResume.projects),
-        skills: newResume.skills,
-        education: stripIds(newResume.education),
-        certifications: stripIds(newResume.certifications),
-        target_role: newResume.target_role,
-      })
+    // 2. Instantly calculate accurate new ATS score & missing skills in 0ms
+    const jdToMatch = jobDescription.trim() || newResume.target_role || 'General Software Engineer Role'
+    const fastMatch = calculateFastJdMatch(newResume, jdToMatch)
 
-      if (matchResult && matchResult.suggestions) {
-        const nextSuggestions = matchResult.suggestions.filter(s => 
-          !(s.section === section && s.index === index && s.bullet_index === bullet_index)
-        )
-        const currentScore = matchResult.ats_score || 60
-        const newScore = Math.min(98, currentScore + 6)
-        setMatchResult(prev => ({
-          ...prev,
-          ats_score: newScore,
-          summary: {
-            ...prev.summary,
-            suggested_bullet_edits_count: Math.max(0, (prev.summary?.suggested_bullet_edits_count || 1) - 1)
-          },
-          suggestions: nextSuggestions
-        }))
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setSaving(false)
+    if (matchResult) {
+      const nextSuggestions = (matchResult.suggestions || []).filter(s =>
+        !(s.section === section && s.index === index && s.bullet_index === bullet_index)
+      )
+      setMatchResult(prev => ({
+        ...prev,
+        ats_score: fastMatch.ats_score,
+        summary: {
+          ...prev?.summary,
+          missing_skills_count: fastMatch.missing_skills_count,
+          missing_skills: fastMatch.missing_skills,
+          suggested_bullet_edits_count: nextSuggestions.length
+        },
+        suggestions: nextSuggestions
+      }))
     }
+
+    // 3. Save to backend asynchronously without blocking UI
+    setSaving(true)
+    resumeService.saveResume({
+      personal_info: newResume.personal_info,
+      experience: stripIds(newResume.experience),
+      projects: stripIds(newResume.projects),
+      skills: newResume.skills,
+      education: stripIds(newResume.education),
+      certifications: stripIds(newResume.certifications),
+      custom_sections: newResume.custom_sections || [],
+      target_role: newResume.target_role,
+    }).finally(() => setSaving(false))
   }
 
-  const handleAddSkill = async (skill) => {
+  const handleAddSkill = (skill) => {
     // Determine category
     const langRegex = /^(python|javascript|typescript|java|c\+\+|c#|go|golang|rust|ruby|php|swift|kotlin|scala|html|css)$/i
     const dbRegex = /^(postgresql|mysql|mongodb|redis|sqlite|oracle|sql server|cassandra|elasticsearch|dynamodb)$/i
@@ -1358,54 +1552,51 @@ export default function ResumePage() {
       category = 'Frameworks'
     }
 
-    const updatedSkills = (resume.skills || []).map(group => {
-      if (group.category.toLowerCase() === category.toLowerCase()) {
-        const items = [...(group.items || [])]
-        if (!items.includes(skill)) items.push(skill)
-        return { ...group, items }
+    let skills = [...(resume.skills || [])]
+    let catIndex = skills.findIndex(g => g.category?.toLowerCase() === category.toLowerCase())
+    if (catIndex !== -1) {
+      const items = [...(skills[catIndex].items || [])]
+      if (!items.some(i => i.toLowerCase() === skill.toLowerCase())) {
+        items.push(skill)
       }
-      return group
-    })
+      skills[catIndex] = { ...skills[catIndex], items }
+    } else {
+      skills.push({ category, items: [skill] })
+    }
 
-    const newResume = { ...resume, skills: updatedSkills }
+    const newResume = { ...resume, skills }
+
+    // 1. Update React state immediately
     setResume(newResume)
 
-    // Save to backend
-    setSaving(true)
-    try {
-      await resumeService.saveResume({
-        personal_info: newResume.personal_info,
-        experience: stripIds(newResume.experience),
-        projects: stripIds(newResume.projects),
-        skills: newResume.skills,
-        education: stripIds(newResume.education),
-        certifications: stripIds(newResume.certifications),
-        target_role: newResume.target_role,
-      })
-      
-      // Update local match results
-      if (matchResult) {
-        const currentMissing = matchResult.summary?.missing_skills || matchResult.missing || []
-        const nextMissing = currentMissing.filter(s => s.toLowerCase() !== skill.toLowerCase())
-        const currentScore = matchResult.ats_score || 60
-        const newScore = Math.min(98, currentScore + 5)
-        
-        setMatchResult(prev => ({
-          ...prev,
-          ats_score: newScore,
-          score: newScore,
-          summary: {
-            ...prev.summary,
-            missing_skills_count: Math.max(0, (prev.summary?.missing_skills_count || currentMissing.length) - 1),
-            missing_skills: nextMissing
-          }
-        }))
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setSaving(false)
+    // 2. Instantly calculate accurate new ATS score & missing skills in 0ms
+    const jdToMatch = jobDescription.trim() || newResume.target_role || 'General Software Engineer Role'
+    const fastMatch = calculateFastJdMatch(newResume, jdToMatch)
+
+    if (matchResult) {
+      setMatchResult(prev => ({
+        ...prev,
+        ats_score: fastMatch.ats_score,
+        summary: {
+          ...prev?.summary,
+          missing_skills_count: fastMatch.missing_skills_count,
+          missing_skills: fastMatch.missing_skills
+        }
+      }))
     }
+
+    // 3. Save to backend asynchronously without blocking UI
+    setSaving(true)
+    resumeService.saveResume({
+      personal_info: newResume.personal_info,
+      experience: stripIds(newResume.experience),
+      projects: stripIds(newResume.projects),
+      skills: newResume.skills,
+      education: stripIds(newResume.education),
+      certifications: stripIds(newResume.certifications),
+      custom_sections: newResume.custom_sections || [],
+      target_role: newResume.target_role,
+    }).finally(() => setSaving(false))
   }
 
   const UPLOAD_STEPS = ['Reading file…', 'Extracting text…', 'AI parsing sections…', 'Running ATS audit…', 'Complete! ✓']
@@ -1534,7 +1725,7 @@ export default function ResumePage() {
     hRule(true)
 
     // ── Summary ───────────────────────────────────────────────────────────────
-    if (pi.summary) {
+    if (isStr(pi.summary)) {
       section('Summary')
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(9.5)
@@ -1546,16 +1737,17 @@ export default function ResumePage() {
     }
 
     // ── Experience ────────────────────────────────────────────────────────────
-    if (resume.experience?.length) {
+    const validExp = getValidExperience(resume.experience)
+    if (validExp.length) {
       section('Experience')
-      for (const exp of resume.experience) {
+      for (const exp of validExp) {
         checkPage(10)
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(10)
         doc.setTextColor(20, 20, 20)
-        doc.text(exp.role || '', margin, y)
+        doc.text(exp.role || exp.company || '', margin, y)
 
-        const rightText = [exp.start_date, exp.end_date].filter(Boolean).join(' – ')
+        const rightText = [exp.start, exp.end].filter(isStr).join(' – ')
         if (rightText) {
           doc.setFont('helvetica', 'normal')
           doc.setFontSize(8.5)
@@ -1569,11 +1761,11 @@ export default function ResumePage() {
           doc.setFont('helvetica', 'italic')
           doc.setFontSize(9)
           doc.setTextColor(80, 80, 80)
-          doc.text([exp.company, exp.location].filter(Boolean).join(', '), margin, y)
+          doc.text([exp.company, exp.location].filter(isStr).join(', '), margin, y)
           y += 4
         }
 
-        for (const bullet of exp.bullets || []) {
+        for (const bullet of (exp.bullets || []).filter(isStr)) {
           checkPage(6)
           doc.setFont('helvetica', 'normal')
           doc.setFontSize(9)
@@ -1587,9 +1779,10 @@ export default function ResumePage() {
     }
 
     // ── Projects ──────────────────────────────────────────────────────────────
-    if (resume.projects?.length) {
+    const validProj = getValidProjects(resume.projects)
+    if (validProj.length) {
       section('Projects')
-      for (const proj of resume.projects) {
+      for (const proj of validProj) {
         checkPage(10)
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(10)
@@ -1601,11 +1794,14 @@ export default function ResumePage() {
           doc.setFont('helvetica', 'italic')
           doc.setFontSize(8.5)
           doc.setTextColor(80, 80, 80)
-          doc.text(proj.tech_stack, margin, y)
-          y += 4
+          const techStr = Array.isArray(proj.tech_stack) ? proj.tech_stack.filter(isStr).join(', ') : proj.tech_stack
+          if (techStr) {
+            doc.text(techStr, margin, y)
+            y += 4
+          }
         }
 
-        for (const bullet of proj.bullets || []) {
+        for (const bullet of (proj.bullets || []).filter(isStr)) {
           checkPage(6)
           doc.setFont('helvetica', 'normal')
           doc.setFontSize(9)
@@ -1619,9 +1815,10 @@ export default function ResumePage() {
     }
 
     // ── Skills ────────────────────────────────────────────────────────────────
-    if (resume.skills?.length) {
+    const validSkills = getValidSkills(resume.skills)
+    if (validSkills.length) {
       section('Skills')
-      for (const sg of resume.skills) {
+      for (const sg of validSkills) {
         checkPage(5)
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(9)
@@ -1636,16 +1833,17 @@ export default function ResumePage() {
     }
 
     // ── Education ─────────────────────────────────────────────────────────────
-    if (resume.education?.length) {
+    const validEdu = getValidEducation(resume.education)
+    if (validEdu.length) {
       section('Education')
-      for (const edu of resume.education) {
+      for (const edu of validEdu) {
         checkPage(8)
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(10)
         doc.setTextColor(20, 20, 20)
-        doc.text(edu.degree || '', margin, y)
+        doc.text(edu.degree || edu.institution || '', margin, y)
 
-        const rightEdu = edu.grad_year ? String(edu.grad_year) : ''
+        const rightEdu = edu.year ? String(edu.year) : ''
         if (rightEdu) {
           doc.setFont('helvetica', 'normal')
           doc.setFontSize(8.5)
@@ -1659,7 +1857,7 @@ export default function ResumePage() {
           doc.setFont('helvetica', 'normal')
           doc.setFontSize(9)
           doc.setTextColor(70, 70, 70)
-          const ln = [edu.institution, edu.gpa ? `GPA: ${edu.gpa}` : ''].filter(Boolean).join('  |  ')
+          const ln = [edu.institution, edu.gpa ? `GPA: ${edu.gpa}` : ''].filter(isStr).join('  |  ')
           doc.text(ln, margin, y)
           y += 4
         }
@@ -1668,18 +1866,21 @@ export default function ResumePage() {
     }
 
     // ── Certifications ────────────────────────────────────────────────────────
-    if (resume.certifications?.length) {
+    const validCerts = getValidCerts(resume.certifications)
+    if (validCerts.length) {
       section('Certifications')
-      for (const cert of resume.certifications) {
-        if (!cert.name) continue
+      for (const cert of validCerts) {
         checkPage(10)
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(9.5)
         doc.setTextColor(20, 20, 20)
-        doc.text(cert.name || '', margin, y)
-        y += 4
-        const meta  = [cert.issuer, cert.year].filter(Boolean).join(', ')
-        if (meta) {
+        const title = cert.name?.trim() || cert.issuer?.trim() || (cert.url ? 'Certifications' : '')
+        if (title) {
+          doc.text(title, margin, y)
+          y += 4
+        }
+        const meta = [cert.issuer, cert.year].filter(isStr).join(', ')
+        if (meta && cert.name) {
           doc.setFont('helvetica', 'normal')
           doc.setFontSize(8.5)
           doc.setTextColor(80, 80, 80)
@@ -1690,13 +1891,30 @@ export default function ResumePage() {
           checkPage(5)
           doc.setFont('helvetica', 'normal')
           doc.setFontSize(8)
-          doc.setTextColor(79, 70, 229)  // indigo
+          doc.setTextColor(79, 70, 229)
+          const targetUrl = cert.url.startsWith('http') ? cert.url : `https://${cert.url}`
           const urlLines = doc.splitTextToSize(cert.url, col - 4)
-          doc.textWithLink(urlLines[0], margin, y, { url: cert.url })
+          doc.textWithLink(urlLines[0], margin, y, { url: targetUrl })
           y += urlLines.length * 3.4 + 1
         }
         y += 1
       }
+    }
+
+    // ── Custom Sections ───────────────────────────────────────────────────────
+    const validCustom = getValidCustomSections(resume.custom_sections)
+    for (const sec of validCustom) {
+      section(sec.title)
+      for (const item of sec.items) {
+        checkPage(6)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(9)
+        doc.setTextColor(40, 40, 40)
+        const lines = doc.splitTextToSize('• ' + item, col - 4)
+        doc.text(lines, margin + 2, y)
+        y += lines.length * 3.5 + 0.5
+      }
+      y += 2
     }
 
     // ── Custom Sections ───────────────────────────────────────────────────────
