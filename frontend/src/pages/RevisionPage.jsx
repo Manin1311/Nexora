@@ -303,12 +303,9 @@ const PLAYBOOK_DATA = {
 }
 
 export default function RevisionPage() {
-  const [company, setCompany] = useState('Google')
-  const [role, setRole] = useState('Software Engineer')
-  const [guide, setGuide] = useState(() => {
-    const c = cacheGet('revision-Google-Software Engineer', null)
-    return c ? c.data : null
-  })
+  const [company, setCompany] = useState('')
+  const [role, setRole] = useState('')
+  const [guide, setGuide] = useState(null)
   const [loading, setLoading] = useState(false)
   const [activeCardIdx, setActiveCardIdx] = useState(null)
   const [viewMode, setViewMode] = useState('flashcard')
@@ -316,6 +313,7 @@ export default function RevisionPage() {
   const { isOpen: tourOpen, openTour, closeTour } = usePageTour('revision')
   
   const fetchGuide = (silent = false) => {
+    if (!company || !role) return
     if (!silent) setLoading(true)
     const key = `revision-${company}-${role}`
     api.get(`/interviews/revision/?company=${encodeURIComponent(company)}&role=${encodeURIComponent(role)}`)
@@ -331,6 +329,10 @@ export default function RevisionPage() {
   }
 
   useEffect(() => {
+    if (!company || !role) {
+      setGuide(null)
+      return
+    }
     const key = `revision-${company}-${role}`
     const cached = cacheGet(key, null)
     if (cached && !cached.stale) {
@@ -472,6 +474,7 @@ export default function RevisionPage() {
                 onChange={e => setCompany(e.target.value)}
                 style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', outline: 'none', fontSize: 13 }}
               >
+                <option value="" disabled hidden>--select target company--</option>
                 {companiesList.map(c => <option key={c} value={c} style={{ background: 'var(--card-bg)' }}>{c}</option>)}
               </select>
             </div>
@@ -482,6 +485,7 @@ export default function RevisionPage() {
                 onChange={e => setRole(e.target.value)}
                 style={{ width: '100%', padding: '10px 14px', borderRadius: 10, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', outline: 'none', fontSize: 13 }}
               >
+                <option value="" disabled hidden>--select target role--</option>
                 {rolesList.map(r => <option key={r} value={r} style={{ background: 'var(--card-bg)' }}>{r}</option>)}
               </select>
             </div>
@@ -490,8 +494,8 @@ export default function RevisionPage() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={fetchGuide}
-                disabled={loading}
-                style={{ padding: '10px 24px', background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', height: 42, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 14px rgba(0,0,0,0.3)' }}
+                disabled={loading || !company || !role}
+                style={{ padding: '10px 24px', background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', height: 42, display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 14px rgba(0,0,0,0.3)', opacity: (!company || !role) ? 0.5 : 1 }}
               >
                 {loading && <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />}
                 Generate Guide
@@ -500,8 +504,18 @@ export default function RevisionPage() {
           </div>
         </div>
 
-        {/* Loading Desk */}
-        {loading ? (
+        {/* Unselected or Loading Desk */}
+        {!company || !role ? (
+          <div style={{ ...S.card, padding: 48, textAlign: 'center', margin: '20px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <BookOpen size={28} style={{ color: '#818cf8' }} />
+            </div>
+            <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-heading)', marginBottom: 8 }}>Select Target Company & Role</h3>
+            <p style={{ fontSize: 13.5, color: 'var(--text-muted)', maxWidth: 460, margin: 0, lineHeight: 1.6 }}>
+              Choose your target company and role above to generate custom spaced-repetition flashcards, cheat sheets, and round-by-round interview blueprints.
+            </p>
+          </div>
+        ) : loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 280, gap: 12 }}>
             <Loader2 size={36} style={{ animation: 'spin 1s linear infinite', color: '#818cf8' }} />
             <p style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Analyzing resume stack, interview failures, and compiling high-yield guidelines...</p>

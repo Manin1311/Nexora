@@ -247,6 +247,53 @@ export default function InterviewSessionPage() {
     }
   }, [cameraActive, onboarded])
 
+  const toggleCamera = async () => {
+    if (cameraActive) {
+      // Disable and stop video tracks only, leaving microphone audio stream and AudioContext visualizer intact
+      if (streamRef.current) {
+        streamRef.current.getVideoTracks().forEach(track => {
+          track.enabled = false
+          track.stop()
+          try { streamRef.current.removeTrack(track) } catch {}
+        })
+      }
+      setCameraActive(false)
+      setCameraMuted(true)
+    } else {
+      // Re-enable webcam video tracks
+      try {
+        const videoStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 320, height: 240, frameRate: { ideal: 15 } }
+        })
+        const vTrack = videoStream.getVideoTracks()[0]
+        if (vTrack) {
+          if (streamRef.current) {
+            streamRef.current.addTrack(vTrack)
+          } else {
+            streamRef.current = videoStream
+          }
+        }
+        setCameraActive(true)
+        setCameraMuted(false)
+        if (videoRef.current && streamRef.current) {
+          videoRef.current.srcObject = streamRef.current
+        }
+      } catch (err) {
+        console.warn('Could not re-enable webcam:', err)
+      }
+    }
+  }
+
+  const toggleMic = () => {
+    const nextState = !micMuted
+    setMicMuted(nextState)
+    if (streamRef.current) {
+      streamRef.current.getAudioTracks().forEach(track => {
+        track.enabled = !nextState
+      })
+    }
+  }
+
   const cleanupMedia = () => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop())
@@ -266,6 +313,7 @@ export default function InterviewSessionPage() {
       audioCtxRef.current = null
     }
     setCameraActive(false)
+    setCameraMuted(true)
   }
 
   const shouldListenRef = useRef(false)
@@ -295,17 +343,6 @@ export default function InterviewSessionPage() {
     setAnswer(newVal)
     answerRef.current = newVal
     baseTextRef.current = newVal
-
-    if (shouldListenRef.current) {
-      if (restartSpeechTimeoutRef.current) {
-        clearTimeout(restartSpeechTimeoutRef.current)
-      }
-      restartSpeechTimeoutRef.current = setTimeout(() => {
-        if (shouldListenRef.current) {
-          startSpeechInstance()
-        }
-      }, 350)
-    }
   }
 
   const cleanTextForSpeech = (text) => {
@@ -434,6 +471,8 @@ export default function InterviewSessionPage() {
       })
       streamRef.current = stream
       setCameraActive(true)
+      setCameraMuted(false)
+      setMicMuted(false)
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream
@@ -447,10 +486,13 @@ export default function InterviewSessionPage() {
         const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
         streamRef.current = audioStream
         setCameraActive(false)
+        setCameraMuted(true)
+        setMicMuted(false)
         startAudioVisualizer(audioStream)
       } catch (audioErr) {
         console.warn('Audio stream also unavailable:', audioErr?.name, audioErr?.message)
         setCameraActive(false)
+        setCameraMuted(true)
       }
     }
   }
@@ -482,9 +524,15 @@ export default function InterviewSessionPage() {
         const height = canvas.height
 
         drawAnimRef.current = requestAnimationFrame(draw)
-        analyser.getByteFrequencyData(dataArray)
-
         ctx.clearRect(0, 0, width, height)
+
+        // Stop animation if recording is turned off or microphone audio track is disabled
+        const isMicDisabled = streamRef.current && streamRef.current.getAudioTracks().some(t => !t.enabled)
+        if (!shouldListenRef.current || isMicDisabled) {
+          return
+        }
+
+        analyser.getByteFrequencyData(dataArray)
 
         const barWidth = (width / bufferLength) * 1.5
         let barHeight
@@ -575,6 +623,7 @@ export default function InterviewSessionPage() {
       }
 
       setAnswer(fullText)
+      answerRef.current = fullText
     }
 
     rec.onerror = (err) => {
@@ -591,12 +640,15 @@ export default function InterviewSessionPage() {
 
     rec.onend = () => {
       if (shouldListenRef.current) {
-        try {
-          baseTextRef.current = answerRef.current || ''
-          rec.start()
-        } catch {
-          setIsListening(false)
+        baseTextRef.current = answerRef.current || ''
+        if (restartSpeechTimeoutRef.current) {
+          clearTimeout(restartSpeechTimeoutRef.current)
         }
+        restartSpeechTimeoutRef.current = setTimeout(() => {
+          if (shouldListenRef.current) {
+            startSpeechInstance()
+          }
+        }, 150)
       } else {
         setIsListening(false)
       }
@@ -1177,22 +1229,16 @@ export default function InterviewSessionPage() {
                     
                     {/* Mic control */}
                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                      onClick={() => setMicMuted(!micMuted)}
+                      onClick={toggleMic}
+                      title={micMuted ? "Unmute Microphone" : "Mute Microphone"}
                       style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: micMuted ? '#ef4444' : 'rgba(255,255,255,0.08)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {micMuted ? <MicOff size={18} /> : <Mic size={18} />}
                     </motion.button>
 
                     {/* Camera control */}
                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        if (cameraMuted) {
-                          startCamera()
-                          setCameraMuted(false)
-                        } else {
-                          cleanupMedia()
-                          setCameraMuted(true)
-                        }
-                      }}
+                      onClick={toggleCamera}
+                      title={cameraMuted ? "Turn On Camera" : "Turn Off Camera"}
                       style={{ width: 44, height: 44, borderRadius: '50%', border: 'none', background: cameraMuted ? '#ef4444' : 'rgba(255,255,255,0.08)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {cameraMuted ? <VideoOff size={18} /> : <Video size={18} />}
                     </motion.button>
@@ -1447,6 +1493,32 @@ export default function InterviewSessionPage() {
                             <p style={{ fontSize: 12, margin: 0, fontWeight: 700 }}>Webcam Offline</p>
                           </div>
                         )}
+
+                        {/* Quick Camera & Mic Toggles Overlay */}
+                        <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 6, zIndex: 10 }}>
+                          <button
+                            type="button"
+                            onClick={toggleMic}
+                            title={micMuted ? "Unmute Mic" : "Mute Mic"}
+                            style={{
+                              width: 32, height: 32, borderRadius: '50%', border: 'none',
+                              background: micMuted ? '#ef4444' : 'rgba(0,0,0,0.65)',
+                              color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                            {micMuted ? <MicOff size={14} /> : <Mic size={14} />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={toggleCamera}
+                            title={cameraMuted ? "Turn On Camera" : "Turn Off Camera"}
+                            style={{
+                              width: 32, height: 32, borderRadius: '50%', border: 'none',
+                              background: cameraMuted ? '#ef4444' : 'rgba(0,0,0,0.65)',
+                              color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                            {cameraMuted ? <VideoOff size={14} /> : <Video size={14} />}
+                          </button>
+                        </div>
                       </div>
 
                       {/* GPU-Accelerated Audio Spectrum bar visualizer */}

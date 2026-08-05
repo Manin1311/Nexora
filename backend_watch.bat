@@ -10,13 +10,17 @@ echo   Auto-restart is ENABLED. Do NOT close this window.
 echo ============================================================
 echo.
 
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8000 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr /c:":8000 " ^| findstr /i "LISTENING"') do taskkill /f /pid %%a >nul 2>&1
 
 echo [%TIME%] Starting Django server on http://127.0.0.1:8000 ...
 echo.
 
 cd /d "%~dp0backend"
-python manage.py runserver 127.0.0.1:8000
+if exist "%~dp0backend\venv\Scripts\python.exe" (
+    "%~dp0backend\venv\Scripts\python.exe" manage.py runserver 127.0.0.1:8000
+) else (
+    python manage.py runserver 127.0.0.1:8000
+)
 
 echo.
 echo ============================================================

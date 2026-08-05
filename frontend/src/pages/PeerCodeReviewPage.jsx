@@ -77,7 +77,18 @@ export default function PeerCodeReviewPage() {
   // Create Modal
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [userProjects, setUserProjects] = useState([])
-  const [userChallenges, setUserChallenges] = useState([])
+  const [userChallenges, setUserChallenges] = useState([
+    { id: 1, title: 'Build JWT Authentication API' },
+    { id: 2, title: 'Explain JavaScript Closures' },
+    { id: 3, title: 'Design a URL Shortener System' },
+    { id: 4, title: 'Build a React Custom Hook: useLocalStorage' },
+    { id: 5, title: 'Write a Binary Search Implementation' },
+    { id: 6, title: 'Build a Custom Decorator for Function Execution Time Profiling' },
+    { id: 7, title: 'Design a Distributed Rate Limiter' },
+    { id: 8, title: 'Implement a Custom Promise Polyfill (MyPromise)' },
+    { id: 9, title: 'Optimize a PostgreSQL Schema with Indexing and Query Tuning' },
+    { id: 10, title: 'Implement a Least Recently Used (LRU) Cache Eviction Policy' },
+  ])
   const [createForm, setCreateForm] = useState({
     title: '',
     description: '',
@@ -145,6 +156,39 @@ export default function PeerCodeReviewPage() {
     }
   }, [filterSource])
 
+  // Load account holder's own projects + challenges on mount and when modal opens
+  const loadModalData = () => {
+    showcaseService.getMyProjects()
+      .then(res => {
+        const list = Array.isArray(res.data) ? res.data : (res.data?.results || [])
+        setUserProjects(list)
+      })
+      .catch(() => {})
+
+    challengeService.getAll()
+      .then(res => {
+        const list = Array.isArray(res.data) ? res.data : (res.data?.results || [])
+        if (list.length > 0) setUserChallenges(list)
+      })
+      .catch(() => {})
+  }
+
+  useEffect(() => {
+    loadModalData()
+  }, [])
+
+  // Auto-fetch challenges whenever user selects Challenge source type
+  useEffect(() => {
+    if (createForm.source_type === 'challenge') {
+      challengeService.getAll()
+        .then(res => {
+          const list = Array.isArray(res.data) ? res.data : (res.data?.results || [])
+          if (list.length > 0) setUserChallenges(list)
+        })
+        .catch(() => {})
+    }
+  }, [createForm.source_type])
+
   // Handle pre-fill from query param `?project=<id>`
   useEffect(() => {
     const projectIdParam = searchParams.get('project')
@@ -153,13 +197,20 @@ export default function PeerCodeReviewPage() {
       showcaseService.getById(projectIdParam).then(res => {
         const proj = res.data
         if (proj) {
+          // Seed this project into the dropdown in case user has not published it themselves
+          setUserProjects(prev => prev.some(p => String(p.id) === String(proj.id)) ? prev : [proj, ...prev])
+
+          let richDesc = proj.description || ''
+          if (proj.architecture) richDesc += `\n\nArchitecture Overview: ${proj.architecture}`
+          if (proj.live_url) richDesc += `\n\nLive Demo: ${proj.live_url}`
+
           setCreateForm(prev => ({
             ...prev,
             source_type: 'project',
-            project_id: proj.id,
+            project_id: String(proj.id),
             project_title: proj.title,
             title: `Peer Review Request: ${proj.title}`,
-            description: proj.description || '',
+            description: richDesc,
             github_url: proj.github_url || '',
             language: proj.tags?.[0]?.name?.toLowerCase() || 'javascript',
           }))
@@ -168,10 +219,11 @@ export default function PeerCodeReviewPage() {
     }
   }, [searchParams])
 
-  // Load user projects when modal opens
+  // Lock scroll when modal is open and refresh options
   useEffect(() => {
     if (showCreateModal) {
       document.body.style.overflow = 'hidden'
+      loadModalData()
     } else {
       document.body.style.overflow = ''
     }
@@ -179,17 +231,6 @@ export default function PeerCodeReviewPage() {
       document.body.style.overflow = ''
     }
   }, [showCreateModal])
-
-  useEffect(() => {
-    if (showCreateModal && user) {
-      showcaseService.getMyProjects()
-        .then(res => setUserProjects(res.data?.results || res.data || []))
-        .catch(() => {})
-      challengeService.getAll()
-        .then(res => setUserChallenges(res.data?.results || res.data || []))
-        .catch(() => {})
-    }
-  }, [showCreateModal, user])
 
   const loadDetail = async (id) => {
     setLoadingDetail(true)
@@ -206,6 +247,18 @@ export default function PeerCodeReviewPage() {
   const handleCreateSubmit = async (e) => {
     e.preventDefault()
     if (!createForm.title.trim()) return
+
+    // Mandatory validation for Project and Challenge selection
+    if (createForm.source_type === 'project' && !createForm.project_id) {
+      setToast({ type: 'error', message: '⚠️ Please select a Showcase project for your review request.' })
+      setTimeout(() => setToast(null), 4000)
+      return
+    }
+    if (createForm.source_type === 'challenge' && !createForm.challenge_id) {
+      setToast({ type: 'error', message: '⚠️ Please select a Challenge for your review request.' })
+      setTimeout(() => setToast(null), 4000)
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -365,7 +418,10 @@ export default function PeerCodeReviewPage() {
             data-tour="peer-review-create"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              setCreateForm({ title:'', description:'', source_type:'project', project_id:'', project_title:'', challenge_id:'', challenge_title:'', language:'javascript', github_url:'', focus_areas:['readability','architecture'] })
+              setShowCreateModal(true)
+            }}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '11px 22px', borderRadius: 12, fontSize: 13, fontWeight: 800,
@@ -439,7 +495,10 @@ export default function PeerCodeReviewPage() {
                   Be the first developer to post a code review request in this feed!
                 </p>
                 <button
-                  onClick={() => setShowCreateModal(true)}
+                  onClick={() => {
+                    setCreateForm({ title:'', description:'', source_type:'project', project_id:'', project_title:'', challenge_id:'', challenge_title:'', language:'javascript', github_url:'', focus_areas:['readability','architecture'] })
+                    setShowCreateModal(true)
+                  }}
                   style={{
                     padding: '8px 16px', borderRadius: 10, fontSize: 12, fontWeight: 700,
                     background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
@@ -809,11 +868,14 @@ export default function PeerCodeReviewPage() {
                 {/* If Showcase Project source selected */}
                 {createForm.source_type === 'project' && (
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Select Showcase Project</label>
+                    <label style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+                      Select Showcase Project <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
                     <select
+                      required
                       value={createForm.project_id}
                       onChange={e => {
-                        const proj = userProjects.find(p => p.id === parseInt(e.target.value))
+                        const proj = userProjects.find(p => String(p.id) === String(e.target.value))
                         setCreateForm(prev => ({
                           ...prev,
                           project_id: e.target.value,
@@ -824,7 +886,7 @@ export default function PeerCodeReviewPage() {
                       }}
                       style={{ width: '100%', padding: '9px 14px', borderRadius: 10, fontSize: 12.5, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', outline: 'none' }}
                     >
-                      <option value="">-- Choose one of your published Showcase projects --</option>
+                      <option value="" disabled>-- Select a Showcase Project --</option>
                       {userProjects.map(p => (
                         <option key={p.id} value={p.id}>{p.title}</option>
                       ))}
@@ -835,8 +897,11 @@ export default function PeerCodeReviewPage() {
                 {/* If Challenge source selected */}
                 {createForm.source_type === 'challenge' && (
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Select Challenge</label>
+                    <label style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+                      Select Challenge <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
                     <select
+                      required
                       value={createForm.challenge_id}
                       onChange={e => {
                         const ch = userChallenges.find(c => String(c.id) === String(e.target.value))
@@ -849,7 +914,7 @@ export default function PeerCodeReviewPage() {
                       }}
                       style={{ width: '100%', padding: '9px 14px', borderRadius: 10, fontSize: 12.5, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--text-color)', outline: 'none' }}
                     >
-                      <option value="">-- Choose a challenge --</option>
+                      <option value="" disabled>-- Select a Challenge --</option>
                       {userChallenges.map(c => (
                         <option key={c.id} value={c.id}>{c.title}</option>
                       ))}

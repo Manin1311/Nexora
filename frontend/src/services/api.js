@@ -27,7 +27,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Auto-refresh on 401
+// Auto-refresh on 401 & uniform error handling
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -46,6 +46,15 @@ api.interceptors.response.use(
           localStorage.removeItem('nexora_refresh')
           window.location.href = '/login'
         }
+      }
+    }
+    // Handle 502 / 503 / Bad Gateway / Offline backend server errors cleanly
+    if (!error.response || error.response.status === 502 || error.response.status === 503) {
+      const offlineMsg = 'Backend server is offline or unreachable (502 Bad Gateway). Please make sure the Django backend is running.'
+      if (!error.response) {
+        error.response = { status: 502, data: { error: offlineMsg } }
+      } else if (typeof error.response.data !== 'object' || !error.response.data || !error.response.data.error) {
+        error.response.data = { error: offlineMsg }
       }
     }
     return Promise.reject(error)

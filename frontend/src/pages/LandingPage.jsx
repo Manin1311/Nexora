@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { challengeService } from '@/services/challengeService'
 import { authService } from '@/services/authService'
+import api from '@/services/api'
 import { useAuth } from '@/context/AuthContext'
 import { useTheme } from '@/context/ThemeContext'
 import Avatar from '@/components/ui/Avatar'
@@ -849,9 +850,8 @@ function Testimonials() {
 
   // Fetch reviews from backend on mount
   const fetchReviews = () => {
-    fetch('/api/reviews/')
-      .then(r => r.json())
-      .then(data => { if (data.reviews?.length > 0) setReviews(data.reviews) })
+    api.get('/reviews/')
+      .then(res => { if (res.data?.reviews?.length > 0) setReviews(res.data.reviews) })
       .catch(() => {})
   }
   useEffect(() => { fetchReviews() }, [])
@@ -861,12 +861,8 @@ function Testimonials() {
     if (!name.trim() || !text.trim()) return
     setLoading(true)
     try {
-      const res = await fetch('/api/reviews/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), role: role.trim(), text: text.trim(), rating })
-      })
-      if (res.ok) {
+      const res = await api.post('/reviews/', { name: name.trim(), role: role.trim(), text: text.trim(), rating })
+      if (res.status === 200 || res.status === 201) {
         setSubmitted(true)
         fetchReviews()
         setTimeout(() => closeModal(), 1400)

@@ -52,7 +52,7 @@ export default function FundamentalsPage() {
   const { user } = useAuth()
   const [screen, setScreen] = useState('lobby') // lobby | exam | scorecard
   const [activeSession, setActiveSession] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [loadingCompany, setLoadingCompany] = useState(null) // null | company name
   const [selectedLanguage, setSelectedLanguage] = useState('python')
   
   // Exam state
@@ -70,9 +70,18 @@ export default function FundamentalsPage() {
   const isTabAwayRef = useRef(false)
   const examStartTimestampRef = useRef(0)
   const [isScreenFrozen, setIsScreenFrozen] = useState(false)
+  const [isFinishing, setIsFinishing] = useState(false)
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false)
+  const [screenshotToast, setScreenshotToast] = useState(false)
   
   // Scorecard state
   const [scorecard, setScorecard] = useState(null)
+
+  // Ref to suppress violations while a confirm modal is open or PrintScreen was pressed
+  const isConfirmOpenRef = useRef(false)
+  const isPrintScreenRef = useRef(false)
+  // Stable ref for triggerViolation — prevents stale-closure in useEffect handlers
+  const triggerViolationRef = useRef(null)
 
   // Track when the exam cockpit starts to prevent initial transition focus noise
   useEffect(() => {
@@ -115,7 +124,7 @@ export default function FundamentalsPage() {
 
   // Start assessment handler
   const handleStartAssessment = async (company) => {
-    setLoading(true)
+    setLoadingCompany(company)
     try {
       // Try to enter fullscreen
       try {
@@ -150,7 +159,7 @@ export default function FundamentalsPage() {
       alert("Failed to start assessment: " + (err.response?.data?.error || err.message))
       if (document.exitFullscreen) document.exitFullscreen().catch(() => {})
     } finally {
-      setLoading(false)
+      setLoadingCompany(null)
     }
   }
 
@@ -189,92 +198,114 @@ export default function FundamentalsPage() {
     }
   }
 
-  // Log focus-loss telemetry warning
+  // Log focus-loss telemetry warning — always up-to-date via ref
   const triggerViolation = async (eventType) => {
     if (!activeSession) return
+    if (isConfirmOpenRef.current) return  // suppress: our own React modal is open
+    if (isPrintScreenRef.current) {        // suppress: PrintScreen key just pressed
+      isPrintScreenRef.current = false
+      return
+    }
+    // Show the freeze overlay immediately — don't wait for the network round-trip
+    setIsScreenFrozen(true)
     try {
       const res = await api.post('/challenges/assessment/telemetry/', {
         session_id: activeSession.session_id,
         event_type: eventType
       })
-      
       setWarnings(res.data.total_warnings)
-      
       if (res.data.warning_threshold_exceeded || res.data.status === 'flagged') {
         setIsDisqualified(true)
-        setIsScreenFrozen(true)
-      } else {
-        setIsScreenFrozen(true)
       }
     } catch (err) {
       console.error("Failed to log telemetry:", err)
     }
   }
+  // Keep the ref always pointing at the latest triggerViolation closure
+  triggerViolationRef.current = triggerViolation
 
   // Finish whole assessment
   const handleFinishAssessment = async (wasDisqualified = false) => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current)
-    
+    setIsScreenFrozen(false)
+    setShowFinishConfirm(false)
+    setIsFinishing(true)
     // Exit Fullscreen
     try {
       if (document.fullscreenElement && document.exitFullscreen) {
         await document.exitFullscreen()
       }
     } catch (e) {}
-
-    setLoading(true)
     try {
       const res = await api.post('/challenges/assessment/finish/', {
         session_id: activeSession.session_id
       })
-      
       setScorecard(res.data)
-      setScreen('scorecard')
       setActiveSession(null)
+      setScreen('scorecard')
     } catch (err) {
       console.error("Failed to finish assessment: ", err)
       setScreen('lobby')
     } finally {
-      setLoading(false)
+      setIsFinishing(false)
     }
   }
 
+
   // Telemetry monitoring event hooks
+  // NOTE: all handlers call via triggerViolationRef so they always use the latest closure
   useEffect(() => {
     if (screen !== 'exam' || !activeSession) return
 
     const handleBlur = () => {
       if (Date.now() - examStartTimestampRef.current < 3000) return
+      if (isConfirmOpenRef.current) return
       isTabAwayRef.current = true
     }
 
     const handleFocus = () => {
       if (Date.now() - examStartTimestampRef.current < 3000) return
+      if (isConfirmOpenRef.current) return
       if (isTabAwayRef.current) {
         isTabAwayRef.current = false
-        triggerViolation('tab_blur')
+        triggerViolationRef.current?.('tab_blur')
       }
     }
     
     const handleVisibilityChange = () => {
+      if (isConfirmOpenRef.current) return
       if (document.visibilityState === 'hidden') {
         if (Date.now() - examStartTimestampRef.current < 3000) return
         isTabAwayRef.current = true
       } else if (document.visibilityState === 'visible' && isTabAwayRef.current) {
         isTabAwayRef.current = false
-        triggerViolation('tab_blur')
+        triggerViolationRef.current?.('tab_blur')
       }
     }
 
     const handleFullscreenChange = () => {
+      if (isConfirmOpenRef.current) return
       if (Date.now() - examStartTimestampRef.current < 3000) return
       if (!document.fullscreenElement) {
-        triggerViolation('fullscreen_exit')
+        triggerViolationRef.current?.('fullscreen_exit')
+      }
+    }
+
+    // Suppress PrintScreen key as a violation trigger — show a toast instead
+    const handleKeyDown = (e) => {
+      if (e.key === 'PrintScreen') {
+        isPrintScreenRef.current = true
+        setScreenshotToast(true)
+        setTimeout(() => {
+          isPrintScreenRef.current = false
+          setScreenshotToast(false)
+        }, 3000)
       }
     }
 
     window.addEventListener('blur', handleBlur)
     window.addEventListener('focus', handleFocus)
+    window.addEventListener('keydown', handleKeyDown)
     document.addEventListener('visibilitychange', handleVisibilityChange)
     document.addEventListener('fullscreenchange', handleFullscreenChange)
 
@@ -283,6 +314,7 @@ export default function FundamentalsPage() {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timerIntervalRef.current)
+          triggerViolationRef.current = null // stop violations
           handleFinishAssessment()
           return 0
         }
@@ -293,6 +325,7 @@ export default function FundamentalsPage() {
     return () => {
       window.removeEventListener('blur', handleBlur)
       window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current)
@@ -324,13 +357,29 @@ export default function FundamentalsPage() {
   }
   return (
     <PageWrapper noPadding>
+      {/* ── Screenshot detected toast ── */}
+      {screenshotToast && (
+        <div style={{
+          position: 'fixed', top: 80, right: 24, zIndex: 9999,
+          background: 'rgba(245,158,11,0.95)', backdropFilter: 'blur(8px)',
+          border: '1px solid #f59e0b', borderRadius: 12,
+          padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10,
+          boxShadow: '0 8px 32px rgba(245,158,11,0.3)', color: '#000',
+          fontSize: 13, fontWeight: 800, animation: 'slideInRight 0.3s ease'
+        }}>
+          <ShieldAlert size={16} /> Screenshot detected — not logged as a violation
+        </div>
+      )}
+
+      {/* ── Non-exam screens (lobby / scorecard) ── */}
+      {screen !== 'exam' && (
       <div style={{
         position: 'relative',
         width: '100%',
         minHeight: 'calc(100vh - 64px)',
         background: 'var(--bg-color)',
-        overflow: screen === 'exam' ? 'hidden' : 'auto',
-        padding: screen === 'exam' ? '12px 20px' : '28px 36px',
+        overflow: 'auto',
+        padding: '28px 36px',
         boxSizing: 'border-box'
       }}>
         {/* Futuristic Background grids */}
@@ -438,16 +487,18 @@ export default function FundamentalsPage() {
 
                     <button
                       onClick={() => handleStartAssessment(spec.name)}
-                      disabled={loading}
+                      disabled={loadingCompany !== null}
                       style={{
                         width: '100%', padding: '14px', borderRadius: 12, border: 'none', outline: 'none',
                         background: `linear-gradient(135deg, ${spec.color}, #a855f7)`, color: '#fff',
-                        fontSize: 13.5, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center',
+                        fontSize: 13.5, fontWeight: 900, cursor: loadingCompany !== null ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center',
                         justifyContent: 'center', gap: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-                        marginTop: 'auto'
+                        marginTop: 'auto', opacity: loadingCompany !== null && loadingCompany !== spec.name ? 0.5 : 1,
+                        transition: 'opacity 0.2s'
                       }}
                     >
-                      {loading ? (
+                      {loadingCompany === spec.name ? (
                         <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
                       ) : (
                         <><Zap size={14} /> Start Proctored Assessment</>
@@ -456,302 +507,6 @@ export default function FundamentalsPage() {
                   </motion.div>
                 ))}
               </div>
-            </motion.div>
-          )}
-
-          {/* ══════════════ 2. EXAM INTERFACE SCREEN ══════════════ */}
-          {screen === 'exam' && activeSession && (
-            <motion.div
-              key="exam"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              style={{
-                height: 'calc(100vh - 88px)', display: 'flex', flexDirection: 'column', gap: 12,
-                position: 'relative', zIndex: 1
-              }}
-            >
-              {/* Top proctored HUD */}
-              <div style={{
-                display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center',
-                padding: '12px 24px', background: 'rgba(10, 10, 15, 0.85)',
-                border: '1px solid rgba(99,102,241,0.3)', borderRadius: 16, flexShrink: 0
-              }}>
-                {/* Left: Company & Questions count */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <Building2 size={18} style={{ color: '#818cf8' }} />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: '#fff' }}>
-                      {activeSession.company} Online Assessment
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
-                      Candidate Test Session
-                    </div>
-                  </div>
-                </div>
-
-                {/* Center: Timer widget */}
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '6px 20px',
-                  borderRadius: 10, background: timeLeft < 120 ? 'rgba(239,68,68,0.12)' : 'rgba(99,102,241,0.08)',
-                  border: `1.5px solid ${timeLeft < 120 ? '#ef4444' : 'rgba(99,102,241,0.25)'}`
-                }}>
-                  <Clock size={14} style={{ color: timeLeft < 120 ? '#ef4444' : '#818cf8' }} />
-                  <span style={{ fontSize: 16, fontWeight: 900, color: timeLeft < 120 ? '#ef4444' : '#fff', fontFamily: 'monospace' }}>
-                    {formatTime(timeLeft)}
-                  </span>
-                </div>
-
-                {/* Right: Telemetry Alerts & Finish */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'flex-end' }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8,
-                    background: warnings >= 2 ? 'rgba(239,68,68,0.1)' : warnings >= 1 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)',
-                    border: `1px solid ${warnings >= 2 ? '#ef4444' : warnings >= 1 ? '#f59e0b' : 'var(--card-border)'}`,
-                    fontSize: 11.5, fontWeight: 800, color: warnings >= 2 ? '#f87171' : warnings >= 1 ? '#fbbf24' : 'var(--text-muted)'
-                  }}>
-                    <ShieldAlert size={12} style={{ color: warnings >= 2 ? '#f87171' : warnings >= 1 ? '#fbbf24' : 'var(--text-muted)' }} />
-                    <span>Warnings: {warnings}/2</span>
-                  </div>
-
-                  <button
-                    onClick={() => { if (confirm("Are you sure you want to finish the entire assessment? Unfinished answers will be marked incomplete.")) handleFinishAssessment() }}
-                    style={{
-                      padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)',
-                      background: 'rgba(239,68,68,0.05)', color: '#ef4444', fontSize: 12, fontWeight: 700,
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
-                    }}
-                  >
-                    <LogOut size={13} /> Finish Exam
-                  </button>
-                </div>
-              </div>
-
-              {/* Main Workspace Workspace */}
-              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '400px 1fr', gap: 12, minHeight: 0 }}>
-                
-                {/* Left side: Problem Description */}
-                <div style={{
-                  background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                  borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 16,
-                  minHeight: 0, overflowY: 'auto'
-                }} className="no-scrollbar">
-                  
-                  {/* Step Selector Tab */}
-                  <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--card-border)', paddingBottom: 10 }}>
-                    {challenges.map((c, idx) => (
-                      <button
-                        key={c.id}
-                        onClick={() => setActiveChallengeIdx(idx)}
-                        style={{
-                          flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none', outline: 'none',
-                          fontSize: 12.5, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-                          background: activeChallengeIdx === idx ? 'rgba(99,102,241,0.12)' : 'transparent',
-                          color: activeChallengeIdx === idx ? '#818cf8' : 'var(--text-muted)',
-                          borderBottom: activeChallengeIdx === idx ? '2px solid #6366f1' : 'none'
-                        }}
-                      >
-                        Challenge {idx + 1}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Active Question details */}
-                  {challenges[activeChallengeIdx] && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <span style={{
-                          padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800,
-                          background: 'rgba(99,102,241,0.08)', color: '#818cf8'
-                        }}>
-                          {challenges[activeChallengeIdx].topic}
-                        </span>
-                        <span style={{
-                          padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800,
-                          background: challenges[activeChallengeIdx].difficulty === 'hard' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
-                          color: challenges[activeChallengeIdx].difficulty === 'hard' ? '#ef4444' : '#f59e0b'
-                        }}>
-                          {challenges[activeChallengeIdx].difficulty.toUpperCase()}
-                        </span>
-                      </div>
-
-                      <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-heading)', margin: 0 }}>
-                        {challenges[activeChallengeIdx].title}
-                      </h3>
-                      
-                      <p style={{ fontSize: 13, color: 'var(--text-color)', lineHeight: 1.6, whiteSpace: 'pre-line', margin: 0 }}>
-                        {challenges[activeChallengeIdx].description}
-                      </p>
-
-                      {/* Score card / attempt status */}
-                      <div style={{
-                        marginTop: 16, padding: 14, borderRadius: 10, background: 'rgba(255,255,255,0.015)',
-                        border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 10
-                      }}>
-                        {submissionResults[challenges[activeChallengeIdx].id] ? (
-                          <>
-                            {submissionResults[challenges[activeChallengeIdx].id].passed === submissionResults[challenges[activeChallengeIdx].id].total ? (
-                              <CheckCircle2 size={16} style={{ color: '#10b981' }} />
-                            ) : (
-                              <XCircle size={16} style={{ color: '#f59e0b' }} />
-                            )}
-                            <div style={{ fontSize: 12.5, fontWeight: 700 }}>
-                              Attempt Status: <span style={{ color: submissionResults[challenges[activeChallengeIdx].id].passed === submissionResults[challenges[activeChallengeIdx].id].total ? '#10b981' : '#f59e0b' }}>
-                                {submissionResults[challenges[activeChallengeIdx].id].passed}/{submissionResults[challenges[activeChallengeIdx].id].total} Test Cases Passed
-                              </span>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <AlertCircle size={16} style={{ color: 'var(--text-muted)' }} />
-                            <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-muted)' }}>
-                              This challenge has not been submitted yet.
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Right side: Editor Pane */}
-                <div style={{
-                  background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                  borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0
-                }}>
-                  {/* Editor control bar */}
-                  <div style={{
-                    padding: '10px 20px', background: 'rgba(0,0,0,0.25)', borderBottom: '1px solid var(--card-border)',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0
-                  }}>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {['python', 'javascript'].map(l => (
-                        <button
-                          key={l}
-                          onClick={() => handleLanguageChange(l)}
-                          style={{
-                            padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
-                            border: 'none', cursor: 'pointer', transition: 'all 0.2s',
-                            background: selectedLanguage === l ? 'rgba(99,102,241,0.15)' : 'transparent',
-                            color: selectedLanguage === l ? '#818cf8' : 'var(--text-muted)'
-                          }}
-                        >
-                          {l.toUpperCase()}
-                        </button>
-                      ))}
-                    </div>
-
-                    <button
-                      onClick={handleSubmitCode}
-                      disabled={submittingIds[challenges[activeChallengeIdx]?.id]}
-                      style={{
-                        padding: '8px 20px', borderRadius: 8, border: 'none', outline: 'none',
-                        background: 'linear-gradient(135deg, #6366f1, #a855f7)', color: '#fff',
-                        fontSize: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
-                      }}
-                    >
-                      {submittingIds[challenges[activeChallengeIdx]?.id] ? (
-                        <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Submitting...</>
-                      ) : (
-                        <><Play size={13} /> Run & Submit OA</>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Monaco Editor Container */}
-                  <div style={{ flex: 1, minHeight: 0 }}>
-                    {challenges[activeChallengeIdx] && (
-                      <Editor
-                        height="100%"
-                        language={selectedLanguage === 'python' ? 'python' : 'javascript'}
-                        theme="vs-dark"
-                        value={userCodes[challenges[activeChallengeIdx].id] || ''}
-                        onChange={(val) => handleCodeChange(challenges[activeChallengeIdx].id, val || '')}
-                        options={{ fontSize: 13, minimap: { enabled: false }, scrollBeyondLastLine: false, automaticLayout: true }}
-                      />
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {isScreenFrozen && (
-                <div style={{
-                  position: 'fixed', inset: 0, zIndex: 1000,
-                  background: 'rgba(5, 5, 10, 0.85)', backdropFilter: 'blur(12px)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    style={{
-                      background: 'var(--card-bg)', border: `1.5px solid ${isDisqualified ? '#ef4444' : '#f59e0b'}`,
-                      borderRadius: 20, padding: '36px 40px', maxWidth: 480, width: '90%',
-                      textAlign: 'center', boxShadow: `0 20px 50px ${isDisqualified ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.15)'}`
-                    }}
-                  >
-                    {isDisqualified ? (
-                      <>
-                        <AlertCircle size={48} style={{ color: '#ef4444', marginBottom: 18 }} />
-                        <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-heading)', margin: '0 0 12px' }}>
-                          Assessment Terminated
-                        </h2>
-                        <p style={{ fontSize: 13.5, color: 'var(--text-color)', lineHeight: 1.6, margin: '0 0 24px' }}>
-                          You have exceeded the maximum focus change limit of 2 warnings. 
-                          This assessment session is disqualified due to proctoring violations.
-                        </p>
-                        <button
-                          onClick={() => {
-                            setIsScreenFrozen(false)
-                            handleFinishAssessment(true)
-                          }}
-                          style={{
-                            padding: '12px 28px', borderRadius: 10, border: 'none', outline: 'none',
-                            background: 'linear-gradient(135deg, #ef4444, #f43f5e)', color: '#fff',
-                            fontSize: 13.5, fontWeight: 900, cursor: 'pointer', boxShadow: '0 4px 15px rgba(239,68,68,0.2)'
-                          }}
-                        >
-                          Acknowledge & View Scorecard
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle size={48} style={{ color: '#f59e0b', marginBottom: 18 }} />
-                        <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-heading)', margin: '0 0 12px' }}>
-                          Proctoring Warning
-                        </h2>
-                        <p style={{ fontSize: 13.5, color: 'var(--text-color)', lineHeight: 1.6, margin: '0 0 24px' }}>
-                          You navigated away from the assessment page or switched tabs. 
-                          This violation has been logged to the proctoring server.
-                          <br /><br />
-                          <strong style={{ color: 'var(--text-heading)' }}>Warnings triggered: {warnings} / 2</strong>
-                          <br />
-                          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                            A third focus loss will result in automatic disqualification.
-                          </span>
-                        </p>
-                        <button
-                          onClick={async () => {
-                            setIsScreenFrozen(false)
-                            // Request fullscreen again if lost
-                            try {
-                              if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-                                await document.documentElement.requestFullscreen()
-                              }
-                            } catch (e) {}
-                          }}
-                          style={{
-                            padding: '12px 28px', borderRadius: 10, border: 'none', outline: 'none',
-                            background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff',
-                            fontSize: 13.5, fontWeight: 900, cursor: 'pointer', boxShadow: '0 4px 15px rgba(245,158,11,0.2)'
-                          }}
-                        >
-                          Acknowledge & Resume
-                        </button>
-                      </>
-                    )}
-                  </motion.div>
-                </div>
-              )}
             </motion.div>
           )}
 
@@ -782,7 +537,7 @@ export default function FundamentalsPage() {
                   </div>
                   <h1 style={{
                     fontSize: 28, fontWeight: 950, margin: '0 0 6px', letterSpacing: '-0.02em',
-                    color: scorecard.status === 'flagged' ? '#ef4444' : '#fff'
+                    color: scorecard.status === 'flagged' ? '#ef4444' : 'var(--text-heading)'
                   }}>
                     {scorecard.status === 'flagged' ? 'DISQUALIFIED / FLAGGED' : 'OA SESSION REPORT'}
                   </h1>
@@ -806,7 +561,7 @@ export default function FundamentalsPage() {
                     </div>
                   </div>
                   <div style={{ borderLeft: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)' }}>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: '#fff' }}>
+                    <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-heading)' }}>
                       {scorecard.completed_steps}/2
                     </div>
                     <div style={{ fontSize: 9.5, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4 }}>
@@ -838,7 +593,7 @@ export default function FundamentalsPage() {
                 {/* Markdown Feedback Report */}
                 <div style={{
                   maxHeight: 220, overflowY: 'auto', padding: '16px 20px', borderRadius: 14,
-                  background: 'rgba(0,0,0,0.2)', border: '1px solid var(--card-border)',
+                  background: 'var(--card-bg)', border: '1px solid var(--card-border)',
                   fontSize: 12.5, color: 'var(--text-color)', lineHeight: 1.6, marginBottom: 32,
                   textAlign: 'left'
                 }} className="no-scrollbar">
@@ -870,6 +625,317 @@ export default function FundamentalsPage() {
 
         </AnimatePresence>
       </div>
+      )}
+
+      {/* ── EXAM: full-viewport fixed overlay (covers sidebar + navbar cleanly) ── */}
+      {screen === 'exam' && activeSession && (
+        <motion.div
+          key="exam-fixed"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 500,
+            background: 'var(--bg-color)',
+            display: 'flex', flexDirection: 'column',
+            padding: '12px 20px',
+            boxSizing: 'border-box',
+            overflow: 'hidden'
+          }}
+        >
+          {/* dot-grid background */}
+          <div style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none', backgroundImage: 'radial-gradient(var(--card-border) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+
+          {/* Top proctored HUD */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center',
+            padding: '12px 24px', background: 'rgba(10, 10, 15, 0.9)',
+            border: '1px solid rgba(99,102,241,0.3)', borderRadius: 16, flexShrink: 0, position: 'relative', zIndex: 1
+          }}>
+            {/* Left: Company */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Building2 size={18} style={{ color: '#818cf8' }} />
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: '#e2e8f0' }}>
+                  {activeSession.company} Online Assessment
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>Candidate Test Session</div>
+              </div>
+            </div>
+
+            {/* Center: Timer */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '6px 20px',
+              borderRadius: 10,
+              background: timeLeft < 120 ? 'rgba(239,68,68,0.12)' : 'rgba(99,102,241,0.08)',
+              border: `1.5px solid ${timeLeft < 120 ? '#ef4444' : 'rgba(99,102,241,0.25)'}`
+            }}>
+              <Clock size={14} style={{ color: timeLeft < 120 ? '#ef4444' : '#818cf8' }} />
+              <span style={{ fontSize: 16, fontWeight: 900, color: timeLeft < 120 ? '#ef4444' : '#e2e8f0', fontFamily: 'monospace' }}>
+                {formatTime(timeLeft)}
+              </span>
+            </div>
+
+            {/* Right: Warnings + Finish */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'flex-end' }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8,
+                background: warnings >= 2 ? 'rgba(239,68,68,0.1)' : warnings >= 1 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${warnings >= 2 ? '#ef4444' : warnings >= 1 ? '#f59e0b' : 'var(--card-border)'}`,
+                fontSize: 11.5, fontWeight: 800,
+                color: warnings >= 2 ? '#f87171' : warnings >= 1 ? '#fbbf24' : 'var(--text-muted)'
+              }}>
+                <ShieldAlert size={12} style={{ color: warnings >= 2 ? '#f87171' : warnings >= 1 ? '#fbbf24' : 'var(--text-muted)' }} />
+                <span>Warnings: {warnings}/2</span>
+              </div>
+              <button
+                onClick={() => { isConfirmOpenRef.current = true; setShowFinishConfirm(true) }}
+                style={{
+                  padding: '8px 16px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)',
+                  background: 'rgba(239,68,68,0.05)', color: '#ef4444', fontSize: 12, fontWeight: 700,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                }}
+              >
+                <LogOut size={13} /> Finish Exam
+              </button>
+            </div>
+          </div>
+
+          {/* Main workspace */}
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '400px 1fr', gap: 12, minHeight: 0, position: 'relative', zIndex: 1, marginTop: 12 }}>
+
+            {/* Left: Problem Description */}
+            <div style={{
+              background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+              borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 16,
+              minHeight: 0, overflowY: 'auto'
+            }} className="no-scrollbar">
+
+              {/* Step Selector Tab */}
+              <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--card-border)', paddingBottom: 10 }}>
+                {challenges.map((c, idx) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setActiveChallengeIdx(idx)}
+                    style={{
+                      flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none', outline: 'none',
+                      fontSize: 12.5, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+                      background: activeChallengeIdx === idx ? 'rgba(99,102,241,0.12)' : 'transparent',
+                      color: activeChallengeIdx === idx ? '#818cf8' : 'var(--text-muted)',
+                      borderBottom: activeChallengeIdx === idx ? '2px solid #6366f1' : 'none'
+                    }}
+                  >
+                    Challenge {idx + 1}
+                  </button>
+                ))}
+              </div>
+
+              {/* Active Question details */}
+              {challenges[activeChallengeIdx] && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800, background: 'rgba(99,102,241,0.08)', color: '#818cf8' }}>
+                      {challenges[activeChallengeIdx].topic}
+                    </span>
+                    <span style={{
+                      padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800,
+                      background: challenges[activeChallengeIdx].difficulty === 'hard' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
+                      color: challenges[activeChallengeIdx].difficulty === 'hard' ? '#ef4444' : '#f59e0b'
+                    }}>
+                      {challenges[activeChallengeIdx].difficulty.toUpperCase()}
+                    </span>
+                  </div>
+                  <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-heading)', margin: 0 }}>
+                    {challenges[activeChallengeIdx].title}
+                  </h3>
+                  <p style={{ fontSize: 13, color: 'var(--text-color)', lineHeight: 1.6, whiteSpace: 'pre-line', margin: 0 }}>
+                    {challenges[activeChallengeIdx].description}
+                  </p>
+                  <div style={{ marginTop: 8, padding: 14, borderRadius: 10, background: 'rgba(255,255,255,0.015)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {submissionResults[challenges[activeChallengeIdx].id] ? (
+                      <>
+                        {submissionResults[challenges[activeChallengeIdx].id].passed === submissionResults[challenges[activeChallengeIdx].id].total
+                          ? <CheckCircle2 size={16} style={{ color: '#10b981' }} />
+                          : <XCircle size={16} style={{ color: '#f59e0b' }} />}
+                        <div style={{ fontSize: 12.5, fontWeight: 700 }}>
+                          Attempt Status: <span style={{ color: submissionResults[challenges[activeChallengeIdx].id].passed === submissionResults[challenges[activeChallengeIdx].id].total ? '#10b981' : '#f59e0b' }}>
+                            {submissionResults[challenges[activeChallengeIdx].id].passed}/{submissionResults[challenges[activeChallengeIdx].id].total} Test Cases Passed
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle size={16} style={{ color: 'var(--text-muted)' }} />
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-muted)' }}>This challenge has not been submitted yet.</div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right: Editor Pane */}
+            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              {/* Editor control bar */}
+              <div style={{
+                padding: '10px 20px', background: 'rgba(0,0,0,0.25)', borderBottom: '1px solid var(--card-border)',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0
+              }}>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {['python', 'javascript'].map(l => (
+                    <button
+                      key={l}
+                      onClick={() => handleLanguageChange(l)}
+                      style={{
+                        padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                        border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                        background: selectedLanguage === l ? 'rgba(99,102,241,0.15)' : 'transparent',
+                        color: selectedLanguage === l ? '#818cf8' : 'var(--text-muted)'
+                      }}
+                    >{l.toUpperCase()}</button>
+                  ))}
+                </div>
+                <button
+                  onClick={handleSubmitCode}
+                  disabled={submittingIds[challenges[activeChallengeIdx]?.id]}
+                  style={{
+                    padding: '8px 20px', borderRadius: 8, border: 'none', outline: 'none',
+                    background: 'linear-gradient(135deg, #6366f1, #a855f7)', color: '#fff',
+                    fontSize: 12, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                  }}
+                >
+                  {submittingIds[challenges[activeChallengeIdx]?.id]
+                    ? <><Loader2 size={13} style={{ animation: 'spin 1s linear infinite' }} /> Submitting...</>
+                    : <><Play size={13} /> Run & Submit OA</>}
+                </button>
+              </div>
+              {/* Monaco Editor */}
+              <div style={{ flex: 1, minHeight: 0 }}>
+                {challenges[activeChallengeIdx] && (
+                  <Editor
+                    height="100%"
+                    language={selectedLanguage}
+                    theme="vs-dark"
+                    value={userCodes[challenges[activeChallengeIdx].id] || ''}
+                    onChange={(val) => handleCodeChange(challenges[activeChallengeIdx].id, val || '')}
+                    options={{ fontSize: 13, minimap: { enabled: false }, scrollBeyondLastLine: false, automaticLayout: true }}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Finishing overlay ── */}
+          {isFinishing && (
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 1100,
+              background: 'rgba(5,5,10,0.92)', backdropFilter: 'blur(16px)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16
+            }}>
+              <Loader2 size={40} style={{ color: '#818cf8', animation: 'spin 1s linear infinite' }} />
+              <p style={{ color: '#818cf8', fontWeight: 800, fontSize: 15, margin: 0 }}>Submitting assessment…</p>
+            </div>
+          )}
+
+          {/* ── Inline Finish-Exam confirm modal ── */}
+          {showFinishConfirm && (
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 1050,
+              background: 'rgba(5,5,10,0.82)', backdropFilter: 'blur(12px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                style={{
+                  background: 'var(--card-bg)', border: '1.5px solid rgba(239,68,68,0.5)',
+                  borderRadius: 20, padding: '36px 40px', maxWidth: 440, width: '90%',
+                  textAlign: 'center', boxShadow: '0 20px 50px rgba(239,68,68,0.15)'
+                }}
+              >
+                <LogOut size={40} style={{ color: '#ef4444', marginBottom: 16 }} />
+                <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-heading)', margin: '0 0 10px' }}>End Assessment?</h2>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, margin: '0 0 24px' }}>
+                  Are you sure you want to finish? Unsubmitted challenges will be marked incomplete.
+                </p>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                  <button
+                    onClick={() => { isConfirmOpenRef.current = false; setShowFinishConfirm(false) }}
+                    style={{ padding: '10px 24px', borderRadius: 10, border: '1px solid var(--card-border)', background: 'transparent', color: 'var(--text-muted)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                  >Cancel</button>
+                  <button
+                    onClick={() => { isConfirmOpenRef.current = false; handleFinishAssessment(false) }}
+                    style={{ padding: '10px 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #ef4444, #f43f5e)', color: '#fff', fontSize: 13, fontWeight: 900, cursor: 'pointer', boxShadow: '0 4px 15px rgba(239,68,68,0.2)' }}
+                  >Yes, End Exam</button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+
+          {/* ── Proctoring freeze overlay ── */}
+          {isScreenFrozen && (
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(5, 5, 10, 0.85)', backdropFilter: 'blur(12px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                style={{
+                  background: 'var(--card-bg)', border: `1.5px solid ${isDisqualified ? '#ef4444' : '#f59e0b'}`,
+                  borderRadius: 20, padding: '36px 40px', maxWidth: 480, width: '90%',
+                  textAlign: 'center', boxShadow: `0 20px 50px ${isDisqualified ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.15)'}`
+                }}
+              >
+                {isDisqualified ? (
+                  <>
+                    <AlertCircle size={48} style={{ color: '#ef4444', marginBottom: 18 }} />
+                    <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-heading)', margin: '0 0 12px' }}>Assessment Terminated</h2>
+                    <p style={{ fontSize: 13.5, color: 'var(--text-color)', lineHeight: 1.6, margin: '0 0 24px' }}>
+                      You have exceeded the maximum focus change limit of 2 warnings.
+                      This assessment session is disqualified due to proctoring violations.
+                    </p>
+                    <button
+                      onClick={() => handleFinishAssessment(true)}
+                      style={{ padding: '12px 28px', borderRadius: 10, border: 'none', outline: 'none', background: 'linear-gradient(135deg, #ef4444, #f43f5e)', color: '#fff', fontSize: 13.5, fontWeight: 900, cursor: 'pointer', boxShadow: '0 4px 15px rgba(239,68,68,0.2)' }}
+                    >Acknowledge & View Scorecard</button>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle size={48} style={{ color: '#f59e0b', marginBottom: 18 }} />
+                    <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--text-heading)', margin: '0 0 12px' }}>Proctoring Warning</h2>
+                    <p style={{ fontSize: 13.5, color: 'var(--text-color)', lineHeight: 1.6, margin: '0 0 24px' }}>
+                      You navigated away from the assessment page or switched tabs.
+                      This violation has been logged to the proctoring server.
+                      <br /><br />
+                      <strong style={{ color: 'var(--text-heading)' }}>Warnings triggered: {warnings} / 2</strong>
+                      <br />
+                      <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>A third focus loss will result in automatic disqualification.</span>
+                    </p>
+                    <button
+                      onClick={async () => {
+                        setIsScreenFrozen(false)
+                        try {
+                          if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                            await document.documentElement.requestFullscreen()
+                          }
+                        } catch (e) {}
+                      }}
+                      style={{ padding: '12px 28px', borderRadius: 10, border: 'none', outline: 'none', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff', fontSize: 13.5, fontWeight: 900, cursor: 'pointer', boxShadow: '0 4px 15px rgba(245,158,11,0.2)' }}
+                    >Acknowledge & Resume</button>
+                  </>
+                )}
+              </motion.div>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      <style>{`
+        @keyframes slideInRight {
+          from { opacity: 0; transform: translateX(40px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
     </PageWrapper>
   )
 }

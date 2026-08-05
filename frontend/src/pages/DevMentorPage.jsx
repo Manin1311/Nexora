@@ -673,12 +673,22 @@ export default function DevMentorPage() {
     architect: { label: 'Architect', icon: '🏛️', color: '#a78bfa' },
     legend:    { label: 'Legend',    icon: '👑', color: '#fbbf24' },
   }
+  const RANK_THRESHOLDS = {
+    explorer:  [0, 500],
+    builder:   [500, 2000],
+    creator:   [2000, 5000],
+    architect: [5000, 15000],
+    legend:    [15000, 15000],
+  }
 
   const currentPersona = PERSONAS[assistantRole] || PERSONAS.advisor
 
-  // Derive rank immediately from auth context — no wait for API
-  const userRank = summary?.rank || user?.profile?.dev_rank || 'explorer'
+  // Sync XP & Rank directly with AuthContext (matching Sidebar.jsx exactly)
+  const userXp = user?.profile?.total_xp ?? user?.xp ?? user?.total_xp ?? summary?.xp ?? 0
+  const userRank = user?.profile?.dev_rank || summary?.rank || 'explorer'
   const rankMeta = RANK_META[userRank] || RANK_META.explorer
+  const [rMin, rMax] = RANK_THRESHOLDS[userRank] || [0, 500]
+  const rankPct = rMax > rMin ? Math.min(100, Math.round(((userXp - rMin) / (rMax - rMin)) * 100)) : 100
 
   return (
     <PageWrapper noPadding>
@@ -1019,11 +1029,11 @@ export default function DevMentorPage() {
                     Level Progress: {rankMeta.icon} {rankMeta.label}
                   </span>
                   <span style={{ fontSize:11, color:'#818cf8', fontWeight:900 }}>
-                    {summary?.xp || user?.profile?.total_xp || 0} XP
+                    {userXp.toLocaleString()} XP
                   </span>
                 </div>
                 <div style={{ height:6, borderRadius:99, background:'var(--card-border)', overflow:'hidden' }}>
-                  <div style={{ width:`${summary?.rank_progress || 0}%`, height:'100%',
+                  <div style={{ width:`${rankPct}%`, height:'100%',
                     background:'linear-gradient(90deg, #6366f1, #a855f7)', borderRadius:99, transition:'width 0.8s' }} />
                 </div>
               </div>

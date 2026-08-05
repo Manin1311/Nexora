@@ -205,6 +205,7 @@ function renderCardThumbnail(project, hovered) {
 function ProjectCard({ project, onEdit, onDelete, isOwn, onSelect, onLike }) {
   const [hovered, setHovered] = useState(false)
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   return (
     <motion.div
@@ -314,22 +315,6 @@ function ProjectCard({ project, onEdit, onDelete, isOwn, onSelect, onLike }) {
             </span>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <button
-                onClick={(e) => { e.stopPropagation(); navigate(`/peer-review?project=${project.id}`) }}
-                title="Request Peer Review for this project"
-                style={{
-                  background: 'rgba(139,92,246,0.1)',
-                  border: '1px solid rgba(139,92,246,0.25)',
-                  borderRadius: 20, padding: '4px 10px', outline: 'none', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 5, color: '#a78bfa',
-                  fontSize: 11, fontWeight: 800, transition: 'all 0.2s'
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.2)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.1)' }}
-              >
-                <Users size={11} /> Review
-              </button>
-
               <button
                 onClick={(e) => { e.stopPropagation(); onLike(project.id) }}
                 title={project.is_liked ? "Remove Upvote" : "Upvote Project"}

@@ -124,7 +124,30 @@ class GitHubConnectView(APIView):
         if not re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,37}[a-zA-Z0-9])?$', username):
             return Response({'error': 'Invalid GitHub username format.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Check if username is already connected to ANOTHER user account
+        taken = UserProfile.objects.filter(
+            github_username__iexact=username,
+            github_connected=True
+        ).exclude(user=request.user).first()
+        if taken:
+            return Response(
+                {'error': f'GitHub profile "@{username}" is already connected to another Nexora user account.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+        # If current user already connected this SAME username and has existing cached data
+        if profile.github_connected and profile.github_username.lower() == username.lower() and profile.github_repos_json:
+            return Response({
+                'username':          profile.github_username,
+                'code_health_score': profile.code_health_score,
+                'repos':             profile.github_repos_json,
+                'repo_count':        len(profile.github_repos_json),
+                'cached':            True,
+                'message':           'GitHub account is already connected.'
+            }, status=status.HTTP_200_OK)
+
         profile.github_username = username
         profile.github_connected = True
         profile.save()
@@ -147,11 +170,11 @@ class GitHubScanView(APIView):
             elapsed = (timezone.now() - profile.github_scanned_at).total_seconds()
             if elapsed < 3600 and profile.github_repos_json:
                 return Response({
-                    'username':       profile.github_username,
+                    'username':          profile.github_username,
                     'code_health_score': profile.code_health_score,
-                    'repos':          profile.github_repos_json,
-                    'repo_count':     len(profile.github_repos_json),
-                    'cached':         True,
+                    'repos':             profile.github_repos_json,
+                    'repo_count':        len(profile.github_repos_json),
+                    'cached':            True,
                 })
 
         return _run_github_scan(request.user, profile)
@@ -166,8 +189,20 @@ def _run_github_scan(user, profile):
     if 'error' in result:
         return Response({'error': result['error']}, status=status.HTTP_400_BAD_REQUEST)
 
-    profile.code_health_score = result.get('overall_score', 0)
-    profile.github_repos_json = result.get('repos', [])
+    new_score = result.get('overall_score', 0)
+    repos = result.get('repos', [])
+
+    if repos:
+        profile.github_repos_json = repos
+        # Only update score if: no existing score yet, or new score is HIGHER than current.
+        # This prevents the AI from arbitrarily lowering the score on every rescan.
+        if profile.code_health_score == 0:
+            profile.code_health_score = new_score
+        elif new_score > profile.code_health_score:
+            profile.code_health_score = new_score
+    elif not profile.github_repos_json and new_score > 0:
+        profile.code_health_score = new_score
+
     profile.github_scanned_at = timezone.now()
     profile.save()
 
