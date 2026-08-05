@@ -260,20 +260,29 @@ export default function FundamentalsPage() {
     const handleBlur = () => {
       if (Date.now() - examStartTimestampRef.current < 3000) return
       if (isConfirmOpenRef.current) return
-      isTabAwayRef.current = true
+      if (isPrintScreenRef.current) return
+      setTimeout(() => {
+        if (document.hidden || document.visibilityState === 'hidden') {
+          isTabAwayRef.current = true
+        }
+      }, 150)
     }
 
     const handleFocus = () => {
       if (Date.now() - examStartTimestampRef.current < 3000) return
       if (isConfirmOpenRef.current) return
-      if (isTabAwayRef.current) {
+      if (isPrintScreenRef.current) return
+      if (isTabAwayRef.current && (document.hidden || document.visibilityState === 'hidden')) {
         isTabAwayRef.current = false
         triggerViolationRef.current?.('tab_blur')
+      } else {
+        isTabAwayRef.current = false
       }
     }
     
     const handleVisibilityChange = () => {
       if (isConfirmOpenRef.current) return
+      if (isPrintScreenRef.current) return
       if (document.visibilityState === 'hidden') {
         if (Date.now() - examStartTimestampRef.current < 3000) return
         isTabAwayRef.current = true
@@ -291,15 +300,19 @@ export default function FundamentalsPage() {
       }
     }
 
-    // Suppress PrintScreen key as a violation trigger — show a toast instead
+    // Suppress PrintScreen and OS screenshot shortcuts (Win+Shift+S, Cmd+Shift+4) as violation triggers
     const handleKeyDown = (e) => {
-      if (e.key === 'PrintScreen') {
+      if (
+        e.key === 'PrintScreen' ||
+        (e.key === 'S' && (e.metaKey || e.ctrlKey) && e.shiftKey) ||
+        (e.key === 's' && (e.metaKey || e.ctrlKey) && e.shiftKey)
+      ) {
         isPrintScreenRef.current = true
         setScreenshotToast(true)
         setTimeout(() => {
           isPrintScreenRef.current = false
           setScreenshotToast(false)
-        }, 3000)
+        }, 4000)
       }
     }
 

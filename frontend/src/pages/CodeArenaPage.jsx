@@ -1290,27 +1290,31 @@ export default function CodeArenaPage() {
                     )}
 
                     {/* Feedback transition banner */}
-                    {correctOption !== null && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        style={{
-                          background: selectedOption === correctOption ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)',
-                          border: `1px solid ${selectedOption === correctOption ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
-                          padding: '16px 20px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12,
-                          justifyContent: 'center', fontSize: 13, fontWeight: 800,
-                          color: selectedOption === correctOption ? '#10b981' : '#ef4444'
-                        }}
-                      >
-                        {selectedOption === correctOption ? (
-                          <>🎉 Correct! You dealt 20 damage to the opponent!</>
-                        ) : selectedOption === null ? (
-                          <>⏰ Timeout! You took 10 damage!</>
-                        ) : (
-                          <>❌ Incorrect! You took 20 damage!</>
-                        )}
-                      </motion.div>
-                    )}
+                    {correctOption !== null && (() => {
+                      const currentDiff = questions[currentQuestionIdx]?.difficulty || 'easy';
+                      const earnedPts = currentDiff === 'easy' ? 10 : (currentDiff === 'medium' ? 20 : 30);
+                      return (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          style={{
+                            background: selectedOption === correctOption ? 'rgba(16,185,129,0.06)' : 'rgba(239,68,68,0.06)',
+                            border: `1px solid ${selectedOption === correctOption ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                            padding: '16px 20px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12,
+                            justifyContent: 'center', fontSize: 13, fontWeight: 800,
+                            color: selectedOption === correctOption ? '#10b981' : '#ef4444'
+                          }}
+                        >
+                          {selectedOption === correctOption ? (
+                            <>🎉 Correct! You got {earnedPts} points!</>
+                          ) : selectedOption === null ? (
+                            <>⏰ Time up! No points earned for this round.</>
+                          ) : (
+                            <>❌ Incorrect! No points earned for this round.</>
+                          )}
+                        </motion.div>
+                      );
+                    })()}
                   </div>
 
                   {/* Right: Health & Game progress display */}
@@ -1324,25 +1328,19 @@ export default function CodeArenaPage() {
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)' }}>👨‍💻 YOUR COCKPIT</span>
-                        <span style={{ fontSize: 12, fontWeight: 900, color: '#818cf8' }}>{myPlayer?.score ?? 0} PTS</span>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: '#818cf8', background: 'rgba(99,102,241,0.1)', padding: '4px 10px', borderRadius: 8 }}>{myPlayer?.score ?? 0} PTS</span>
                       </div>
-                      
-                      {/* HP Bar */}
+
+                      {/* Progress Bar */}
                       <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                          <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>HP HEALTH</span>
-                          <span style={{ fontSize: 11, fontWeight: 900, color: (myPlayer?.health ?? 100) < 40 ? '#ef4444' : '#10b981' }}>
-                            {myPlayer?.health ?? 100}/100
-                          </span>
-                        </div>
-                        <div style={{ height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                        <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.05)', overflow: 'hidden', marginTop: 4 }}>
                           <motion.div
-                            animate={{ width: `${myPlayer?.health ?? 100}%` }}
+                            animate={{ width: `${Math.min((myPlayer?.score ?? 0), 100)}%` }}
                             transition={{ duration: 0.4 }}
                             style={{
                               height: '100%',
                               background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
-                              borderRadius: 5
+                              borderRadius: 4
                             }}
                           />
                         </div>
@@ -1370,25 +1368,19 @@ export default function CodeArenaPage() {
                       }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)' }}>🥷 RIVAL COCKPIT</span>
-                          <span style={{ fontSize: 12, fontWeight: 900, color: '#f87171' }}>{rival.score ?? 0} PTS</span>
+                          <span style={{ fontSize: 14, fontWeight: 900, color: '#f87171', background: 'rgba(239,68,68,0.1)', padding: '4px 10px', borderRadius: 8 }}>{rival.score ?? 0} PTS</span>
                         </div>
 
-                        {/* HP Bar */}
+                        {/* Progress Bar */}
                         <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                            <span style={{ fontSize: 11, fontWeight: 800, color: '#fff' }}>HP HEALTH</span>
-                            <span style={{ fontSize: 11, fontWeight: 900, color: (rival.health ?? 100) < 40 ? '#ef4444' : '#10b981' }}>
-                              {rival.health ?? 100}/100
-                            </span>
-                          </div>
-                          <div style={{ height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                          <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.05)', overflow: 'hidden', marginTop: 4 }}>
                             <motion.div
-                              animate={{ width: `${rival.health ?? 100}%` }}
+                              animate={{ width: `${Math.min((rival.score ?? 0), 100)}%` }}
                               transition={{ duration: 0.4 }}
                               style={{
                                 height: '100%',
                                 background: 'linear-gradient(90deg, #ef4444, #f43f5e)',
-                                borderRadius: 5
+                                borderRadius: 4
                               }}
                             />
                           </div>
@@ -1704,21 +1696,27 @@ export default function CodeArenaPage() {
                 transition={{ duration:0.6, delay:0.3 }}
                 style={{ fontSize:72, marginBottom:20, display:'block', lineHeight:1 }}
               >
-                {outcome === 'victory' ? '🏆' : '⚔️'}
+                {outcome === 'victory' ? '🏆' : outcome === 'draw' ? '🤝' : '⚔️'}
               </motion.div>
 
               <h1 style={{
                 fontSize:'clamp(32px,5vw,52px)', fontWeight:900, margin:'0 0 10px', letterSpacing:'-0.03em',
-                background: outcome === 'victory' ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#ef4444,#f87171)',
+                background: outcome === 'victory'
+                  ? 'linear-gradient(90deg,#10b981,#34d399)'
+                  : outcome === 'draw'
+                  ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
+                  : 'linear-gradient(90deg,#ef4444,#f87171)',
                 WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent'
               }}>
-                {outcome === 'victory' ? 'VICTORY!' : 'DEFEAT'}
+                {outcome === 'victory' ? 'VICTORY!' : outcome === 'draw' ? 'MATCH DRAW!' : 'DEFEAT'}
               </h1>
 
               <p style={{ fontSize:14, color:'var(--text-muted)', marginBottom:32, lineHeight:1.5 }}>
                 {outcome === 'victory'
-                  ? 'You outcoded your rival and won the battle! 🎉'
-                  : 'Your opponent solved it first. Train harder and rematch!'}
+                  ? (roomMode === 'aptitude' ? 'You scored higher and won the Aptitude Battle! 🎉' : 'You outcoded your rival and won the battle! 🎉')
+                  : outcome === 'draw'
+                  ? 'Both players scored equally! The match ended in a tie! 🤝'
+                  : (roomMode === 'aptitude' ? 'Your rival scored higher in the Aptitude Battle. Train harder and rematch!' : 'Your opponent solved it first. Train harder and rematch!')}
               </p>
 
               {/* Stats row */}

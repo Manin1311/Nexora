@@ -379,14 +379,10 @@ class ArenaConsumer(AsyncWebsocketConsumer):
                     }
                 )
 
-                # Check if game should end early
-                if any(p.get("health", 100) <= 0 for p in room["players"].values()):
-                    break
-
                 # Wait before starting the next question
                 await asyncio.sleep(4)
 
-            # Game is finished
+            # Game is finished after all 5 questions
             room = ROOMS.get(room_code)
             if not room or room["status"] != "battle":
                 return
@@ -395,21 +391,23 @@ class ArenaConsumer(AsyncWebsocketConsumer):
             
             winner_id = None
             winner_name = None
+            is_tie = False
             
             players_list = list(room["players"].items())
             if len(players_list) == 2:
                 p1_id, p1 = players_list[0]
                 p2_id, p2 = players_list[1]
                 
-                if p1["health"] > p2["health"]:
+                p1_score = p1.get("score", 0)
+                p2_score = p2.get("score", 0)
+                
+                if p1_score > p2_score:
                     winner_id, winner_name = p1_id, p1["name"]
-                elif p2["health"] > p1["health"]:
+                elif p2_score > p1_score:
                     winner_id, winner_name = p2_id, p2["name"]
                 else:
-                    if p1["score"] > p2["score"]:
-                        winner_id, winner_name = p1_id, p1["name"]
-                    elif p2["score"] > p1["score"]:
-                        winner_id, winner_name = p2_id, p2["name"]
+                    is_tie = True
+                    winner_name = "Draw"
             elif len(players_list) == 1:
                 winner_id, winner_name = players_list[0][0], players_list[0][1]["name"]
 
@@ -422,7 +420,8 @@ class ArenaConsumer(AsyncWebsocketConsumer):
                     "payload": {
                         "type": "battle_finish",
                         "winner_id": winner_id,
-                        "winner_name": winner_name
+                        "winner_name": winner_name,
+                        "is_tie": is_tie
                     }
                 }
             )
