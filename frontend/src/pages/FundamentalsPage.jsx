@@ -210,7 +210,7 @@ export default function FundamentalsPage() {
     setIsScreenFrozen(true)
     try {
       const res = await api.post('/challenges/assessment/telemetry/', {
-        session_id: activeSession.session_id,
+        session_id: activeSession?.session_id,
         event_type: eventType
       })
       setWarnings(res.data.total_warnings)
@@ -238,7 +238,7 @@ export default function FundamentalsPage() {
     } catch (e) {}
     try {
       const res = await api.post('/challenges/assessment/finish/', {
-        session_id: activeSession.session_id
+        session_id: activeSession?.session_id
       })
       setScorecard(res.data)
       setActiveSession(null)
@@ -257,32 +257,8 @@ export default function FundamentalsPage() {
   useEffect(() => {
     if (screen !== 'exam' || !activeSession) return
 
-    const handleBlur = () => {
-      if (Date.now() - examStartTimestampRef.current < 3000) return
-      if (isConfirmOpenRef.current) return
-      if (isPrintScreenRef.current) return
-      setTimeout(() => {
-        if (document.hidden || document.visibilityState === 'hidden') {
-          isTabAwayRef.current = true
-        }
-      }, 150)
-    }
-
-    const handleFocus = () => {
-      if (Date.now() - examStartTimestampRef.current < 3000) return
-      if (isConfirmOpenRef.current) return
-      if (isPrintScreenRef.current) return
-      if (isTabAwayRef.current && (document.hidden || document.visibilityState === 'hidden')) {
-        isTabAwayRef.current = false
-        triggerViolationRef.current?.('tab_blur')
-      } else {
-        isTabAwayRef.current = false
-      }
-    }
-    
     const handleVisibilityChange = () => {
       if (isConfirmOpenRef.current) return
-      if (isPrintScreenRef.current) return
       if (document.visibilityState === 'hidden') {
         if (Date.now() - examStartTimestampRef.current < 3000) return
         isTabAwayRef.current = true
@@ -300,25 +276,6 @@ export default function FundamentalsPage() {
       }
     }
 
-    // Suppress PrintScreen and OS screenshot shortcuts (Win+Shift+S, Cmd+Shift+4) as violation triggers
-    const handleKeyDown = (e) => {
-      if (
-        e.key === 'PrintScreen' ||
-        (e.key === 'S' && (e.metaKey || e.ctrlKey) && e.shiftKey) ||
-        (e.key === 's' && (e.metaKey || e.ctrlKey) && e.shiftKey)
-      ) {
-        isPrintScreenRef.current = true
-        setScreenshotToast(true)
-        setTimeout(() => {
-          isPrintScreenRef.current = false
-          setScreenshotToast(false)
-        }, 4000)
-      }
-    }
-
-    window.addEventListener('blur', handleBlur)
-    window.addEventListener('focus', handleFocus)
-    window.addEventListener('keydown', handleKeyDown)
     document.addEventListener('visibilitychange', handleVisibilityChange)
     document.addEventListener('fullscreenchange', handleFullscreenChange)
 
@@ -336,9 +293,6 @@ export default function FundamentalsPage() {
     }, 1000)
 
     return () => {
-      window.removeEventListener('blur', handleBlur)
-      window.removeEventListener('focus', handleFocus)
-      window.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current)
@@ -640,22 +594,26 @@ export default function FundamentalsPage() {
       </div>
       )}
 
-      {/* ── EXAM: full-viewport fixed overlay (covers sidebar + navbar cleanly) ── */}
-      {screen === 'exam' && activeSession && (
-        <motion.div
-          key="exam-fixed"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 500,
-            background: 'var(--bg-color)',
-            display: 'flex', flexDirection: 'column',
-            padding: '12px 20px',
-            boxSizing: 'border-box',
-            overflow: 'hidden'
-          }}
-        >
+      {/* ── EXAM: full-viewport fixed overlay ── */}
+      {screen === 'exam' && (() => {
+        const isCollapsed = localStorage.getItem('nexora_sidebar_collapsed') === 'true';
+        const leftPadding = isCollapsed ? 88 : 236;
+        return (
+          <motion.div
+            key="exam-fixed"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 99999,
+              background: 'var(--bg-color)',
+              display: 'flex', flexDirection: 'column',
+              padding: `16px 24px 16px ${leftPadding}px`,
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              transition: 'padding-left 0.35s ease'
+            }}
+          >
           {/* dot-grid background */}
           <div style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none', backgroundImage: 'radial-gradient(var(--card-border) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
@@ -670,7 +628,7 @@ export default function FundamentalsPage() {
               <Building2 size={18} style={{ color: '#818cf8' }} />
               <div>
                 <div style={{ fontSize: 14, fontWeight: 900, color: '#e2e8f0' }}>
-                  {activeSession.company} Online Assessment
+                  {activeSession?.company || 'Company'} Online Assessment
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>Candidate Test Session</div>
               </div>
@@ -714,25 +672,29 @@ export default function FundamentalsPage() {
             </div>
           </div>
 
-          {/* Main workspace */}
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'minmax(300px, 400px) 1fr', gap: 14, minHeight: 0, position: 'relative', zIndex: 1, marginTop: 12, width: '100%', boxSizing: 'border-box' }}>
+          {/* Main workspace (Stacked Centered Layout) */}
+          <div style={{
+            flex: 1, display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0,
+            position: 'relative', zIndex: 1, marginTop: 10, width: '100%', maxWidth: 1100,
+            margin: '10px auto 0', boxSizing: 'border-box'
+          }}>
 
-            {/* Left: Problem Description */}
+            {/* Top: Problem Description (Centered Full-Width) */}
             <div style={{
               background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-              borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 16,
-              minHeight: 0, overflowY: 'auto', overflowX: 'hidden', wordBreak: 'break-word'
+              borderRadius: 14, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12,
+              maxHeight: 240, flexShrink: 0, overflowY: 'auto', overflowX: 'hidden', wordBreak: 'break-word'
             }} className="no-scrollbar">
 
               {/* Step Selector Tab */}
-              <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--card-border)', paddingBottom: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--card-border)', paddingBottom: 8, flexWrap: 'wrap' }}>
                 {challenges.map((c, idx) => (
                   <button
                     key={c.id}
                     onClick={() => setActiveChallengeIdx(idx)}
                     style={{
-                      flex: 1, minWidth: 80, padding: '8px 12px', borderRadius: 8, border: 'none', outline: 'none',
-                      fontSize: 12.5, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+                      flex: 1, minWidth: 90, padding: '6px 12px', borderRadius: 6, border: 'none', outline: 'none',
+                      fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
                       background: activeChallengeIdx === idx ? 'rgba(99,102,241,0.12)' : 'transparent',
                       color: activeChallengeIdx === idx ? '#818cf8' : 'var(--text-muted)',
                       borderBottom: activeChallengeIdx === idx ? '2px solid #6366f1' : 'none'
@@ -745,32 +707,32 @@ export default function FundamentalsPage() {
 
               {/* Active Question details */}
               {challenges[activeChallengeIdx] && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800, background: 'rgba(99,102,241,0.08)', color: '#818cf8' }}>
+                    <span style={{ padding: '3px 8px', borderRadius: 5, fontSize: 10, fontWeight: 800, background: 'rgba(99,102,241,0.08)', color: '#818cf8' }}>
                       {challenges[activeChallengeIdx].topic}
                     </span>
                     <span style={{
-                      padding: '3px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800,
+                      padding: '3px 8px', borderRadius: 5, fontSize: 10, fontWeight: 800,
                       background: challenges[activeChallengeIdx].difficulty === 'hard' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
                       color: challenges[activeChallengeIdx].difficulty === 'hard' ? '#ef4444' : '#f59e0b'
                     }}>
                       {challenges[activeChallengeIdx].difficulty.toUpperCase()}
                     </span>
                   </div>
-                  <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-heading)', margin: 0, wordBreak: 'break-word' }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 900, color: 'var(--text-heading)', margin: 0, wordBreak: 'break-word', lineHeight: 1.3 }}>
                     {challenges[activeChallengeIdx].title}
                   </h3>
-                  <p style={{ fontSize: 13, color: 'var(--text-color)', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
+                  <p style={{ fontSize: 13, color: 'var(--text-color)', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
                     {challenges[activeChallengeIdx].description}
                   </p>
-                  <div style={{ marginTop: 8, padding: 14, borderRadius: 10, background: 'rgba(255,255,255,0.015)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ marginTop: 4, padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.015)', border: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
                     {submissionResults[challenges[activeChallengeIdx].id] ? (
                       <>
                         {submissionResults[challenges[activeChallengeIdx].id].passed === submissionResults[challenges[activeChallengeIdx].id].total
-                          ? <CheckCircle2 size={16} style={{ color: '#10b981' }} />
-                          : <XCircle size={16} style={{ color: '#f59e0b' }} />}
-                        <div style={{ fontSize: 12.5, fontWeight: 700 }}>
+                          ? <CheckCircle2 size={15} style={{ color: '#10b981' }} />
+                          : <XCircle size={15} style={{ color: '#f59e0b' }} />}
+                        <div style={{ fontSize: 12, fontWeight: 700 }}>
                           Attempt Status: <span style={{ color: submissionResults[challenges[activeChallengeIdx].id].passed === submissionResults[challenges[activeChallengeIdx].id].total ? '#10b981' : '#f59e0b' }}>
                             {submissionResults[challenges[activeChallengeIdx].id].passed}/{submissionResults[challenges[activeChallengeIdx].id].total} Test Cases Passed
                           </span>
@@ -778,8 +740,8 @@ export default function FundamentalsPage() {
                       </>
                     ) : (
                       <>
-                        <AlertCircle size={16} style={{ color: 'var(--text-muted)' }} />
-                        <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-muted)' }}>This challenge has not been submitted yet.</div>
+                        <AlertCircle size={15} style={{ color: 'var(--text-muted)' }} />
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>This challenge has not been submitted yet.</div>
                       </>
                     )}
                   </div>
@@ -787,11 +749,11 @@ export default function FundamentalsPage() {
               )}
             </div>
 
-            {/* Right: Editor Pane */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            {/* Bottom: Terminal / Editor Pane (Centered Full-Width) */}
+            <div style={{ flex: 1, background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
               {/* Editor control bar */}
               <div style={{
-                padding: '10px 20px', background: 'rgba(0,0,0,0.25)', borderBottom: '1px solid var(--card-border)',
+                padding: '10px 16px', background: 'rgba(0,0,0,0.25)', borderBottom: '1px solid var(--card-border)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0
               }}>
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -941,7 +903,8 @@ export default function FundamentalsPage() {
             </div>
           )}
         </motion.div>
-      )}
+        );
+      })()}
 
       <style>{`
         @keyframes slideInRight {

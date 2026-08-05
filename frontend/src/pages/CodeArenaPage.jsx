@@ -327,19 +327,7 @@ export default function CodeArenaPage() {
       }
     } catch (e) {}
 
-    const handleBlur = () => {
-      if (Date.now() - battleStartTimestampRef.current < 200) return
-      if (isPrintScreenRef.current) return
-      // Ignore blur if document is still visible (e.g. Snipping tool / screenshot taking overlay)
-      setTimeout(() => {
-        if (document.hidden || document.visibilityState === 'hidden') {
-          triggerBattleViolationRef.current?.()
-        }
-      }, 150)
-    }
-
     const handleVisibilityChange = () => {
-      if (isPrintScreenRef.current) return
       if (document.visibilityState === 'hidden') {
         if (Date.now() - battleStartTimestampRef.current < 200) return
         triggerBattleViolationRef.current?.()
@@ -353,33 +341,6 @@ export default function CodeArenaPage() {
       }
     }
 
-    const handleKeyDown = (e) => {
-      if (Date.now() - battleStartTimestampRef.current < 200) return
-      // Ignore screenshot shortcuts
-      if (
-        e.key === 'PrintScreen' ||
-        (e.key === 'S' && (e.metaKey || e.ctrlKey) && e.shiftKey) ||
-        (e.key === 's' && (e.metaKey || e.ctrlKey) && e.shiftKey)
-      ) {
-        isPrintScreenRef.current = true
-        setTimeout(() => { isPrintScreenRef.current = false }, 4000)
-        return
-      }
-
-      if (
-        e.key === 'Escape' ||
-        e.key === 'Alt' ||
-        e.key === 'Meta' ||
-        (e.altKey && e.key === 'Tab') ||
-        e.key === 'F11' ||
-        (e.ctrlKey && (e.key === 't' || e.key === 'w' || e.key === 'n' || e.key === 'Tab'))
-      ) {
-        triggerBattleViolationRef.current?.()
-      }
-    }
-
-    window.addEventListener('blur', handleBlur)
-    window.addEventListener('keydown', handleKeyDown)
     document.addEventListener('visibilitychange', handleVisibilityChange)
     document.addEventListener('fullscreenchange', handleFullscreenChange)
 
@@ -391,8 +352,6 @@ export default function CodeArenaPage() {
     window.addEventListener('beforeunload', handleBeforeUnload)
 
     return () => {
-      window.removeEventListener('blur', handleBlur)
-      window.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
       window.removeEventListener('beforeunload', handleBeforeUnload)
