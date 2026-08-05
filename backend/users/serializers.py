@@ -88,7 +88,7 @@ class ResumeSerializer(serializers.ModelSerializer):
         model = Resume
         fields = (
             'id', 'personal_info', 'experience', 'projects',
-            'skills', 'education', 'certifications',
+            'skills', 'education', 'certifications', 'custom_sections',
             'target_role', 'ats_score', 'audit_report',
             'is_premium_unlocked', 'created_at', 'updated_at',
         )

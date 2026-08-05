@@ -106,6 +106,8 @@ class Resume(models.Model):
     education       = models.JSONField(default=list, blank=True)
     # [{ name, issuer, year, url }]
     certifications  = models.JSONField(default=list, blank=True)
+    # [{ title, items:[] }]  Extra-curricular, achievements, awards, etc.
+    custom_sections = models.JSONField(default=list, blank=True)
 
     # ── ATS / Audit ─────────────────────────────────────────────────────────
     target_role     = models.CharField(max_length=150, blank=True)

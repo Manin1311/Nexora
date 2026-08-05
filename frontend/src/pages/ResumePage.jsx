@@ -68,7 +68,7 @@ const TEMPLATES = [
 
 // ─── Default empty resume structure ─────────────────────────────────────────
 const EMPTY_RESUME = {
-  personal_info: { name: '', title: '', email: '', phone: '', linkedin: '', github: '', website: '', summary: '' },
+  personal_info: { name: '', title: '', location: '', email: '', phone: '', linkedin: '', github: '', website: '', summary: '' },
   experience: [],
   projects: [],
   skills: [
@@ -79,6 +79,7 @@ const EMPTY_RESUME = {
   ],
   education: [],
   certifications: [],
+  custom_sections: [],
   target_role: '',
 }
 
@@ -441,6 +442,7 @@ function PersonalSection({ data, onChange }) {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
       <div style={{ gridColumn: '1/-1' }}><Input label="Full Name" value={data.name || ''} onChange={set('name')} placeholder="John Doe" /></div>
       <Input label="Job Title" value={data.title || ''} onChange={set('title')} placeholder="Full Stack Developer" />
+      <Input label="City / Location" value={data.location || ''} onChange={set('location')} placeholder="Mumbai, India" />
       <Input label="Email" value={data.email || ''} onChange={set('email')} placeholder="john@email.com" type="email" />
       <Input label="Phone" value={data.phone || ''} onChange={set('phone')} placeholder="+91 9876543210" />
       <Input label="LinkedIn URL" value={data.linkedin || ''} onChange={set('linkedin')} placeholder="https://linkedin.com/in/..." />
@@ -514,6 +516,17 @@ function ProjectsSection({ items, onChange }) {
   const add = () => onChange([...items, { _id: uid(), name: '', tech_stack: [], description: '', url: '', bullets: [''] }])
   const update = (id, data) => onChange(items.map(x => x._id === id ? { ...x, ...data } : x))
   const remove = (id) => onChange(items.filter(x => x._id !== id))
+  const addBullet = (id) => update(id, { bullets: [...(items.find(x => x._id === id)?.bullets || []), ''] })
+  const setBullet = (id, i, v) => {
+    const item = items.find(x => x._id === id)
+    const bullets = [...(item.bullets || [])]
+    bullets[i] = v
+    update(id, { bullets })
+  }
+  const removeBullet = (id, i) => {
+    const item = items.find(x => x._id === id)
+    update(id, { bullets: (item.bullets || []).filter((_, j) => j !== i) })
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -531,6 +544,16 @@ function ProjectsSection({ items, onChange }) {
               <TagInput tags={proj.tech_stack || []} onChange={v => update(proj._id, { tech_stack: v })} placeholder="React, Node.js, PostgreSQL..." />
             </div>
             <Input label="Description" value={proj.description} onChange={v => update(proj._id, { description: v })} placeholder="Brief description of the project..." rows={2} />
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Bullet Points</label>
+            {(proj.bullets || []).map((b, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                <input value={b} onChange={e => setBullet(proj._id, i, e.target.value)} placeholder="Built X feature using Y, achieving Z result..." style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-color)', fontSize: 13 }} />
+                <button onClick={() => removeBullet(proj._id, i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={13} /></button>
+              </div>
+            ))}
+            <button onClick={() => addBullet(proj._id)} style={{ fontSize: 12, color: '#818cf8', background: 'none', border: '1px dashed rgba(99,102,241,0.3)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>+ Add Bullet</button>
           </div>
         </div>
       ))}
@@ -633,8 +656,13 @@ function CertificationsSection({ items, onChange }) {
             <Input label="Certificate Name" value={cert.name || ''} onChange={v => update(cert._id, { name: v })} placeholder="AWS Certified Developer" />
             <Input label="Issuing Organization" value={cert.issuer || ''} onChange={v => update(cert._id, { issuer: v })} placeholder="Amazon Web Services" />
             <Input label="Year / Date" value={cert.year || ''} onChange={v => update(cert._id, { year: v })} placeholder="2024" />
-            <Input label="Credential URL (optional)" value={cert.url || ''} onChange={v => update(cert._id, { url: v })} placeholder="https://credential.net/..." />
+            <Input label="Credential / LinkedIn URL" value={cert.url || ''} onChange={v => update(cert._id, { url: v })} placeholder="https://linkedin.com/learning/... or https://credential.net/..." />
           </div>
+          {cert.url ? (
+            <p style={{ fontSize: 11, color: '#10b981', margin: '8px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>✓ Credential URL saved — will appear as a clickable link in preview & PDF</p>
+          ) : (
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: '8px 0 0' }}>💡 Add a LinkedIn or credential URL so it shows up in your resume preview and PDF as a clickable link.</p>
+          )}
         </div>
       ))}
       <button onClick={add} style={{ padding: '10px', borderRadius: 10, border: '1px dashed var(--glass-border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
@@ -655,7 +683,7 @@ function ClassicPreview({ resume }) {
         <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: 1 }}>{pi.name || 'Your Name'}</div>
         <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>{pi.title || 'Your Title'}</div>
         <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-          {[pi.email, pi.phone, pi.linkedin && 'LinkedIn', pi.github && 'GitHub', pi.website].filter(Boolean).join(' · ')}
+          {[pi.email, pi.phone, pi.location, pi.linkedin && 'LinkedIn', pi.github && 'GitHub', pi.website].filter(Boolean).join(' · ')}
         </div>
       </div>
 
@@ -737,16 +765,29 @@ function ClassicPreview({ resume }) {
 
       {/* Certifications */}
       {(resume.certifications || []).filter(c => c.name).length > 0 && (
-        <div>
+        <div style={{ marginBottom: 14 }}>
           <div style={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: 2, marginBottom: 8 }}>Certifications</div>
           {resume.certifications.filter(c => c.name).map((c, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <div><span style={{ fontWeight: 700 }}>{c.name}</span>{c.issuer ? ` — ${c.issuer}` : ''}</div>
-              <div style={{ color: '#64748b' }}>{c.year}</div>
+            <div key={i} style={{ marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div><span style={{ fontWeight: 700 }}>{c.name}</span>{c.issuer ? ` — ${c.issuer}` : ''}</div>
+                <div style={{ color: '#64748b' }}>{c.year}</div>
+              </div>
+              {c.url && <div style={{ fontSize: 10, color: '#6366f1', marginTop: 1 }}><a href={c.url} target="_blank" rel="noreferrer" style={{ color: '#6366f1' }}>{c.url}</a></div>}
             </div>
           ))}
         </div>
       )}
+
+      {/* Custom Sections */}
+      {(resume.custom_sections || []).filter(s => s.title && s.items?.length > 0).map((sec, si) => (
+        <div key={si} style={{ marginBottom: 14 }}>
+          <div style={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: 2, marginBottom: 8 }}>{sec.title}</div>
+          {sec.items.map((item, ii) => (
+            <div key={ii} style={{ paddingLeft: 12, color: '#334155', marginBottom: 2 }}>• {item}</div>
+          ))}
+        </div>
+      ))}
     </div>
   )
 }
@@ -762,6 +803,7 @@ function ModernPreview({ resume }) {
         <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11, flexWrap: 'wrap', opacity: 0.85 }}>
           {pi.email && <span>✉ {pi.email}</span>}
           {pi.phone && <span>📱 {pi.phone}</span>}
+          {pi.location && <span>📍 {pi.location}</span>}
           {pi.github && <span>⌥ {pi.github.replace('https://github.com/', '@').replace('https://github.com/', '')}</span>}
           {pi.linkedin && <span>🔗 LinkedIn</span>}
         </div>
@@ -844,16 +886,29 @@ function ModernPreview({ resume }) {
 
         {/* Certifications */}
         {(resume.certifications || []).filter(c => c.name).length > 0 && (
-          <div>
+          <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 13, color: '#6366f1', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Certifications</div>
             {resume.certifications.filter(c => c.name).map((c, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <div>★ <span style={{ fontWeight: 700 }}>{c.name}</span>{c.issuer ? ` — ${c.issuer}` : ''}</div>
-                <span style={{ color: '#94a3b8', fontSize: 11 }}>{c.year}</span>
+              <div key={i} style={{ marginBottom: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div>★ <span style={{ fontWeight: 700 }}>{c.name}</span>{c.issuer ? ` — ${c.issuer}` : ''}</div>
+                  <span style={{ color: '#94a3b8', fontSize: 11 }}>{c.year}</span>
+                </div>
+                {c.url && <div style={{ fontSize: 10, color: '#6366f1', marginTop: 1 }}><a href={c.url} target="_blank" rel="noreferrer" style={{ color: '#6366f1' }}>{c.url}</a></div>}
               </div>
             ))}
           </div>
         )}
+
+        {/* Custom Sections */}
+        {(resume.custom_sections || []).filter(s => s.title && s.items?.length > 0).map((sec, si) => (
+          <div key={si} style={{ marginBottom: 16 }}>
+            <div style={{ fontWeight: 800, fontSize: 13, color: '#6366f1', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>{sec.title}</div>
+            {sec.items.map((item, ii) => (
+              <div key={ii} style={{ color: '#475569', marginBottom: 3 }}>• {item}</div>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -870,6 +925,7 @@ function ExecutivePreview({ resume }) {
         <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, fontWeight: 700 }}>Contact</div>
         {pi.email && <div style={{ fontSize: 11, color: '#cbd5e1', marginBottom: 3, wordBreak: 'break-all' }}>{pi.email}</div>}
         {pi.phone && <div style={{ fontSize: 11, color: '#cbd5e1', marginBottom: 3 }}>{pi.phone}</div>}
+        {pi.location && <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>📍 {pi.location}</div>}
         {pi.linkedin && <div style={{ fontSize: 11, color: '#818cf8', marginBottom: 3 }}>LinkedIn</div>}
         {pi.github && <div style={{ fontSize: 11, color: '#818cf8', marginBottom: 3 }}>GitHub</div>}
         {(resume.skills || []).filter(g => g.items?.length > 0).length > 0 && (
@@ -937,7 +993,7 @@ function ExecutivePreview({ resume }) {
 
         {/* Education */}
         {(resume.education || []).length > 0 && (
-          <div>
+          <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#0f172a', borderBottom: '2px solid #0f172a', paddingBottom: 4, marginBottom: 10 }}>Education</div>
             {resume.education.map((e, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -947,6 +1003,16 @@ function ExecutivePreview({ resume }) {
             ))}
           </div>
         )}
+
+        {/* Custom Sections */}
+        {(resume.custom_sections || []).filter(s => s.title && s.items?.length > 0).map((sec, si) => (
+          <div key={si} style={{ marginBottom: 16 }}>
+            <div style={{ fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#0f172a', borderBottom: '2px solid #0f172a', paddingBottom: 4, marginBottom: 10 }}>{sec.title}</div>
+            {sec.items.map((item, ii) => (
+              <div key={ii} style={{ color: '#334155', paddingLeft: 10, marginBottom: 2 }}>• {item}</div>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -963,7 +1029,7 @@ function NexoraPreview({ resume }) {
             <div style={{ fontSize: 22, fontWeight: 800 }}>{pi.name || 'Your Name'}</div>
             <div style={{ fontSize: 13, opacity: 0.85, marginTop: 2 }}>{pi.title || 'Your Title'}</div>
             <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, opacity: 0.8, flexWrap: 'wrap' }}>
-              {[pi.email, pi.phone].filter(Boolean).map((v, i) => <span key={i}>{v}</span>)}
+              {[pi.email, pi.phone, pi.location].filter(Boolean).map((v, i) => <span key={i}>{v}</span>)}
             </div>
           </div>
           {/* Nexora Verified Badge */}
@@ -988,10 +1054,15 @@ function NexoraPreview({ resume }) {
               ))}
             </div>
           )}
-          {(resume.certifications || []).length > 0 && (
-            <div>
+          {(resume.certifications || []).filter(c => c.name).length > 0 && (
+            <div style={{ marginTop: 8 }}>
               <div style={{ fontWeight: 800, fontSize: 10, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Certifications</div>
-              {resume.certifications.map((c, i) => <div key={i} style={{ fontSize: 11, color: '#475569', marginBottom: 4 }}>★ {c.name}</div>)}
+              {resume.certifications.filter(c => c.name).map((c, i) => (
+                <div key={i} style={{ marginBottom: 6 }}>
+                  <div style={{ fontSize: 11, color: '#475569' }}>★ {c.name}</div>
+                  {c.url && <a href={c.url} target="_blank" rel="noreferrer" style={{ fontSize: 10, color: '#6366f1', wordBreak: 'break-all' }}>{c.url}</a>}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -1040,7 +1111,7 @@ function NexoraPreview({ resume }) {
 
           {/* Education */}
           {(resume.education || []).length > 0 && (
-            <div>
+            <div style={{ marginBottom: 14 }}>
               <div style={{ fontWeight: 800, fontSize: 11, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Education</div>
               {resume.education.map((e, i) => (
                 <div key={i} style={{ marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
@@ -1050,6 +1121,16 @@ function NexoraPreview({ resume }) {
               ))}
             </div>
           )}
+
+          {/* Custom Sections */}
+          {(resume.custom_sections || []).filter(s => s.title && s.items?.length > 0).map((sec, si) => (
+            <div key={si} style={{ marginBottom: 14 }}>
+              <div style={{ fontWeight: 800, fontSize: 11, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>{sec.title}</div>
+              {sec.items.map((item, ii) => (
+                <div key={ii} style={{ color: '#475569', paddingLeft: 10, marginBottom: 2 }}>• {item}</div>
+              ))}
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -1104,12 +1185,13 @@ export default function ResumePage() {
       // Ensure _id keys for array items
       const hydrate = (arr) => (arr || []).map(x => ({ _id: uid(), ...x }))
       setResume({
-        personal_info: data.personal_info || EMPTY_RESUME.personal_info,
+        personal_info: { ...EMPTY_RESUME.personal_info, ...(data.personal_info || {}) },
         experience: hydrate(data.experience),
         projects: hydrate(data.projects),
         skills: data.skills?.length ? data.skills : EMPTY_RESUME.skills,
         education: hydrate(data.education),
         certifications: hydrate(data.certifications),
+        custom_sections: data.custom_sections || [],
         target_role: data.target_role || '',
       })
       setIsPremium(data.is_premium_unlocked || false)
@@ -1131,6 +1213,7 @@ export default function ResumePage() {
         skills: resume.skills,
         education: stripIds(resume.education),
         certifications: stripIds(resume.certifications),
+        custom_sections: resume.custom_sections || [],
         target_role: resume.target_role,
       })
       setSaved(true)
@@ -1152,6 +1235,7 @@ export default function ResumePage() {
       skills: resume.skills,
       education: stripIds(resume.education),
       certifications: stripIds(resume.certifications),
+      custom_sections: resume.custom_sections || [],
       target_role: roleToAudit,
     }).catch(() => {})
     try {
@@ -1332,12 +1416,13 @@ export default function ResumePage() {
       const data = res.data.resume
       const hydrate = (arr) => (arr || []).map(x => ({ _id: uid(), ...x }))
       setResume({
-        personal_info: data.personal_info || EMPTY_RESUME.personal_info,
+        personal_info: { ...EMPTY_RESUME.personal_info, ...(data.personal_info || {}) },
         experience: hydrate(data.experience),
         projects: hydrate(data.projects),
         skills: data.skills?.length ? data.skills : EMPTY_RESUME.skills,
         education: hydrate(data.education),
         certifications: hydrate(data.certifications),
+        custom_sections: data.custom_sections || [],
         target_role: data.target_role || '',
       })
       setIsPremium(data.is_premium_unlocked || false)
@@ -1426,13 +1511,14 @@ export default function ResumePage() {
       y += 6
     }
 
-    const contacts = [pi.email, pi.phone, pi.linkedin, pi.github, pi.website].filter(Boolean)
+    const contacts = [pi.email, pi.phone, pi.location, pi.linkedin, pi.github, pi.website].filter(Boolean)
     if (contacts.length) {
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(8.5)
       doc.setTextColor(80, 80, 80)
-      doc.text(contacts.join('  ·  '), margin, y)
-      y += 5
+      const contactLine = doc.splitTextToSize(contacts.join('  ·  '), col)
+      doc.text(contactLine, margin, y)
+      y += contactLine.length * 3.8 + 2
     }
 
     hRule(true)
@@ -1575,14 +1661,14 @@ export default function ResumePage() {
     if (resume.certifications?.length) {
       section('Certifications')
       for (const cert of resume.certifications) {
-        checkPage(6)
+        if (!cert.name) continue
+        checkPage(10)
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(9.5)
         doc.setTextColor(20, 20, 20)
-        const line1 = cert.name || ''
-        const meta  = [cert.issuer, cert.year].filter(Boolean).join(', ')
-        doc.text(line1, margin, y)
+        doc.text(cert.name || '', margin, y)
         y += 4
+        const meta  = [cert.issuer, cert.year].filter(Boolean).join(', ')
         if (meta) {
           doc.setFont('helvetica', 'normal')
           doc.setFontSize(8.5)
@@ -1590,7 +1676,34 @@ export default function ResumePage() {
           doc.text(meta, margin, y)
           y += 4
         }
+        if (cert.url) {
+          checkPage(5)
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(8)
+          doc.setTextColor(79, 70, 229)  // indigo
+          const urlLines = doc.splitTextToSize(cert.url, col - 4)
+          doc.textWithLink(urlLines[0], margin, y, { url: cert.url })
+          y += urlLines.length * 3.4 + 1
+        }
         y += 1
+      }
+    }
+
+    // ── Custom Sections ───────────────────────────────────────────────────────
+    if ((resume.custom_sections || []).filter(s => s.title && s.items?.length > 0).length > 0) {
+      for (const sec of resume.custom_sections) {
+        if (!sec.title || !sec.items?.length) continue
+        section(sec.title)
+        for (const item of sec.items) {
+          checkPage(5)
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(9)
+          doc.setTextColor(40, 40, 40)
+          const lines = doc.splitTextToSize('• ' + item, col - 4)
+          doc.text(lines, margin + 2, y)
+          y += lines.length * 3.5 + 0.5
+        }
+        y += 2
       }
     }
 

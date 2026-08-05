@@ -317,6 +317,7 @@ class ResumeAnalyzeView(APIView):
         resume.skills          = parsed.get('skills', [])
         resume.education       = parsed.get('education', [])
         resume.certifications  = parsed.get('certifications', [])
+        resume.custom_sections = parsed.get('custom_sections', [])
 
         # Auto-run ATS audit using existing target_role or a generic one
         target_role = resume.target_role or 'Software Developer'

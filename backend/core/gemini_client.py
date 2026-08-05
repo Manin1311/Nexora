@@ -1151,39 +1151,59 @@ Return ONLY a JSON object (no markdown, no ```json, just raw JSON):
 
 def parse_resume_from_text(raw_text: str) -> dict:
     """Parse raw resume text (extracted from PDF/TXT) into structured JSON sections.
-    Returns a dict with keys: personal_info, experience, projects, skills, education, certifications.
+    Returns a dict with keys: personal_info, experience, projects, skills, education,
+    certifications, custom_sections.
     """
     system = (
-        "You are an expert resume parser. Extract structured information from the raw resume text "
-        "and return ONLY a valid JSON object with no markdown fencing."
+        "You are an expert resume parser. Extract ALL structured information from the raw resume text "
+        "and return ONLY a valid JSON object with no markdown fencing. "
+        "CRITICAL RULES: "
+        "1) Copy EVERY bullet point exactly as written — do NOT summarise, skip, or merge any bullet. "
+        "2) Include EVERY skill, technology, tool, language, and framework mentioned anywhere. "
+        "3) Extract the candidate's city/location from the header and put it in personal_info.location. "
+        "4) If the resume contains sections not covered by the standard schema (extra-curricular "
+        "activities, achievements, awards, volunteer work, publications, hobbies, languages spoken, "
+        "leadership, etc.) capture each such section in custom_sections as {\"title\": \"...\", "
+        "\"items\": [\"...\", ...]}.  Leave custom_sections as [] if there are none."
     )
-    prompt = f"""Parse the following resume text and extract all information into a structured JSON object.
+    prompt = f"""Parse the following resume text and extract ALL information into a structured JSON object.
 
 Return ONLY valid JSON with this exact structure (use empty arrays/dicts for missing sections):
 {{
-  "personal_info": {{"name": "", "title": "", "email": "", "phone": "", "linkedin": "", "github": "", "website": "", "summary": ""}},
+  "personal_info": {{"name": "", "title": "", "location": "", "email": "", "phone": "", "linkedin": "", "github": "", "website": "", "summary": ""}},
   "experience": [
-    {{"company": "", "role": "", "location": "", "start": "", "end": "", "current": false, "bullets": []}}
+    {{"company": "", "role": "", "location": "", "start": "", "end": "", "current": false, "bullets": ["COPY EVERY BULLET VERBATIM"]}}
   ],
   "projects": [
-    {{"name": "", "tech_stack": [], "description": "", "url": "", "bullets": []}}
+    {{"name": "", "tech_stack": [], "description": "", "url": "", "bullets": ["COPY EVERY BULLET VERBATIM"]}}
   ],
   "skills": [
     {{"category": "Languages", "items": []}},
     {{"category": "Frameworks", "items": []}},
     {{"category": "Tools", "items": []}},
-    {{"category": "Databases", "items": []}}
+    {{"category": "Databases", "items": []}},
+    {{"category": "Other", "items": []}}
   ],
   "education": [
     {{"institution": "", "degree": "", "field": "", "year": "", "gpa": ""}}
   ],
   "certifications": [
     {{"name": "", "issuer": "", "year": "", "url": ""}}
+  ],
+  "custom_sections": [
+    {{"title": "Section Name", "items": ["item 1", "item 2"]}}
   ]
 }}
 
+IMPORTANT:
+- Copy ALL bullet points exactly — do NOT drop, shorten, or merge any.
+- Put location/city from the resume header into personal_info.location.
+- If a certification has a LinkedIn URL or credential link, put it in certifications[].url.
+- Classify skills correctly (Languages, Frameworks, Tools, Databases, Other). Put anything that doesn't fit neatly into Other.
+- Use custom_sections for: Extra-Curricular Activities, Achievements, Awards, Volunteer, Publications, Languages spoken, Leadership, Hobbies, etc.
+
 RESUME TEXT:
-{raw_text[:6000]}"""
+{raw_text[:15000]}"""
 
     try:
         text = _call_groq(prompt, system=system, temperature=0.2)
@@ -1199,7 +1219,7 @@ RESUME TEXT:
 
     return {
         "personal_info": {}, "experience": [], "projects": [],
-        "skills": [], "education": [], "certifications": []
+        "skills": [], "education": [], "certifications": [], "custom_sections": []
     }
 
 
