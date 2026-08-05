@@ -478,10 +478,10 @@ export default function PeerCodeReviewPage() {
         </div>
 
         {/* Workspace 2-Column Split */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: 20, minHeight: 600, position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 400px) 1fr', gap: 20, height: 'calc(100vh - 180px)', minHeight: 650, position: 'relative', zIndex: 1 }}>
 
           {/* LEFT COLUMN: Review Feed List */}
-          <div data-tour="peer-review-feed" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div data-tour="peer-review-feed" style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto', maxHeight: '100%', paddingRight: 6 }}>
             {loading ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 64, gap: 12 }}>
                 <Loader2 size={28} className="spinning" style={{ color: '#8b5cf6' }} />
@@ -588,7 +588,7 @@ export default function PeerCodeReviewPage() {
           </div>
 
           {/* RIGHT COLUMN: Detail & Comment Thread */}
-          <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 20, padding: 24, display: 'flex', flexDirection: 'column', minHeight: 600 }}>
+          <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 20, padding: 24, display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
             {!selectedRequest ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: 48, textAlign: 'center' }}>
                 <Code size={40} style={{ color: '#8b5cf6', opacity: 0.5, marginBottom: 12 }} />

@@ -687,6 +687,16 @@ function CustomSectionsSection({ items, onChange }) {
 // ─── Resume Preview Templates ────────────────────────────────────────────────
 const isStr = (s) => Boolean(s && String(s).trim())
 
+const formatUrl = (url) => {
+  if (!url) return ''
+  let str = String(url).trim()
+  if (!str) return ''
+  if (!/^https?:\/\//i.test(str)) {
+    return `https://${str}`
+  }
+  return str
+}
+
 const getValidExperience = (arr) => (arr || []).filter(e => e && (
   isStr(e.company) || isStr(e.role) || isStr(e.location) || isStr(e.start) || isStr(e.end) || (e.bullets || []).some(isStr)
 ))
@@ -724,14 +734,33 @@ function ClassicPreview({ resume }) {
   const validCerts = getValidCerts(resume.certifications)
   const validCustom = getValidCustomSections(resume.custom_sections)
 
+  const headerItems = []
+  if (pi.email) headerItems.push({ label: pi.email, url: `mailto:${pi.email}` })
+  if (pi.phone) headerItems.push({ label: pi.phone, url: `tel:${pi.phone}` })
+  if (pi.location) headerItems.push({ label: pi.location, url: null })
+  if (pi.linkedin) headerItems.push({ label: 'LinkedIn', url: formatUrl(pi.linkedin) })
+  if (pi.github) headerItems.push({ label: 'GitHub', url: formatUrl(pi.github) })
+  if (pi.website) headerItems.push({ label: 'Portfolio', url: formatUrl(pi.website) })
+
   return (
     <div id="resume-preview" style={{ fontFamily: 'Georgia, serif', color: '#1e293b', padding: '32px 40px', background: '#fff', fontSize: 12, lineHeight: 1.5, minHeight: 700 }}>
       {/* Header */}
       <div style={{ textAlign: 'center', borderBottom: '2px solid #1e293b', paddingBottom: 12, marginBottom: 16 }}>
-        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: 1 }}>{pi.name || 'Your Name'}</div>
-        <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>{pi.title || 'Your Title'}</div>
-        <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
-          {[pi.email, pi.phone, pi.location, pi.linkedin && 'LinkedIn', pi.github && 'GitHub', pi.website].filter(Boolean).join(' · ')}
+        {isStr(pi.name) && <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: 1 }}>{pi.name}</div>}
+        {isStr(pi.title) && <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>{pi.title}</div>}
+        <div style={{ fontSize: 11, color: '#64748b', marginTop: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {headerItems.map((item, idx) => (
+            <span key={idx} style={{ display: 'inline-flex', alignItems: 'center' }}>
+              {idx > 0 && <span style={{ margin: '0 4px', color: '#94a3b8' }}>·</span>}
+              {item.url ? (
+                <a href={item.url} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'underline' }}>
+                  {item.label}
+                </a>
+              ) : (
+                <span>{item.label}</span>
+              )}
+            </span>
+          ))}
         </div>
       </div>
 
@@ -766,23 +795,31 @@ function ClassicPreview({ resume }) {
       {validProj.length > 0 && (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, borderBottom: '1px solid #cbd5e1', paddingBottom: 2, marginBottom: 8 }}>Projects</div>
-          {validProj.map((p, i) => (
-            <div key={i} style={{ marginBottom: 8 }}>
-              <div style={{ fontWeight: 700 }}>
-                {p.name}
-                {p.tech_stack?.length > 0 && (
-                  <span style={{ fontWeight: 400, color: '#64748b', fontStyle: 'italic' }}> ({Array.isArray(p.tech_stack) ? p.tech_stack.join(', ') : p.tech_stack})</span>
-                )}
-                {p.url && (
-                  <span style={{ fontWeight: 400, color: '#6366f1', marginLeft: 6, fontSize: 11 }}>{p.url}</span>
-                )}
+          {validProj.map((p, i) => {
+            const projUrl = p.url ? formatUrl(p.url) : (pi.github ? formatUrl(pi.github) : null)
+            return (
+              <div key={i} style={{ marginBottom: 8 }}>
+                <div style={{ fontWeight: 700 }}>
+                  {p.name}
+                  {p.tech_stack && (
+                    <span style={{ fontWeight: 400, color: '#64748b', fontStyle: 'italic' }}>
+                      {' '}
+                      ({Array.isArray(p.tech_stack) ? p.tech_stack.filter(isStr).join(', ') : p.tech_stack})
+                    </span>
+                  )}
+                  {projUrl && (
+                    <a href={projUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: '#2563eb', marginLeft: 8, fontSize: 11, textDecoration: 'underline' }}>
+                      View on GitHub
+                    </a>
+                  )}
+                </div>
+                {p.description && <div style={{ color: '#334155', marginTop: 2 }}>{p.description}</div>}
+                {(p.bullets || []).filter(isStr).map((b, j) => (
+                  <div key={j} style={{ paddingLeft: 12, color: '#334155' }}>• {b}</div>
+                ))}
               </div>
-              {p.description && <div style={{ color: '#334155', marginTop: 2 }}>{p.description}</div>}
-              {(p.bullets || []).filter(isStr).map((b, j) => (
-                <div key={j} style={{ paddingLeft: 12, color: '#334155' }}>• {b}</div>
-              ))}
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -865,14 +902,27 @@ function ModernPreview({ resume }) {
     <div id="resume-preview" style={{ fontFamily: "'Inter', sans-serif", color: '#1e293b', background: '#fff', minHeight: 700, fontSize: 12 }}>
       {/* Header */}
       <div style={{ background: '#6366f1', padding: '24px 32px', color: '#fff' }}>
-        <div style={{ fontSize: 22, fontWeight: 800 }}>{pi.name || 'Your Name'}</div>
-        <div style={{ fontSize: 13, opacity: 0.9, marginTop: 2 }}>{pi.title || 'Your Title'}</div>
-        <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11, flexWrap: 'wrap', opacity: 0.85 }}>
+        {isStr(pi.name) && <div style={{ fontSize: 22, fontWeight: 800 }}>{pi.name}</div>}
+        {isStr(pi.title) && <div style={{ fontSize: 13, opacity: 0.9, marginTop: 2 }}>{pi.title}</div>}
+        <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 11, flexWrap: 'wrap', opacity: 0.9 }}>
           {pi.email && <span>✉ {pi.email}</span>}
           {pi.phone && <span>📱 {pi.phone}</span>}
           {pi.location && <span>📍 {pi.location}</span>}
-          {pi.github && <span>⌥ {pi.github.replace('https://github.com/', '@').replace('https://github.com/', '')}</span>}
-          {pi.linkedin && <span>🔗 LinkedIn</span>}
+          {pi.github && (
+            <a href={formatUrl(pi.github)} target="_blank" rel="noreferrer" style={{ color: '#fff', textDecoration: 'underline' }}>
+              ⌥ GitHub
+            </a>
+          )}
+          {pi.linkedin && (
+            <a href={formatUrl(pi.linkedin)} target="_blank" rel="noreferrer" style={{ color: '#fff', textDecoration: 'underline' }}>
+              🔗 LinkedIn
+            </a>
+          )}
+          {pi.website && (
+            <a href={formatUrl(pi.website)} target="_blank" rel="noreferrer" style={{ color: '#fff', textDecoration: 'underline' }}>
+              🌐 Portfolio
+            </a>
+          )}
         </div>
       </div>
       <div style={{ padding: '20px 32px' }}>
@@ -916,25 +966,32 @@ function ModernPreview({ resume }) {
         {validProj.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 13, color: '#6366f1', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>Projects</div>
-            {validProj.map((p, i) => (
-              <div key={i} style={{ marginBottom: 12, paddingLeft: 12, borderLeft: '3px solid #e0e7ff' }}>
-                <div style={{ fontWeight: 700 }}>
-                  {p.name}
-                  {p.url && <span style={{ fontWeight: 400, color: '#6366f1', marginLeft: 8, fontSize: 11 }}>{p.url}</span>}
-                </div>
-                {p.tech_stack && (
-                  <div style={{ marginBottom: 4 }}>
-                    {(Array.isArray(p.tech_stack) ? p.tech_stack : [p.tech_stack]).filter(isStr).map((t, j) => (
-                      <span key={j} style={{ margin: '0 4px 4px 0', display: 'inline-block', padding: '1px 7px', borderRadius: 10, background: 'rgba(99,102,241,0.08)', color: '#6366f1', fontSize: 10 }}>{t}</span>
-                    ))}
+            {validProj.map((p, i) => {
+              const projUrl = p.url ? formatUrl(p.url) : (pi.github ? formatUrl(pi.github) : null)
+              return (
+                <div key={i} style={{ marginBottom: 12, paddingLeft: 12, borderLeft: '3px solid #e0e7ff' }}>
+                  <div style={{ fontWeight: 700 }}>
+                    {p.name}
+                    {projUrl && (
+                      <a href={projUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: '#6366f1', marginLeft: 8, fontSize: 11, textDecoration: 'underline' }}>
+                        View on GitHub
+                      </a>
+                    )}
                   </div>
-                )}
-                {p.description && <div style={{ color: '#475569', marginBottom: 4 }}>{p.description}</div>}
-                {(p.bullets || []).filter(isStr).map((b, j) => (
-                  <div key={j} style={{ color: '#475569' }}>• {b}</div>
-                ))}
-              </div>
-            ))}
+                  {p.tech_stack && (
+                    <div style={{ marginBottom: 4 }}>
+                      {(Array.isArray(p.tech_stack) ? p.tech_stack : [p.tech_stack]).filter(isStr).map((t, j) => (
+                        <span key={j} style={{ margin: '0 4px 4px 0', display: 'inline-block', padding: '1px 7px', borderRadius: 10, background: 'rgba(99,102,241,0.08)', color: '#6366f1', fontSize: 10 }}>{t}</span>
+                      ))}
+                    </div>
+                  )}
+                  {p.description && <div style={{ color: '#475569', marginBottom: 4 }}>{p.description}</div>}
+                  {(p.bullets || []).filter(isStr).map((b, j) => (
+                    <div key={j} style={{ color: '#475569' }}>• {b}</div>
+                  ))}
+                </div>
+              )
+            })}
           </div>
         )}
 
@@ -1003,14 +1060,33 @@ function ExecutivePreview({ resume }) {
     <div id="resume-preview" style={{ fontFamily: "'Inter', sans-serif", display: 'flex', minHeight: 700, background: '#fff', fontSize: 12 }}>
       {/* Sidebar */}
       <div style={{ width: 210, background: '#0f172a', color: '#fff', padding: '24px 16px', flexShrink: 0 }}>
-        <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.2, marginBottom: 4 }}>{pi.name || 'Your Name'}</div>
-        <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>{pi.title || 'Your Title'}</div>
+        {isStr(pi.name) && <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.2, marginBottom: 4 }}>{pi.name}</div>}
+        {isStr(pi.title) && <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>{pi.title}</div>}
         <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, fontWeight: 700 }}>Contact</div>
         {pi.email && <div style={{ fontSize: 11, color: '#cbd5e1', marginBottom: 3, wordBreak: 'break-all' }}>{pi.email}</div>}
         {pi.phone && <div style={{ fontSize: 11, color: '#cbd5e1', marginBottom: 3 }}>{pi.phone}</div>}
         {pi.location && <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 3 }}>📍 {pi.location}</div>}
-        {pi.linkedin && <div style={{ fontSize: 11, color: '#818cf8', marginBottom: 3 }}>LinkedIn</div>}
-        {pi.github && <div style={{ fontSize: 11, color: '#818cf8', marginBottom: 3 }}>GitHub</div>}
+        {pi.linkedin && (
+          <div style={{ fontSize: 11, color: '#818cf8', marginBottom: 3 }}>
+            <a href={formatUrl(pi.linkedin)} target="_blank" rel="noreferrer" style={{ color: '#818cf8', textDecoration: 'underline' }}>
+              LinkedIn
+            </a>
+          </div>
+        )}
+        {pi.github && (
+          <div style={{ fontSize: 11, color: '#818cf8', marginBottom: 3 }}>
+            <a href={formatUrl(pi.github)} target="_blank" rel="noreferrer" style={{ color: '#818cf8', textDecoration: 'underline' }}>
+              GitHub
+            </a>
+          </div>
+        )}
+        {pi.website && (
+          <div style={{ fontSize: 11, color: '#818cf8', marginBottom: 3 }}>
+            <a href={formatUrl(pi.website)} target="_blank" rel="noreferrer" style={{ color: '#818cf8', textDecoration: 'underline' }}>
+              Portfolio
+            </a>
+          </div>
+        )}
 
         {validSkills.length > 0 && (
           <div style={{ marginTop: 20 }}>
@@ -1069,19 +1145,26 @@ function ExecutivePreview({ resume }) {
         {validProj.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, color: '#0f172a', borderBottom: '2px solid #0f172a', paddingBottom: 4, marginBottom: 10 }}>Projects</div>
-            {validProj.map((p, i) => (
-              <div key={i} style={{ marginBottom: 12 }}>
-                <div style={{ fontWeight: 700, fontSize: 13 }}>
-                  {p.name}
-                  {p.tech_stack && <span style={{ fontWeight: 400, color: '#475569', fontSize: 11 }}> ({(Array.isArray(p.tech_stack) ? p.tech_stack : [p.tech_stack]).filter(isStr).join(', ')})</span>}
-                  {p.url && <span style={{ fontWeight: 400, color: '#6366f1', fontSize: 11, marginLeft: 6 }}>{p.url}</span>}
+            {validProj.map((p, i) => {
+              const projUrl = p.url ? formatUrl(p.url) : (pi.github ? formatUrl(pi.github) : null)
+              return (
+                <div key={i} style={{ marginBottom: 12 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>
+                    {p.name}
+                    {p.tech_stack && <span style={{ fontWeight: 400, color: '#475569', fontSize: 11 }}> ({(Array.isArray(p.tech_stack) ? p.tech_stack : [p.tech_stack]).filter(isStr).join(', ')})</span>}
+                    {projUrl && (
+                      <a href={projUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: '#6366f1', fontSize: 11, marginLeft: 6, textDecoration: 'underline' }}>
+                        View on GitHub
+                      </a>
+                    )}
+                  </div>
+                  {p.description && <div style={{ color: '#475569', marginBottom: 4, fontStyle: 'italic' }}>{p.description}</div>}
+                  {(p.bullets || []).filter(isStr).map((b, j) => (
+                    <div key={j} style={{ color: '#334155', paddingLeft: 10 }}>• {b}</div>
+                  ))}
                 </div>
-                {p.description && <div style={{ color: '#475569', marginBottom: 4, fontStyle: 'italic' }}>{p.description}</div>}
-                {(p.bullets || []).filter(isStr).map((b, j) => (
-                  <div key={j} style={{ color: '#334155', paddingLeft: 10 }}>• {b}</div>
-                ))}
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
@@ -1127,10 +1210,27 @@ function NexoraPreview({ resume }) {
       <div style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', padding: '24px 32px', color: '#fff', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 800 }}>{pi.name || 'Your Name'}</div>
-            <div style={{ fontSize: 13, opacity: 0.85, marginTop: 2 }}>{pi.title || 'Your Title'}</div>
-            <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, opacity: 0.8, flexWrap: 'wrap' }}>
-              {[pi.email, pi.phone, pi.location].filter(Boolean).map((v, i) => <span key={i}>{v}</span>)}
+            {isStr(pi.name) && <div style={{ fontSize: 22, fontWeight: 800 }}>{pi.name}</div>}
+            {isStr(pi.title) && <div style={{ fontSize: 13, opacity: 0.85, marginTop: 2 }}>{pi.title}</div>}
+            <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: 11, opacity: 0.9, flexWrap: 'wrap' }}>
+              {pi.email && <span>{pi.email}</span>}
+              {pi.phone && <span>{pi.phone}</span>}
+              {pi.location && <span>{pi.location}</span>}
+              {pi.linkedin && (
+                <a href={formatUrl(pi.linkedin)} target="_blank" rel="noreferrer" style={{ color: '#fff', textDecoration: 'underline' }}>
+                  LinkedIn
+                </a>
+              )}
+              {pi.github && (
+                <a href={formatUrl(pi.github)} target="_blank" rel="noreferrer" style={{ color: '#fff', textDecoration: 'underline' }}>
+                  GitHub
+                </a>
+              )}
+              {pi.website && (
+                <a href={formatUrl(pi.website)} target="_blank" rel="noreferrer" style={{ color: '#fff', textDecoration: 'underline' }}>
+                  Portfolio
+                </a>
+              )}
             </div>
           </div>
           {/* Nexora Verified Badge */}
@@ -1185,12 +1285,12 @@ function NexoraPreview({ resume }) {
               {validExp.map((e, i) => (
                 <div key={i} style={{ marginBottom: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 700 }}>{e.role}{e.company ? ` — ${e.company}` : ''}</span>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: '#1e293b' }}>{e.role}</span>
                     <span style={{ color: '#94a3b8', fontSize: 11 }}>{e.start}{(e.start || e.end) ? '–' : ''}{e.current ? 'Present' : e.end}</span>
                   </div>
-                  {e.location && <div style={{ color: '#64748b', fontSize: 11, marginBottom: 2 }}>{e.location}</div>}
+                  <div style={{ color: '#4f46e5', fontSize: 11, marginBottom: 4 }}>{e.company}{e.location ? ` · ${e.location}` : ''}</div>
                   {(e.bullets || []).filter(isStr).map((b, j) => (
-                    <div key={j} style={{ color: '#475569', paddingLeft: 10 }}>• {b}</div>
+                    <div key={j} style={{ color: '#334155' }}>• {b}</div>
                   ))}
                 </div>
               ))}
@@ -1201,19 +1301,32 @@ function NexoraPreview({ resume }) {
           {validProj.length > 0 && (
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontWeight: 800, fontSize: 11, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Projects</div>
-              {validProj.map((p, i) => (
-                <div key={i} style={{ marginBottom: 10 }}>
-                  <div style={{ fontWeight: 700 }}>
-                    {p.name}
-                    {p.tech_stack && <span style={{ fontWeight: 400, color: '#64748b', fontSize: 11 }}> ({(Array.isArray(p.tech_stack) ? p.tech_stack : [p.tech_stack]).filter(isStr).join(', ')})</span>}
-                    {p.url && <span style={{ fontWeight: 400, color: '#6366f1', fontSize: 11, marginLeft: 6 }}>{p.url}</span>}
+              {validProj.map((p, i) => {
+                const projUrl = p.url ? formatUrl(p.url) : (pi.github ? formatUrl(pi.github) : null)
+                return (
+                  <div key={i} style={{ marginBottom: 10 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#1e293b' }}>
+                      {p.name}
+                      {projUrl && (
+                        <a href={projUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 600, color: '#4f46e5', fontSize: 11, marginLeft: 6, textDecoration: 'underline' }}>
+                          View on GitHub
+                        </a>
+                      )}
+                    </div>
+                    {p.tech_stack && (
+                      <div style={{ marginBottom: 3 }}>
+                        {(Array.isArray(p.tech_stack) ? p.tech_stack : [p.tech_stack]).filter(isStr).map((t, j) => (
+                          <span key={j} style={{ margin: '0 4px 4px 0', display: 'inline-block', padding: '1px 6px', borderRadius: 8, background: '#e0e7ff', color: '#4338ca', fontSize: 10 }}>{t}</span>
+                        ))}
+                      </div>
+                    )}
+                    {p.description && <div style={{ color: '#475569', marginBottom: 4 }}>{p.description}</div>}
+                    {(p.bullets || []).filter(isStr).map((b, j) => (
+                      <div key={j} style={{ color: '#334155' }}>• {b}</div>
+                    ))}
                   </div>
-                  {p.description && <div style={{ color: '#475569', marginBottom: 3 }}>{p.description}</div>}
-                  {(p.bullets || []).filter(isStr).map((b, j) => (
-                    <div key={j} style={{ color: '#475569', paddingLeft: 10 }}>• {b}</div>
-                  ))}
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
 
@@ -1222,9 +1335,9 @@ function NexoraPreview({ resume }) {
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontWeight: 800, fontSize: 11, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Education</div>
               {validEdu.map((e, i) => (
-                <div key={i} style={{ marginBottom: 6, display: 'flex', justifyContent: 'space-between' }}>
-                  <div><b>{e.degree}</b> — {e.institution}{e.gpa ? ` (${e.gpa})` : ''}</div>
-                  <span style={{ color: '#94a3b8', flexShrink: 0, marginLeft: 8 }}>{e.year}</span>
+                <div key={i} style={{ marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}>
+                  <div><span style={{ fontWeight: 700, color: '#1e293b' }}>{e.degree}</span> — {e.institution}{e.gpa ? ` (${e.gpa})` : ''}</div>
+                  <span style={{ color: '#94a3b8', fontSize: 11, flexShrink: 0, marginLeft: 8 }}>{e.year}</span>
                 </div>
               ))}
             </div>
@@ -1712,14 +1825,40 @@ export default function ResumePage() {
       y += 6
     }
 
-    const contacts = [pi.email, pi.phone, pi.location, pi.linkedin, pi.github, pi.website].filter(Boolean)
-    if (contacts.length) {
+    const contactItems = []
+    if (pi.email) contactItems.push({ label: pi.email, url: `mailto:${pi.email}` })
+    if (pi.phone) contactItems.push({ label: pi.phone, url: `tel:${pi.phone}` })
+    if (pi.location) contactItems.push({ label: pi.location, url: null })
+    if (pi.linkedin) contactItems.push({ label: 'LinkedIn', url: formatUrl(pi.linkedin) })
+    if (pi.github) contactItems.push({ label: 'GitHub', url: formatUrl(pi.github) })
+    if (pi.website) contactItems.push({ label: 'Portfolio', url: formatUrl(pi.website) })
+
+    if (contactItems.length) {
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(8.5)
-      doc.setTextColor(80, 80, 80)
-      const contactLine = doc.splitTextToSize(contacts.join('  ·  '), col)
-      doc.text(contactLine, margin, y)
-      y += contactLine.length * 3.8 + 2
+      let currentX = margin
+      for (let idx = 0; idx < contactItems.length; idx++) {
+        const item = contactItems[idx]
+        const textStr = item.label
+        const itemW = doc.getTextWidth(textStr)
+
+        if (item.url) {
+          doc.setTextColor(37, 99, 235)
+          doc.text(textStr, currentX, y)
+          doc.link(currentX, y - 3, itemW, 4, { url: item.url })
+        } else {
+          doc.setTextColor(80, 80, 80)
+          doc.text(textStr, currentX, y)
+        }
+        currentX += itemW
+
+        if (idx < contactItems.length - 1) {
+          doc.setTextColor(150, 150, 150)
+          doc.text('  ·  ', currentX, y)
+          currentX += doc.getTextWidth('  ·  ')
+        }
+      }
+      y += 6
     }
 
     hRule(true)
@@ -1788,6 +1927,20 @@ export default function ResumePage() {
         doc.setFontSize(10)
         doc.setTextColor(20, 20, 20)
         doc.text(proj.name || '', margin, y)
+
+        const projUrl = proj.url ? formatUrl(proj.url) : (pi.github ? formatUrl(pi.github) : null)
+        if (projUrl) {
+          const nameW = doc.getTextWidth(proj.name || '')
+          const linkText = 'View on GitHub'
+          const linkW = doc.getTextWidth(linkText)
+          const linkX = margin + nameW + 3
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(8.5)
+          doc.setTextColor(37, 99, 235)
+          doc.text(linkText, linkX, y)
+          doc.link(linkX, y - 3, linkW, 4, { url: projUrl })
+        }
+
         y += 4.5
 
         if (proj.tech_stack) {
