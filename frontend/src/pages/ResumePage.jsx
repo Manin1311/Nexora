@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Lock, Crown, CheckCircle, XCircle,
   Download, Copy, RotateCcw, Briefcase, GraduationCap,
   Code2, FolderOpen, User, Award, Loader2, Tag, AlertTriangle,
-  TrendingUp, ExternalLink, Star, Check, Zap, Globe, CheckSquare
+  TrendingUp, ExternalLink, Star, Check, Zap, Globe, CheckSquare, LayoutList
 } from 'lucide-react'
 import resumeService from '@/services/resumeService'
 import { useAuth } from '@/context/AuthContext'
@@ -380,7 +380,7 @@ function Input({ label, value, onChange, placeholder, type = 'text', rows }) {
   )
 }
 
-function TagInput({ tags, onChange, placeholder, onVerifyRequest, verifiedSkills = [] }) {
+function TagInput({ tags, onChange, placeholder }) {
   const [val, setVal] = useState('')
 
   const tryAdd = () => {
@@ -394,43 +394,29 @@ function TagInput({ tags, onChange, placeholder, onVerifyRequest, verifiedSkills
   return (
     <div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-        {tags.map(t => {
-          const isVerified = verifiedSkills.includes(t)
-          return (
-            <span key={t} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px 3px 10px',
-              borderRadius: 20,
-              background: isVerified ? 'rgba(16,185,129,0.1)' : 'rgba(99,102,241,0.1)',
-              border: isVerified ? '1px solid rgba(16,185,129,0.35)' : '1px solid rgba(99,102,241,0.2)',
-              fontSize: 12, color: isVerified ? '#10b981' : '#818cf8'
-            }}>
-              {isVerified && <span style={{ fontSize: 10, marginRight: 2 }}>✓</span>}
-              {t}
-              {onVerifyRequest && !isVerified && (
-                <button
-                  onClick={() => onVerifyRequest(t)}
-                  title="Verify this skill to earn a badge"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f59e0b', padding: 0, lineHeight: 1, fontSize: 11, marginLeft: 2 }}
-                >🛡️</button>
-              )}
-              <button onClick={() => remove(t)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isVerified ? '#10b981' : '#818cf8', padding: 0, lineHeight: 1 }}>×</button>
-            </span>
-          )
-        })}
+        {tags.map(t => (
+          <span key={t} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px',
+            borderRadius: 20,
+            background: 'rgba(99,102,241,0.1)',
+            border: '1px solid rgba(99,102,241,0.2)',
+            fontSize: 12, color: '#818cf8'
+          }}>
+            {t}
+            <button onClick={() => remove(t)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#818cf8', padding: 0, lineHeight: 1 }}>×</button>
+          </span>
+        ))}
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
         <input value={val} onChange={e => setVal(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), tryAdd())}
-          placeholder={placeholder || 'Type a skill and press Enter'}
+          placeholder={placeholder || 'Type and press Enter'}
           style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-color)', fontSize: 13 }} />
         <button onClick={tryAdd}
           style={{ padding: '8px 14px', borderRadius: 8, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)', color: '#818cf8', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
           + Add
         </button>
       </div>
-      {onVerifyRequest && (
-        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 6 }}>💡 Click the 🛡️ icon on any skill to optionally verify it and earn a <strong style={{ color: '#10b981' }}>Verified ✓</strong> badge on your resume.</p>
-      )}
     </div>
   )
 }
@@ -565,50 +551,25 @@ function ProjectsSection({ items, onChange }) {
 }
 
 function SkillsSection({ groups, onChange }) {
-  const [pendingSkill, setPendingSkill] = useState(null)  // { groupIndex, skillName }
-  const [verifiedSkills, setVerifiedSkills] = useState([])  // names of verified skills
-
   const updateGroup = (i, items) => {
     const next = [...groups]
     next[i] = { ...next[i], items }
     onChange(next)
   }
 
-  const handleVerifyRequest = (groupIndex, skillName) => {
-    setPendingSkill({ groupIndex, skillName })
-  }
-
-  const handlePass = (skill) => {
-    // Skill already exists in list (user clicked 🛡️ on an existing chip), just mark verified
-    setVerifiedSkills(prev => prev.includes(skill) ? prev : [...prev, skill])
-    setPendingSkill(null)
-  }
-
   return (
-    <>
-      {/* Modal rendered HERE — outside any overflow:hidden/transform context */}
-      {pendingSkill && (
-        <SkillVerifyModal
-          skill={pendingSkill.skillName}
-          onPass={handlePass}
-          onClose={() => setPendingSkill(null)}
-        />
-      )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        {groups.map((g, i) => (
-          <div key={g.category}>
-            <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-heading)', display: 'block', marginBottom: 8 }}>{g.category}</label>
-            <TagInput
-              tags={g.items || []}
-              onChange={v => updateGroup(i, v)}
-              placeholder={`Add ${g.category}...`}
-              onVerifyRequest={(skill) => handleVerifyRequest(i, skill)}
-              verifiedSkills={verifiedSkills}
-            />
-          </div>
-        ))}
-      </div>
-    </>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {groups.map((g, i) => (
+        <div key={g.category || i}>
+          <label style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-heading)', display: 'block', marginBottom: 8 }}>{g.category}</label>
+          <TagInput
+            tags={g.items || []}
+            onChange={v => updateGroup(i, v)}
+            placeholder={`Add ${g.category}...`}
+          />
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -667,6 +628,58 @@ function CertificationsSection({ items, onChange }) {
       ))}
       <button onClick={add} style={{ padding: '10px', borderRadius: 10, border: '1px dashed var(--glass-border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
         <Plus size={14} /> Add Certificate
+      </button>
+    </div>
+  )
+}
+
+function CustomSectionsSection({ items, onChange }) {
+  const addSection = () => onChange([...(items || []), { _id: uid(), title: '', items: [''] }])
+  const updateSection = (id, data) => onChange((items || []).map(x => x._id === id ? { ...x, ...data } : x))
+  const removeSection = (id) => onChange((items || []).filter(x => x._id !== id))
+
+  const addItem = (secId) => {
+    const sec = (items || []).find(x => x._id === secId)
+    if (sec) updateSection(secId, { items: [...(sec.items || []), ''] })
+  }
+  const setItem = (secId, i, val) => {
+    const sec = (items || []).find(x => x._id === secId)
+    if (sec) {
+      const list = [...(sec.items || [])]
+      list[i] = val
+      updateSection(secId, { items: list })
+    }
+  }
+  const removeItem = (secId, i) => {
+    const sec = (items || []).find(x => x._id === secId)
+    if (sec) {
+      updateSection(secId, { items: (sec.items || []).filter((_, j) => j !== i) })
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {(items || []).map((sec) => (
+        <div key={sec._id} style={{ padding: 16, borderRadius: 12, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-heading)' }}>{sec.title || 'New Additional Section'}</span>
+            <button onClick={() => removeSection(sec._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={14} /></button>
+          </div>
+          <Input label="Section Title" value={sec.title || ''} onChange={v => updateSection(sec._id, { title: v })} placeholder="e.g. Languages Spoken, Soft Skills, Achievements, Awards..." />
+          <div style={{ marginTop: 12 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Section Items / Bullets</label>
+            {(sec.items || []).map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                <input value={item} onChange={e => setItem(sec._id, i, e.target.value)} placeholder="Item detail..." style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-color)', fontSize: 13 }} />
+                <button onClick={() => removeItem(sec._id, i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={13} /></button>
+              </div>
+            ))}
+            <button onClick={() => addItem(sec._id)} style={{ fontSize: 12, color: '#818cf8', background: 'none', border: '1px dashed rgba(99,102,241,0.3)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>+ Add Item</button>
+          </div>
+        </div>
+      ))}
+      <button onClick={addSection} style={{ padding: '10px', borderRadius: 10, border: '1px dashed var(--glass-border)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+        <Plus size={14} /> Add Custom / Additional Section (e.g. Languages, Soft Skills, Achievements)
       </button>
     </div>
   )
@@ -1174,9 +1187,6 @@ export default function ResumePage() {
   const [jobDescription, setJobDescription] = useState('')
   const [matching, setMatching] = useState(false)
   const [matchResult, setMatchResult] = useState(null)
-
-  // Skill verification modal
-  const [verifySkill, setVerifySkill] = useState(null) // skill name pending verification
 
   // Load resume on mount
   useEffect(() => {
@@ -1722,6 +1732,7 @@ export default function ResumePage() {
     { key: 'skills',           label: 'Skills',            icon: Code2        },
     { key: 'education',        label: 'Education',         icon: GraduationCap},
     { key: 'certifications',   label: 'Certifications',    icon: Award        },
+    { key: 'custom_sections',  label: 'Custom / Extra Sections', icon: LayoutList },
   ]
 
   const TABS = [
@@ -1819,6 +1830,7 @@ export default function ResumePage() {
                             {key === 'skills'          && <SkillsSection groups={resume.skills} onChange={v => setResume(r => ({ ...r, skills: v }))} />}
                             {key === 'education'       && <EducationSection items={resume.education} onChange={v => setResume(r => ({ ...r, education: v }))} />}
                             {key === 'certifications'  && <CertificationsSection items={resume.certifications || []} onChange={v => setResume(r => ({ ...r, certifications: v }))} />}
+                            {key === 'custom_sections' && <CustomSectionsSection items={resume.custom_sections || []} onChange={v => setResume(r => ({ ...r, custom_sections: v }))} />}
                           </div>
                         </motion.div>
                       )}
@@ -2117,8 +2129,6 @@ export default function ResumePage() {
                         </div>
                       </div>
                     </Card>
-
-                    {/* Detailed Suggestions (Bottom) */}
                     <Card style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                       <SectionTitle icon={Sparkles} label="Tailoring Suggestions" color="#6366f1" />
                       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
@@ -2242,7 +2252,7 @@ export default function ResumePage() {
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-heading)', marginBottom: 4 }}>AI Extracts Everything</div>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0, lineHeight: 1.6 }}>
-                    Our AI reads your resume and automatically fills in Personal Info, Work Experience with bullet points, Projects with tech stack, Skills categorized by type, Education, and Certifications. You can then edit any field in the Builder.
+                    Our AI reads your resume and automatically fills in Personal Info, Work Experience with bullet points, Projects with tech stack, Skills categorized by type, Education, Certifications, and Custom Sections (like Languages, Soft Skills, Achievements, etc.). You can edit any section in the Builder.
                   </p>
                 </div>
               </div>
@@ -2250,38 +2260,6 @@ export default function ResumePage() {
           </div>
         )}
       </div>
-
-      {/* ── Skill Verification Modal ──────────────────────────────────────── */}
-      <AnimatePresence>
-        {verifySkill && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001, backdropFilter: 'blur(4px)' }}
-            onClick={() => setVerifySkill(null)}>
-            <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-              onClick={e => e.stopPropagation()}
-              style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 20, padding: 32, maxWidth: 400, width: '90%' }}>
-              <div style={{ fontSize: 28, marginBottom: 12 }}>🎯</div>
-              <h2 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: 'var(--text-heading)' }}>Confirm Your Skill</h2>
-              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 20px', lineHeight: 1.6 }}>
-                Do you genuinely have hands-on experience with <strong style={{ color: 'var(--text-heading)' }}>{verifySkill}</strong>?
-                Only add skills you actually know — misrepresenting your abilities hurts your credibility in interviews.
-              </p>
-              <div style={{ display: 'flex', gap: 10 }}>
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  onClick={() => { handleAddSkill(verifySkill); setVerifySkill(null) }}
-                  style={{ flex: 1, padding: '12px', borderRadius: 10, border: 'none', background: '#111111', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                  ✅ Yes, I know {verifySkill}
-                </motion.button>
-                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  onClick={() => setVerifySkill(null)}
-                  style={{ padding: '12px 20px', borderRadius: 10, border: '1px solid var(--glass-border)', background: 'var(--glass-bg)', color: 'var(--text-muted)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-                  Cancel
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ── Premium Modal ──────────────────────────────────────────────────── */}
       <AnimatePresence>
