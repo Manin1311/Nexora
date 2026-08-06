@@ -15,7 +15,7 @@ from rest_framework import status
 
 from .challenges import ARENA_CHALLENGES
 from .aptitude_challenges import APTITUDE_CHALLENGES
-from .room_manager import ROOMS, create_unique_room_code, purge_stale_rooms
+from .room_manager import ROOMS, USER_ROOM_COUNTS, create_unique_room_code, purge_stale_rooms
 
 
 class CreateRoomView(APIView):
@@ -24,6 +24,7 @@ class CreateRoomView(APIView):
     def post(self, request):
         purge_stale_rooms()
 
+        user_id = str(request.user.id)
         language = request.data.get("language", "javascript")
         if language not in ("javascript", "python"):
             language = "javascript"
@@ -46,10 +47,15 @@ class CreateRoomView(APIView):
             
             questions = selected_easy + selected_med + selected_hard
         else:
-            challenge = random.choice(ARENA_CHALLENGES)
+            user_count = USER_ROOM_COUNTS.get(user_id, 0)
+            if user_count == 0:
+                challenge = ARENA_CHALLENGES[0]  # 1st question: FizzBuzz
+            elif user_count == 1:
+                challenge = ARENA_CHALLENGES[1]  # 2nd question: Reverse Words
+            else:
+                challenge = random.choice(ARENA_CHALLENGES)
+            USER_ROOM_COUNTS[user_id] = user_count + 1
             questions = []
-
-        user_id = str(request.user.id)
 
         ROOMS[room_code] = {
             "code": room_code,
@@ -87,10 +93,19 @@ class GetRoomView(APIView):
         room = ROOMS.get(code_upper)
         if not room:
             if code_upper.startswith("NEXO-"):
-                challenge = random.choice(ARENA_CHALLENGES)
+                user_id = str(request.user.id)
+                user_count = USER_ROOM_COUNTS.get(user_id, 0)
+                if user_count == 0:
+                    challenge = ARENA_CHALLENGES[0]  # 1st question: FizzBuzz
+                elif user_count == 1:
+                    challenge = ARENA_CHALLENGES[1]  # 2nd question: Reverse Words
+                else:
+                    challenge = random.choice(ARENA_CHALLENGES)
+                USER_ROOM_COUNTS[user_id] = user_count + 1
+
                 room = {
                     "code": code_upper,
-                    "host_id": str(request.user.id),
+                    "host_id": user_id,
                     "challenge": challenge,
                     "questions": [],
                     "mode": "coding",

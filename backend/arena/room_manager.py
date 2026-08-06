@@ -20,6 +20,7 @@ import time
 #   "winner": str | None
 # }
 ROOMS: dict = {}
+USER_ROOM_COUNTS: dict = {}
 
 ROOM_TTL_SECONDS = 30 * 60  # 30 minutes
 
