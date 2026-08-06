@@ -261,9 +261,24 @@ export default function CodeArenaPage() {
 
   // UI helpers
   const [copied, setCopied]         = useState(false)
-  const [stats, setStats]           = useState(() => {
-    try { return JSON.parse(localStorage.getItem('nexora_arena_stats') || '{}') } catch { return {} }
-  })
+  
+  // User-scoped stats (defaults to 0 wins / 0 losses for new users)
+  const statsKey = user?.id ? `nexora_arena_stats_${user.id}` : 'nexora_arena_stats_guest'
+  const [stats, setStats]           = useState({ wins: 0, losses: 0, streak: 0 })
+
+  // Sync stats when user or statsKey changes
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(statsKey)
+      if (saved) {
+        setStats(JSON.parse(saved))
+      } else {
+        setStats({ wins: 0, losses: 0, streak: 0 })
+      }
+    } catch {
+      setStats({ wins: 0, losses: 0, streak: 0 })
+    }
+  }, [statsKey])
 
   // Refs
   const wsRef   = useRef(null)
@@ -279,8 +294,10 @@ export default function CodeArenaPage() {
 
   // ── Persist stats ────────────────────────────────────────────────────────
   useEffect(() => {
-    localStorage.setItem('nexora_arena_stats', JSON.stringify(stats))
-  }, [stats])
+    if (statsKey) {
+      localStorage.setItem(statsKey, JSON.stringify(stats))
+    }
+  }, [stats, statsKey])
 
   // Battle proctoring violation logger
   const triggerBattleViolation = useCallback(() => {
