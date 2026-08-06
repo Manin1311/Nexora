@@ -41,6 +41,25 @@ class ChallengeListView(generics.ListAPIView):
     def get_serializer_context(self):
         ctx = super().get_serializer_context()
         ctx['request'] = self.request
+
+        # Batch fetch completed challenge IDs for current user to avoid N+1 queries
+        completed_ids = set()
+        user = self.request.user
+        if user and user.is_authenticated:
+            completed_ids = set(
+                ChallengeSubmission.objects.filter(user=user, status='evaluated')
+                .values_list('challenge_id', flat=True)
+            )
+        ctx['completed_challenge_ids'] = completed_ids
+
+        # Batch fetch active challenge count per topic to avoid N+1 queries
+        from django.db.models import Count, Q
+        topic_counts = dict(
+            ChallengeTopic.objects.annotate(
+                active_count=Count('challenges', filter=Q(challenges__is_active=True))
+            ).values_list('id', 'active_count')
+        )
+        ctx['topic_counts'] = topic_counts
         return ctx
 
 
@@ -146,8 +165,7 @@ class DailyChallengeView(generics.RetrieveAPIView):
 
     def get_object(self):
         from django.utils import timezone
-        from challenges.models import ChallengeTopic, Challenge
-        from core.gemini_client import generate_ai_challenge
+        from challenges.models import Challenge
         
         today = timezone.now().date()
         
@@ -161,39 +179,11 @@ class DailyChallengeView(generics.RetrieveAPIView):
         if challenge:
             return challenge
 
-        # 2. If not found, dynamically generate a new daily challenge for today
-        try:
-            # Pick a random topic to keep it diverse
-            topic = ChallengeTopic.objects.order_by('?').first()
-            if not topic:
-                topic = ChallengeTopic.objects.create(name='General Engineering', icon='⚙️', color='#6366f1')
-            
-            # Generate challenge data using AI client
-            challenge_data = generate_ai_challenge(topic.name)
-            
-            # Save as a daily challenge
-            challenge = Challenge.objects.create(
-                title=challenge_data['title'],
-                description=challenge_data['description'],
-                requirements=challenge_data['requirements'],
-                difficulty=challenge_data['difficulty'],
-                topic=topic,
-                challenge_type='daily',
-                xp_reward=challenge_data['xp_reward'],
-                tags=challenge_data['tags'],
-                estimated_time=challenge_data['estimated_time'],
-                is_active=True
-            )
-            print(f"[DailyChallengeView] Successfully auto-generated today's daily challenge: {challenge.title}")
-            return challenge
-        except Exception as e:
-            print(f"[DailyChallengeView] Auto-generation failed: {e}. Falling back to latest daily.")
-            
-            # Fallback to the most recent daily challenge of any day
-            challenge = Challenge.objects.filter(challenge_type='daily', is_active=True).order_by('-created_at').first()
-            if not challenge:
-                challenge = Challenge.objects.filter(is_active=True).order_by('-created_at').first()
-            return challenge
+        # 2. Fast fallback to the most recent daily or active challenge (< 5ms)
+        challenge = Challenge.objects.filter(challenge_type='daily', is_active=True).order_by('-created_at').first()
+        if not challenge:
+            challenge = Challenge.objects.filter(is_active=True).order_by('-created_at').first()
+        return challenge
 
 
 class GenerateAIChallengeView(APIView):

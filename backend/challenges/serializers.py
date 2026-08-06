@@ -10,6 +10,9 @@ class ChallengeTopicSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'icon', 'color', 'challenge_count')
 
     def get_challenge_count(self, obj):
+        topic_counts = self.context.get('topic_counts')
+        if topic_counts is not None and obj.id in topic_counts:
+            return topic_counts[obj.id]
         return obj.challenges.filter(is_active=True).count()
 
 
@@ -24,6 +27,9 @@ class ChallengeListSerializer(serializers.ModelSerializer):
                   'created_at', 'is_completed')
 
     def get_is_completed(self, obj):
+        completed_ids = self.context.get('completed_challenge_ids')
+        if completed_ids is not None:
+            return obj.id in completed_ids
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.submissions.filter(user=request.user, status='evaluated').exists()
