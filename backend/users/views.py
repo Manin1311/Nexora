@@ -475,10 +475,14 @@ class GoogleLoginView(APIView):
         token_info = response.json()
         
         # Verify the Client ID (audience) matches ours
-        client_id = getattr(django_settings, 'GOOGLE_CLIENT_ID', '677409406492-44in3v5m8b3ns1hg8dt66giul3r7nji7.apps.googleusercontent.com')
+        expected_client_ids = {
+            '677409406492-44in3v5m8b3ns1hg8dt66giul3r7nji7.apps.googleusercontent.com',
+            '262401890252-9rvc6los0skfju4i5om4jqvqnnlj606p.apps.googleusercontent.com',
+            str(getattr(django_settings, 'GOOGLE_CLIENT_ID', '')).strip()
+        }
         aud = token_info.get('aud')
-        if aud != client_id:
-            print(f"[GoogleLoginView Error] Audience mismatch. Token aud: '{aud}', Server client_id: '{client_id}'")
+        if aud not in expected_client_ids:
+            print(f"[GoogleLoginView Error] Audience mismatch. Token aud: '{aud}', Expected set: '{expected_client_ids}'")
             return Response({'error': 'Audience mismatch. Client ID does not match expected client ID.'}, status=status.HTTP_400_BAD_REQUEST)
 
         email = token_info.get('email')
