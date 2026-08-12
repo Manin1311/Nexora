@@ -102,7 +102,7 @@ export default function LoginPage() {
           google.accounts.id.initialize({
             client_id: (import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_ID.trim())
               ? import.meta.env.VITE_GOOGLE_CLIENT_ID.trim()
-              : '262401890252-9rvc6los0skfju4i5om4jqvqnnlj606p.apps.googleusercontent.com',
+              : '677409406492-44in3v5m8b3ns1hg8dt66giul3r7nji7.apps.googleusercontent.com',
             callback: handleGoogleCredentialResponse,
           })
           const btn = document.getElementById('google-signin-btn')
